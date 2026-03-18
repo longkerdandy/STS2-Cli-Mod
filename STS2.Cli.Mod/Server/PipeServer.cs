@@ -3,10 +3,8 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
-using STS2.Cli.Mod.Actions;
 using PlayCardActionClass = STS2.Cli.Mod.Actions.PlayCardAction;
 using EndTurnActionClass = STS2.Cli.Mod.Actions.EndTurnAction;
-using STS2.Cli.Mod.Models.Dto;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
@@ -186,61 +184,8 @@ public class PipeServer : IDisposable
             return new { ok = false, error = "STATE_EXTRACTION_ERROR", message = state.Error };
         }
 
-        // Convert to response format
-        object? data = state.Screen switch
-        {
-            "COMBAT" when state.Combat != null => new
-            {
-                screen = state.Screen,
-                is_player_turn = state.Combat.IsPlayerTurn,
-                turn_number = state.Combat.TurnNumber,
-                player = new
-                {
-                    hp = state.Combat.Player.Hp,
-                    max_hp = state.Combat.Player.MaxHp,
-                    energy = state.Combat.Player.Energy,
-                    max_energy = state.Combat.Player.MaxEnergy,
-                    block = state.Combat.Player.Block,
-                    deck_count = state.Combat.Player.DeckCount,
-                    discard_count = state.Combat.Player.DiscardCount,
-                    exhaust_count = state.Combat.Player.ExhaustCount,
-                    buffs = state.Combat.Player.Buffs.Select(b => new { b.Id, b.Name, b.Amount, b.Type }).ToArray()
-                },
-                hand = state.Combat.Hand.Select(c => new
-                {
-                    c.Index,
-                    c.Id,
-                    c.Name,
-                    c.Cost,
-                    cost_display = c.CostDisplay,
-                    c.CanPlay,
-                    c.UnplayableReason,
-                    c.Description,
-                    c.Type,
-                    c.IsUpgraded
-                }).ToArray(),
-                enemies = state.Combat.Enemies.Select(e => new
-                {
-                    e.Index,
-                    e.Id,
-                    e.Name,
-                    e.Hp,
-                    max_hp = e.MaxHp,
-                    e.Block,
-                    e.IsMinion,
-                    intent = new
-                    {
-                        type = e.Intent.Type,
-                        description = e.Intent.Description
-                    },
-                    buffs = e.Buffs.Select(b => new { b.Id, b.Name, b.Amount, b.Type }).ToArray()
-                }).ToArray()
-            },
-            "MENU" => new { screen = state.Screen, message = "In main menu" },
-            _ => new { screen = state.Screen, timestamp = state.Timestamp }
-        };
-
-        return new { ok = true, data };
+        // Return DTO directly - simpler and includes all fields
+        return new { ok = true, data = state };
     }
 
     private object HandlePlayRequest(int[]? args)

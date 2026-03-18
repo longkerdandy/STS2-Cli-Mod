@@ -46,23 +46,23 @@ public static class PlayCardAction
 
             // Validate card index
             var hand = player.PlayerCombatState.Hand;
-            if (hand == null || cardIndex < 0 || cardIndex >= hand.Cards.Count)
+            if (cardIndex < 0 || cardIndex >= hand.Cards.Count)
                 return new
                 {
                     ok = false, error = "INVALID_CARD_INDEX",
-                    message = $"Card index {cardIndex} out of range (hand has {hand?.Cards.Count ?? 0} cards)"
+                    message = $"Card index {cardIndex} out of range (hand has {hand.Cards.Count} cards)"
                 };
 
             var card = hand.Cards[cardIndex];
 
-            // Check if card can be played
+            // Check if the card can be played
             if (!card.CanPlay(out var reason, out _))
                 return new
                 {
                     ok = false, error = "CANNOT_PLAY_CARD", message = $"Card '{card.Title}' cannot be played: {reason}"
                 };
 
-            // Resolve target if needed
+            // Resolve the target if needed
             Creature? target = null;
             if (card.TargetType == TargetType.AnyEnemy)
             {
@@ -82,11 +82,11 @@ public static class PlayCardAction
                     };
             }
 
-            // Enqueue the play card action via game's ActionQueue
+            // Enqueue the play card action via the game's ActionQueue
             RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(
                 new MegaCrit.Sts2.Core.GameActions.PlayCardAction(card, target));
 
-            var targetName = target?.Monster?.Title?.GetFormattedText() ?? "enemy";
+            var targetName = target?.Monster?.Title.GetFormattedText() ?? "enemy";
             var targetMsg = target != null ? $" targeting {targetName}" : "";
             Logger.Info($"Enqueued PlayCardAction: '{card.Title}'{targetMsg}");
 
@@ -125,8 +125,7 @@ public static class PlayCardAction
                     continue;
 
                 var baseId = creature.Monster?.Id.Entry ?? "unknown";
-                if (!entityCounts.TryGetValue(baseId, out var count))
-                    count = 0;
+                var count = entityCounts.GetValueOrDefault(baseId, 0);
 
                 entityCounts[baseId] = count + 1;
                 var generatedId = $"{baseId}_{count}";
