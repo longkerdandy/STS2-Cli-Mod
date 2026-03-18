@@ -3,7 +3,7 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
-using PlayCardActionClass = STS2.Cli.Mod.Actions.PlayCardAction;
+using PlayCardHandler = STS2.Cli.Mod.Actions.PlayCardHandler;
 using EndTurnActionClass = STS2.Cli.Mod.Actions.EndTurnAction;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State;
@@ -197,7 +197,7 @@ public class PipeServer : IDisposable
         Logger.Info($"Requested to play card at index {cardIndex}");
 
         // Execute play card action via game's ActionQueue
-        return PlayCardActionClass.Execute(cardIndex);
+        return PlayCardHandler.Execute(cardIndex);
     }
 
     private object HandleEndRequest()

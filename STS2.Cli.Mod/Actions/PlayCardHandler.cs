@@ -7,9 +7,9 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Executes play card action using the game's native ActionQueue.
+///     Handles play card action using the game's native ActionQueue.
 /// </summary>
-public static class PlayCardAction
+public static class PlayCardHandler
 {
     private static readonly ModLogger Logger = new("PlayCardAction");
 
