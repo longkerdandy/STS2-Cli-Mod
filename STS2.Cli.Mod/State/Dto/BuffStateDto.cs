@@ -8,12 +8,12 @@ public class BuffStateDto
     /// <summary>
     ///     Buff ID (e.g., "Strength", "Dexterity", "Vulnerable").
     /// </summary>
-    public string Id { get; set; } = "";
+    public string? Id { get; set; }
 
     /// <summary>
     ///     Buff display name.
     /// </summary>
-    public string Name { get; set; } = "";
+    public string? Name { get; set; }
 
     /// <summary>
     ///     Buff stack amount.
@@ -23,10 +23,10 @@ public class BuffStateDto
     /// <summary>
     ///     Buff type (Buff, Debuff, etc.).
     /// </summary>
-    public string Type { get; set; } = "";
+    public string? Type { get; set; }
 
     /// <summary>
     ///     Buff description text.
     /// </summary>
-    public string Description { get; set; } = "";
+    public string? Description { get; set; }
 }

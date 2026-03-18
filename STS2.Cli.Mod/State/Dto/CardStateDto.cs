@@ -13,12 +13,12 @@ public class CardStateDto
     /// <summary>
     ///     Card ID (e.g., "Strike", "Defend").
     /// </summary>
-    public string Id { get; set; } = "";
+    public string? Id { get; set; }
 
     /// <summary>
     ///     Card display name.
     /// </summary>
-    public string Name { get; set; } = "";
+    public string? Name { get; set; }
 
     /// <summary>
     ///     Energy cost (-1 for X cost).
@@ -28,7 +28,7 @@ public class CardStateDto
     /// <summary>
     ///     Display string for cost (e.g., "1", "2", "X").
     /// </summary>
-    public string CostDisplay { get; set; } = "";
+    public string? CostDisplay { get; set; }
 
     /// <summary>
     ///     True if the card can be played now.
@@ -43,12 +43,12 @@ public class CardStateDto
     /// <summary>
     ///     Card description text.
     /// </summary>
-    public string Description { get; set; } = "";
+    public string? Description { get; set; }
 
     /// <summary>
     ///     Card type (Attack, Skill, Power, etc.).
     /// </summary>
-    public string Type { get; set; } = "";
+    public string? Type { get; set; }
 
     /// <summary>
     ///     True if card is upgraded.

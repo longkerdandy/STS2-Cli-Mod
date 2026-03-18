@@ -8,10 +8,10 @@ public class IntentStateDto
     /// <summary>
     ///     Intent type (Attack, Defend, Buff, Debuff, etc.).
     /// </summary>
-    public string Type { get; set; } = "UNKNOWN";
+    public string? Type { get; set; }
 
     /// <summary>
     ///     Human-readable description of the intent.
     /// </summary>
-    public string Description { get; set; } = "";
+    public string? Description { get; set; }
 }

@@ -21,9 +21,9 @@ public class PlayerStateDto
     public int Energy { get; set; }
 
     /// <summary>
-    ///     Maximum energy (default 3).
+    ///     Maximum energy (typically 3).
     /// </summary>
-    public int MaxEnergy { get; set; } = 3;
+    public int MaxEnergy { get; set; }
 
     /// <summary>
     ///     Current block (temporary HP).

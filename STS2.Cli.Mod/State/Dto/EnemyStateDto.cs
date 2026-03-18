@@ -13,12 +13,12 @@ public class EnemyStateDto
     /// <summary>
     ///     Enemy ID (e.g., "Cultist", "JawWorm").
     /// </summary>
-    public string Id { get; set; } = "";
+    public string? Id { get; set; }
 
     /// <summary>
     ///     Enemy display name.
     /// </summary>
-    public string Name { get; set; } = "";
+    public string? Name { get; set; }
 
     /// <summary>
     ///     Current HP.
@@ -43,7 +43,7 @@ public class EnemyStateDto
     /// <summary>
     ///     Enemy's current intent (next action).
     /// </summary>
-    public IntentStateDto Intent { get; set; } = new();
+    public IntentStateDto? Intent { get; set; }
 
     /// <summary>
     ///     Active buffs/powers on the enemy.

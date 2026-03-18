@@ -8,17 +8,17 @@ public class CombatStateDto
     /// <summary>
     ///     True if it's the player's turn and they can act.
     /// </summary>
-    public bool IsPlayerTurn { get; set; } = true;
+    public bool IsPlayerTurn { get; set; }
 
     /// <summary>
     ///     Current round/turn number.
     /// </summary>
-    public int TurnNumber { get; set; } = 1;
+    public int TurnNumber { get; set; }
 
     /// <summary>
     ///     Player state including HP, energy, block, etc.
     /// </summary>
-    public PlayerStateDto Player { get; set; } = new();
+    public PlayerStateDto? Player { get; set; }
 
     /// <summary>
     ///     Current hand cards.
