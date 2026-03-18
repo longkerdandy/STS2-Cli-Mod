@@ -6,7 +6,7 @@ namespace STS2.Cli.Mod.State;
 
 /// <summary>
 ///     Extracts game state from Slay the Spire 2 using reflection.
-///     Safely accesses game classes without hard dependencies.
+///     Based on actual decompiled class names from sts2.dll.
 /// </summary>
 public static class GameStateExtractor
 {
@@ -16,6 +16,13 @@ public static class GameStateExtractor
     private static readonly Dictionary<string, Type?> TypeCache = new();
     private static readonly Dictionary<string, PropertyInfo?> PropertyCache = new();
     private static readonly Dictionary<string, FieldInfo?> FieldCache = new();
+
+    // Known type names from decompilation
+    private const string CombatManagerType = "MegaCrit.Sts2.Core.Combat.CombatManager";
+    private const string CombatStateType = "MegaCrit.Sts2.Core.Combat.CombatState";
+    private const string CreatureType = "MegaCrit.Sts2.Core.Entities.Creatures.Creature";
+    private const string PlayerType = "MegaCrit.Sts2.Core.Entities.Players.Player";
+    private const string CardModelType = "MegaCrit.Sts2.Core.Entities.Cards.CardModel";
 
     /// <summary>
     ///     Gets the current game state.
@@ -50,72 +57,32 @@ public static class GameStateExtractor
     /// </summary>
     private static string DetectScreen()
     {
-        // Try to find CombatManager or similar
-        var combatManagerType = FindType("CombatManager", "BattleManager", "GameStateManager");
+        // Check CombatManager.IsInProgress
+        var combatManagerType = FindType(CombatManagerType);
+        if (combatManagerType == null)
+        {
+            // Fallback to simple name
+            combatManagerType = FindType("CombatManager");
+        }
+
         if (combatManagerType != null)
         {
             var instance = GetStaticProperty(combatManagerType, "Instance");
             if (instance != null)
             {
-                // Check if in combat by looking for combat-specific properties
-                var inCombat = GetPropertyValue(instance, "InCombat", "IsInCombat", "CombatInProgress");
-                if (inCombat is true)
+                // IsInProgress indicates active combat
+                var inProgress = GetPropertyValue(instance, "IsInProgress") as bool?;
+                if (inProgress is true)
                     return "COMBAT";
             }
         }
 
-        // Try SceneManager for other screens
-        var sceneManagerType = FindType("SceneManager", "ScreenManager", "GameManager");
-        if (sceneManagerType != null)
-        {
-            var currentScene = GetStaticProperty(sceneManagerType, "CurrentScene", "ActiveScene");
-            if (currentScene != null)
-            {
-                var sceneName = currentScene.ToString();
-                return sceneName switch
-                {
-                    _ when sceneName.Contains("Map", StringComparison.OrdinalIgnoreCase) => "MAP",
-                    _ when sceneName.Contains("Shop", StringComparison.OrdinalIgnoreCase) => "SHOP",
-                    _ when sceneName.Contains("Event", StringComparison.OrdinalIgnoreCase) => "EVENT",
-                    _ when sceneName.Contains("Rest", StringComparison.OrdinalIgnoreCase) => "REST",
-                    _ when sceneName.Contains("Boss", StringComparison.OrdinalIgnoreCase) => "BOSS",
-                    _ when sceneName.Contains("Treasure", StringComparison.OrdinalIgnoreCase) => "TREASURE",
-                    _ => "UNKNOWN"
-                };
-            }
-        }
-
-        // Fallback: check if any combat-related objects exist
-        if (IsCombatActive())
-            return "COMBAT";
-
+        // TODO: Detect other screens (MAP, SHOP, EVENT, etc.)
         return "UNKNOWN";
     }
 
     /// <summary>
-    ///     Checks if combat is currently active.
-    /// </summary>
-    private static bool IsCombatActive()
-    {
-        // Look for combat scene or combat-related objects
-        var combatTypes = new[] { "CombatManager", "BattleManager", "AbstractCreature", "AbstractMonster" };
-        foreach (var typeName in combatTypes)
-        {
-            var type = FindType(typeName);
-            if (type != null)
-            {
-                // Check if there are any active instances
-                var instance = GetStaticProperty(type, "Instance");
-                if (instance != null)
-                    return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    ///     Extracts combat state including player, hand, and enemies.
+    ///     Extracts combat state from CombatManager.
     /// </summary>
     private static CombatState? ExtractCombatState()
     {
@@ -123,8 +90,8 @@ public static class GameStateExtractor
         {
             var combatState = new CombatState();
 
-            // Get CombatManager instance
-            var combatManagerType = FindType("CombatManager", "BattleManager");
+            // Get CombatManager
+            var combatManagerType = FindType(CombatManagerType, "CombatManager");
             if (combatManagerType == null)
             {
                 Logger.Warning("CombatManager type not found");
@@ -138,18 +105,33 @@ public static class GameStateExtractor
                 return null;
             }
 
-            // Extract player state
-            combatState.Player = ExtractPlayerState(combatManager);
+            // Get CombatState via DebugOnlyGetState() method
+            var state = CallMethod(combatManager, "DebugOnlyGetState");
+            if (state == null)
+            {
+                // Try to get _state field directly
+                state = GetFieldValue(combatManager, "_state");
+            }
+
+            if (state == null)
+            {
+                Logger.Warning("CombatState is null");
+                return null;
+            }
+
+            // Extract player state from CombatState.Players
+            combatState.Player = ExtractPlayerState(state);
 
             // Extract hand
-            combatState.Hand = ExtractHand(combatManager);
+            combatState.Hand = ExtractHand(state);
 
-            // Extract enemies
-            combatState.Enemies = ExtractEnemies(combatManager);
+            // Extract enemies from CombatState.Enemies
+            combatState.Enemies = ExtractEnemies(state);
 
-            // Extract turn info
-            combatState.IsPlayerTurn = GetPropertyValue(combatManager, "IsPlayerTurn", "PlayerTurn") as bool? ?? true;
-            combatState.TurnNumber = GetPropertyValue(combatManager, "TurnNumber", "Turn") as int? ?? 1;
+            // Turn info
+            // IsPlayPhase = player can act
+            combatState.IsPlayerTurn = GetPropertyValue(combatManager, "IsPlayPhase") as bool? ?? true;
+            combatState.TurnNumber = GetPropertyValue(state, "RoundNumber") as int? ?? 1;
 
             return combatState;
         }
@@ -161,47 +143,78 @@ public static class GameStateExtractor
     }
 
     /// <summary>
-    ///     Extracts player state from combat manager.
+    ///     Extracts player state from CombatState.
     /// </summary>
-    private static PlayerState ExtractPlayerState(object combatManager)
+    private static PlayerState ExtractPlayerState(object combatState)
     {
         var playerState = new PlayerState();
 
         try
         {
-            // Get player from combat manager
-            var player = GetPropertyValue(combatManager, "Player", "CurrentPlayer", "AbstractPlayer");
-            if (player == null)
+            // Get Players list from CombatState
+            var players = GetPropertyValue(combatState, "Players") as System.Collections.IEnumerable;
+            if (players == null)
             {
-                Logger.Warning("Player not found in CombatManager");
+                Logger.Warning("Players list not found in CombatState");
                 return playerState;
             }
 
-            // Extract HP
-            playerState.Hp = GetPropertyValue(player, "CurrentHealth", "Health", "Hp") as int? ?? 0;
-            playerState.MaxHp = GetPropertyValue(player, "MaxHealth", "MaxHp") as int? ?? 0;
-
-            // Extract energy
-            playerState.Energy = GetPropertyValue(player, "Energy", "CurrentEnergy") as int? ?? 0;
-            playerState.MaxEnergy = GetPropertyValue(player, "MaxEnergy") as int? ?? 3;
-
-            // Extract block
-            playerState.Block = GetPropertyValue(player, "Block", "CurrentBlock") as int? ?? 0;
-
-            // Extract buffs/powers
-            playerState.Buffs = ExtractBuffs(player);
-
-            // Extract deck/discard counts
-            var deck = GetPropertyValue(player, "DrawPile", "Deck", "MasterDeck");
-            if (deck is System.Collections.IEnumerable deckEnumerable)
+            // Get first player (single player mode)
+            var player = players.Cast<object>().FirstOrDefault();
+            if (player == null)
             {
-                playerState.DeckCount = deckEnumerable.Cast<object>().Count();
+                Logger.Warning("No player found");
+                return playerState;
             }
 
-            var discard = GetPropertyValue(player, "DiscardPile", "Discard");
-            if (discard is System.Collections.IEnumerable discardEnumerable)
+            // Player has a Creature property that contains combat stats
+            var creature = GetPropertyValue(player, "Creature");
+            if (creature != null)
             {
-                playerState.DiscardCount = discardEnumerable.Cast<object>().Count();
+                // Creature stats: CurrentHp, MaxHp, Block
+                playerState.Hp = GetPropertyValue(creature, "CurrentHp") as int? ?? 0;
+                playerState.MaxHp = GetPropertyValue(creature, "MaxHp") as int? ?? 0;
+                playerState.Block = GetPropertyValue(creature, "Block") as int? ?? 0;
+            }
+
+            // PlayerCombatState contains hand and energy
+            var playerCombatState = GetPropertyValue(player, "PlayerCombatState");
+            if (playerCombatState != null)
+            {
+                // Energy
+                playerState.Energy = GetPropertyValue(playerCombatState, "Energy") as int? ?? 0;
+                playerState.MaxEnergy = GetPropertyValue(playerCombatState, "MaxEnergy") as int? ?? 3;
+
+                // Hand size (actual cards extracted separately)
+                var hand = GetPropertyValue(playerCombatState, "Hand") as System.Collections.IEnumerable;
+                if (hand != null)
+                {
+                    playerState.HandCount = hand.Cast<object>().Count();
+                }
+
+                // Draw pile
+                var drawPile = GetPropertyValue(playerCombatState, "DrawPile") as System.Collections.IEnumerable;
+                if (drawPile != null)
+                {
+                    playerState.DeckCount = drawPile.Cast<object>().Count();
+                }
+
+                // Discard pile
+                var discardPile = GetPropertyValue(playerCombatState, "DiscardPile") as System.Collections.IEnumerable;
+                if (discardPile != null)
+                {
+                    playerState.DiscardCount = discardPile.Cast<object>().Count();
+                }
+            }
+
+            // Buffs/Powers from Creature
+            if (creature != null)
+            {
+                var powers = GetFieldValue(creature, "_powers") as System.Collections.IEnumerable;
+                if (powers != null)
+                {
+                    playerState.Buffs = ExtractBuffs(powers);
+                }
             }
         }
         catch (Exception ex)
@@ -213,40 +226,41 @@ public static class GameStateExtractor
     }
 
     /// <summary>
-    ///     Extracts hand cards from combat manager.
+    ///     Extracts hand cards from player's combat state.
     /// </summary>
-    private static List<CardState> ExtractHand(object combatManager)
+    private static List<CardState> ExtractHand(object combatState)
     {
         var hand = new List<CardState>();
 
         try
         {
-            // Get hand from player
-            var player = GetPropertyValue(combatManager, "Player", "CurrentPlayer");
+            // Get Players list
+            var players = GetPropertyValue(combatState, "Players") as System.Collections.IEnumerable;
+            var player = players?.Cast<object>().FirstOrDefault();
             if (player == null) return hand;
 
-            var handObj = GetPropertyValue(player, "Hand", "HandGroup");
-            if (handObj is not System.Collections.IEnumerable handEnumerable) return hand;
+            // Get PlayerCombatState
+            var playerCombatState = GetPropertyValue(player, "PlayerCombatState");
+            if (playerCombatState == null) return hand;
+
+            // Get Hand
+            var handObj = GetPropertyValue(playerCombatState, "Hand") as System.Collections.IEnumerable;
+            if (handObj == null) return hand;
 
             var index = 0;
-            foreach (var card in handEnumerable)
+            foreach (var card in handObj)
             {
                 if (card == null) continue;
 
                 var cardState = new CardState
                 {
                     Index = index++,
-                    Id = GetPropertyValue(card, "CardId", "ID", "Id")?.ToString() ?? "Unknown",
-                    Name = GetPropertyValue(card, "Name", "CardName")?.ToString() ?? "Unknown",
-                    Cost = GetPropertyValue(card, "Cost", "EnergyCost") as int? ?? -1,
-                    CanPlay = GetPropertyValue(card, "CanPlay", "IsPlayable") as bool? ?? false,
-                    Description = GetPropertyValue(card, "Description", "RawDescription")?.ToString() ?? ""
+                    Id = GetCardId(card),
+                    Name = GetPropertyValue(card, "Title")?.ToString() ?? "Unknown",
+                    Cost = GetCardCost(card),
+                    CanPlay = CanPlayCard(card, playerCombatState),
+                    Description = GetCardDescription(card)
                 };
-
-                // Check if card has upgrades
-                var upgraded = GetPropertyValue(card, "Upgraded", "IsUpgraded") as bool? ?? false;
-                if (upgraded)
-                    cardState.Id += "+";
 
                 hand.Add(cardState);
             }
@@ -260,47 +274,54 @@ public static class GameStateExtractor
     }
 
     /// <summary>
-    ///     Extracts enemy states from combat manager.
+    ///     Extracts enemy states from CombatState.Enemies.
     /// </summary>
-    private static List<EnemyState> ExtractEnemies(object combatManager)
+    private static List<EnemyState> ExtractEnemies(object combatState)
     {
         var enemies = new List<EnemyState>();
 
         try
         {
-            // Get enemies list
-            var enemiesObj = GetPropertyValue(combatManager, "Enemies", "Monsters", "CombatEnemies");
-            if (enemiesObj is not System.Collections.IEnumerable enemiesEnumerable) return enemies;
+            // Get Enemies list from CombatState
+            var enemiesObj = GetPropertyValue(combatState, "Enemies") as System.Collections.IEnumerable;
+            if (enemiesObj == null) return enemies;
 
             var index = 0;
-            foreach (var enemy in enemiesEnumerable)
+            foreach (var creature in enemiesObj)
             {
-                if (enemy == null) continue;
+                if (creature == null) continue;
 
                 // Skip dead enemies
-                var isDead = GetPropertyValue(enemy, "IsDead", "Dead", "IsDying") as bool? ?? false;
-                if (isDead) continue;
+                var isAlive = GetPropertyValue(creature, "IsAlive") as bool? ?? false;
+                if (!isAlive) continue;
 
                 var enemyState = new EnemyState
                 {
                     Index = index++,
-                    Id = GetPropertyValue(enemy, "Id", "MonsterId")?.ToString() ?? "Unknown",
-                    Name = GetPropertyValue(enemy, "Name", "MonsterName")?.ToString() ?? "Unknown",
-                    Hp = GetPropertyValue(enemy, "CurrentHealth", "Health", "Hp") as int? ?? 0,
-                    MaxHp = GetPropertyValue(enemy, "MaxHealth", "MaxHp") as int? ?? 0,
-                    Block = GetPropertyValue(enemy, "Block", "CurrentBlock") as int? ?? 0,
-                    IsMinion = GetPropertyValue(enemy, "IsMinion") as bool? ?? false,
-                    Buffs = ExtractBuffs(enemy)
+                    Id = GetCreatureId(creature),
+                    Name = GetPropertyValue(creature, "Name")?.ToString() ?? "Unknown",
+                    Hp = GetPropertyValue(creature, "CurrentHp") as int? ?? 0,
+                    MaxHp = GetPropertyValue(creature, "MaxHp") as int? ?? 0,
+                    Block = GetPropertyValue(creature, "Block") as int? ?? 0,
+                    IsMinion = GetPropertyValue(creature, "IsPet") as bool? ?? false,
+                    Buffs = new List<BuffState>()
                 };
 
-                // Extract intent
-                enemyState.Intent = ExtractIntent(enemy);
+                // Get powers/buffs
+                var powers = GetFieldValue(creature, "_powers") as System.Collections.IEnumerable;
+                if (powers != null)
+                {
+                    enemyState.Buffs = ExtractBuffs(powers);
+                }
+
+                // Extract intent from Monster
+                enemyState.Intent = ExtractIntent(creature);
 
                 enemies.Add(enemyState);
             }
         }
         catch (Exception ex)
-                {
+        {
             Logger.Error($"Failed to extract enemies: {ex.Message}");
         }
 
@@ -310,19 +331,49 @@ public static class GameStateExtractor
     /// <summary>
     ///     Extracts enemy intent.
     /// </summary>
-    private static IntentState ExtractIntent(object enemy)
+    private static IntentState ExtractIntent(object creature)
     {
         var intentState = new IntentState();
 
         try
         {
-            var intent = GetPropertyValue(enemy, "Intent", "CurrentIntent", "NextMove");
+            // Check if this creature is a monster
+            var isMonster = GetPropertyValue(creature, "IsMonster") as bool? ?? false;
+            if (!isMonster) return intentState;
+
+            // Get Monster model
+            var monster = GetPropertyValue(creature, "Monster");
+            if (monster == null) return intentState;
+
+            // Get NextMove
+            var nextMove = GetPropertyValue(monster, "NextMove");
+            if (nextMove == null) return intentState;
+
+            // Get Intents list
+            var intents = GetPropertyValue(nextMove, "Intents") as System.Collections.IEnumerable;
+            if (intents == null) return intentState;
+
+            // Take first intent
+            var intent = intents.Cast<object>().FirstOrDefault();
             if (intent == null) return intentState;
 
-            intentState.Type = GetPropertyValue(intent, "Type", "IntentType", "MoveType")?.ToString() ?? "UNKNOWN";
-            intentState.Damage = GetPropertyValue(intent, "Damage", "IntentDamage") as int? ?? 0;
-            intentState.HitCount = GetPropertyValue(intent, "HitCount", "Multiplier", "Times") as int? ?? 1;
-            intentState.Description = GetPropertyValue(intent, "Description", "IntentDescription")?.ToString() ?? "";
+            // Intent properties
+            intentState.Type = GetPropertyValue(intent, "Type")?.ToString() ?? "UNKNOWN";
+            intentState.Damage = GetPropertyValue(intent, "Damage") as int? ?? 0;
+            intentState.HitCount = GetPropertyValue(intent, "HitCount") as int? ?? 1;
+
+            // Description from hover tip
+            var description = GetPropertyValue(intent, "Description")?.ToString();
+            if (string.IsNullOrEmpty(description))
+            {
+                // Try to generate from AbstractIntent
+                var abstractIntent = GetPropertyValue(intent, "AbstractIntent");
+                if (abstractIntent != null)
+                {
+                    description = GetPropertyValue(abstractIntent, "Description")?.ToString();
+                }
+            }
+            intentState.Description = description ?? "";
         }
         catch (Exception ex)
         {
@@ -333,26 +384,26 @@ public static class GameStateExtractor
     }
 
     /// <summary>
-    ///     Extracts buffs/powers from a creature.
+    ///     Extracts buffs from powers collection.
     /// </summary>
-    private static List<BuffState> ExtractBuffs(object creature)
+    private static List<BuffState> ExtractBuffs(System.Collections.IEnumerable powers)
     {
         var buffs = new List<BuffState>();
 
         try
         {
-            var powersObj = GetPropertyValue(creature, "Powers", "Buffs", "PowerGroup");
-            if (powersObj is not System.Collections.IEnumerable powersEnumerable) return buffs;
-
-            foreach (var power in powersEnumerable)
+            foreach (var power in powers)
             {
                 if (power == null) continue;
 
                 var buff = new BuffState
                 {
-                    Id = GetPropertyValue(power, "Id", "PowerId")?.ToString() ?? "Unknown",
+                    Id = GetPropertyValue(power, "Id")?.ToString() 
+                        ?? GetPropertyValue(power, "PowerId")?.ToString() 
+                        ?? "Unknown",
                     Name = GetPropertyValue(power, "Name")?.ToString() ?? "Unknown",
-                    Amount = GetPropertyValue(power, "Amount", "Stack", "Count") as int? ?? 1,
+                    Amount = GetPropertyValue(power, "Amount") as int? 
+                        ?? GetPropertyValue(power, "Stack") as int? ?? 1,
                     Description = GetPropertyValue(power, "Description")?.ToString() ?? ""
                 };
 
@@ -367,35 +418,164 @@ public static class GameStateExtractor
         return buffs;
     }
 
+    #region Card Helpers
+
+    private static string GetCardId(object card)
+    {
+        // Try different properties for card ID
+        var id = GetPropertyValue(card, "Id")?.ToString()
+            ?? GetPropertyValue(card, "CardId")?.ToString()
+            ?? GetPropertyValue(card, "ID")?.ToString();
+
+        if (string.IsNullOrEmpty(id))
+        {
+            // Try to get from CardModel
+            var cardModel = GetPropertyValue(card, "Card");
+            if (cardModel != null)
+            {
+                id = GetPropertyValue(cardModel, "Id")?.ToString();
+            }
+        }
+
+        // Check if upgraded
+        var upgraded = GetPropertyValue(card, "IsUpgraded") as bool? 
+            ?? GetPropertyValue(card, "Upgraded") as bool? ?? false;
+
+        if (upgraded && !string.IsNullOrEmpty(id) && !id.EndsWith("+"))
+            id += "+";
+
+        return id ?? "Unknown";
+    }
+
+    private static int GetCardCost(object card)
+    {
+        // Try Cost property
+        var cost = GetPropertyValue(card, "Cost") as int?;
+        if (cost.HasValue) return cost.Value;
+
+        // Try EnergyCost
+        cost = GetPropertyValue(card, "EnergyCost") as int?;
+        if (cost.HasValue) return cost.Value;
+
+        // Try CostForTurn (modified cost)
+        cost = GetPropertyValue(card, "CostForTurn") as int?;
+        if (cost.HasValue) return cost.Value;
+
+        return -1;
+    }
+
+    private static bool CanPlayCard(object card, object playerCombatState)
+    {
+        // Try CanPlay property
+        var canPlay = GetPropertyValue(card, "CanPlay") as bool?;
+        if (canPlay.HasValue) return canPlay.Value;
+
+        // Try IsPlayable
+        canPlay = GetPropertyValue(card, "IsPlayable") as bool?;
+        if (canPlay.HasValue) return canPlay.Value;
+
+        // Check if has enough energy
+        var cost = GetCardCost(card);
+        if (cost >= 0)
+        {
+            var energy = GetPropertyValue(playerCombatState, "Energy") as int? ?? 0;
+            return cost <= energy;
+        }
+
+        return true;
+    }
+
+    private static string GetCardDescription(object card)
+    {
+        var desc = GetPropertyValue(card, "Description")?.ToString()
+            ?? GetPropertyValue(card, "RawDescription")?.ToString()
+            ?? GetPropertyValue(card, "CardDescription")?.ToString();
+
+        if (string.IsNullOrEmpty(desc))
+        {
+            // Try to get description from Card model
+            var cardModel = GetPropertyValue(card, "Card");
+            if (cardModel != null)
+            {
+                desc = GetPropertyValue(cardModel, "Description")?.ToString();
+            }
+        }
+
+        return desc ?? "";
+    }
+
+    #endregion
+
+    #region Creature Helpers
+
+    private static string GetCreatureId(object creature)
+    {
+        // Try ModelId
+        var modelId = GetPropertyValue(creature, "ModelId");
+        if (modelId != null)
+        {
+            return modelId.ToString() ?? "Unknown";
+        }
+
+        // Try Monster.Id
+        var monster = GetPropertyValue(creature, "Monster");
+        if (monster != null)
+        {
+            var id = GetPropertyValue(monster, "Id")?.ToString();
+            if (!string.IsNullOrEmpty(id))
+                return id;
+        }
+
+        return "Unknown";
+    }
+
+    #endregion
+
     #region Reflection Helpers
 
-    /// <summary>
-    ///     Finds a type by name from the game assembly.
-    /// </summary>
     private static Type? FindType(params string[] possibleNames)
     {
         foreach (var name in possibleNames)
         {
+            if (string.IsNullOrEmpty(name)) continue;
+
             if (TypeCache.TryGetValue(name, out var cachedType))
                 return cachedType;
 
-            // Try to find in all loaded assemblies
+            // Try exact name first
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
-                var type = assembly.GetType(name);
-                if (type != null)
+                try
                 {
-                    TypeCache[name] = type;
-                    return type;
+                    var type = assembly.GetType(name);
+                    if (type != null)
+                    {
+                        TypeCache[name] = type;
+                        return type;
+                    }
                 }
-
-                // Try with namespaces
-                type = assembly.GetTypes().FirstOrDefault(t =>
-                    t.Name == name || t.FullName?.EndsWith($".{name}") == true);
-                if (type != null)
+                catch
                 {
-                    TypeCache[name] = type;
-                    return type;
+                    continue;
+                }
+            }
+
+            // Try partial match
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                try
+                {
+                    var type = assembly.GetTypes().FirstOrDefault(t =>
+                        t.Name == name || t.FullName?.EndsWith($".{name}") == true);
+                    if (type != null)
+                    {
+                        TypeCache[name] = type;
+                        return type;
+                    }
+                }
+                catch
+                {
+                    continue;
                 }
             }
 
@@ -405,9 +585,6 @@ public static class GameStateExtractor
         return null;
     }
 
-    /// <summary>
-    ///     Gets a static property value.
-    /// </summary>
     private static object? GetStaticProperty(Type type, params string[] possibleNames)
     {
         foreach (var name in possibleNames)
@@ -421,15 +598,21 @@ public static class GameStateExtractor
             }
 
             if (property != null)
-                return property.GetValue(null);
+            {
+                try
+                {
+                    return property.GetValue(null);
+                }
+                catch
+                {
+                    continue;
+                }
+            }
         }
 
         return null;
     }
 
-    /// <summary>
-    ///     Gets a property value from an object.
-    /// </summary>
     private static object? GetPropertyValue(object obj, params string[] possibleNames)
     {
         var type = obj.GetType();
@@ -452,9 +635,56 @@ public static class GameStateExtractor
                 }
                 catch
                 {
-                    // Property might throw, try next
                     continue;
                 }
+            }
+        }
+
+        return null;
+    }
+
+    private static object? GetFieldValue(object obj, string fieldName)
+    {
+        var type = obj.GetType();
+        var cacheKey = $"{type.FullName}.{fieldName}";
+
+        if (!FieldCache.TryGetValue(cacheKey, out var field))
+        {
+            field = type.GetField(fieldName,
+                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public);
+            FieldCache[cacheKey] = field;
+        }
+
+        if (field != null)
+        {
+            try
+            {
+                return field.GetValue(obj);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
+    private static object? CallMethod(object obj, string methodName, params object[] args)
+    {
+        var type = obj.GetType();
+        var method = type.GetMethod(methodName,
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.NonPublic);
+
+        if (method != null)
+        {
+            try
+            {
+                return method.Invoke(obj, args);
+            }
+            catch
+            {
+                return null;
             }
         }
 
@@ -490,6 +720,7 @@ public class PlayerState
     public int Energy { get; set; }
     public int MaxEnergy { get; set; } = 3;
     public int Block { get; set; }
+    public int HandCount { get; set; }
     public int DeckCount { get; set; }
     public int DiscardCount { get; set; }
     public List<BuffState> Buffs { get; set; } = new();
