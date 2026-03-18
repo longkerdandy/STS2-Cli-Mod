@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace STS2.Cli.Mod.State.Dto;
 
 /// <summary>
-///     Card state DTO representing a single card in hand.
+///     Card state DTO representing a single card in the hand.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 public class CardStateDto
 {
     /// <summary>
@@ -51,7 +54,7 @@ public class CardStateDto
     public string? Type { get; set; }
 
     /// <summary>
-    ///     True if card is upgraded.
+    ///     True if the card is upgraded.
     /// </summary>
     public bool IsUpgraded { get; set; }
 }

@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace STS2.Cli.Mod.State.Dto;
 
 /// <summary>
 ///     Buff/Power state DTO representing a status effect on a creature.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 public class BuffStateDto
 {
     /// <summary>

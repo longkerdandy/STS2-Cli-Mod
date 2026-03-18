@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace STS2.Cli.Mod.State.Dto;
 
 /// <summary>
 ///     Root game state DTO containing overall game information.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 public class GameStateDto
 {
     /// <summary>

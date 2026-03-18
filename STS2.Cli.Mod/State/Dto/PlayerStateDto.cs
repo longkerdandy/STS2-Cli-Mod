@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace STS2.Cli.Mod.State.Dto;
 
 /// <summary>
 ///     Player state DTO containing character stats and resources.
 /// </summary>
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class PlayerStateDto
 {
     /// <summary>
@@ -36,17 +39,17 @@ public class PlayerStateDto
     public int HandCount { get; set; }
 
     /// <summary>
-    ///     Number of cards in draw pile.
+    ///     Number of cards in the draw pile.
     /// </summary>
     public int DeckCount { get; set; }
 
     /// <summary>
-    ///     Number of cards in discard pile.
+    ///     Number of cards in the discard pile.
     /// </summary>
     public int DiscardCount { get; set; }
 
     /// <summary>
-    ///     Number of cards in exhaust pile.
+    ///     Number of cards in the exhaust pile.
     /// </summary>
     public int ExhaustCount { get; set; }
 

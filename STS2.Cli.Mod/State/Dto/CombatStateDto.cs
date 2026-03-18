@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace STS2.Cli.Mod.State.Dto;
 
 /// <summary>
 ///     Combat-specific state DTO containing player, hand, and enemy information.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 public class CombatStateDto
 {
     /// <summary>

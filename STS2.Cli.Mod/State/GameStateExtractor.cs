@@ -2,9 +2,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Entities.Powers;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.State.Dto;
@@ -53,7 +51,7 @@ public static class GameStateExtractor
     /// </summary>
     private static string DetectScreen()
     {
-        // Check if run is in progress
+        // Check if a run is in progress
         if (!RunManager.Instance.IsInProgress)
         {
             return "MENU";
@@ -118,13 +116,13 @@ public static class GameStateExtractor
     }
 
     /// <summary>
-    ///     Gets the local player from combat state.
+    ///     Gets the local player from the combat state.
     /// </summary>
-    private static Player? GetLocalPlayer(MegaCrit.Sts2.Core.Combat.CombatState combatState)
+    private static Player? GetLocalPlayer(CombatState combatState)
     {
         try
         {
-            // In single player, get the first player
+            // In the single player, get the first player
             var players = combatState.Players;
             if (players.Count > 0)
             {
@@ -139,7 +137,7 @@ public static class GameStateExtractor
     }
 
     /// <summary>
-    ///     Builds player state from Player object.
+    ///     Builds player state from the Player object.
     /// </summary>
     private static PlayerStateDto BuildPlayerState(Player player)
     {
@@ -180,7 +178,7 @@ public static class GameStateExtractor
     }
 
     /// <summary>
-    ///     Builds hand state from player's combat state.
+    ///     Builds hand state from the player's combat state.
     /// </summary>
     private static List<CardStateDto> BuildHandState(Player player)
     {
@@ -256,7 +254,7 @@ public static class GameStateExtractor
     /// <summary>
     ///     Builds enemies state from CombatState.
     /// </summary>
-    private static List<EnemyStateDto> BuildEnemiesState(MegaCrit.Sts2.Core.Combat.CombatState combatState)
+    private static List<EnemyStateDto> BuildEnemiesState(CombatState combatState)
     {
         var enemies = new List<EnemyStateDto>();
 
@@ -282,7 +280,7 @@ public static class GameStateExtractor
     /// <summary>
     ///     Builds a single enemy state.
     /// </summary>
-    private static EnemyStateDto BuildEnemyState(Creature creature, int index, MegaCrit.Sts2.Core.Combat.CombatState combatState)
+    private static EnemyStateDto BuildEnemyState(Creature creature, int index, CombatState combatState)
     {
         var state = new EnemyStateDto
         {
@@ -328,7 +326,7 @@ public static class GameStateExtractor
     /// <summary>
     ///     Builds intent state from MoveState.
     /// </summary>
-    private static IntentStateDto BuildIntentState(MoveState moveState, Creature creature, MegaCrit.Sts2.Core.Combat.CombatState combatState)
+    private static IntentStateDto BuildIntentState(MoveState moveState, Creature creature, CombatState combatState)
     {
         var state = new IntentStateDto();
 
@@ -341,7 +339,7 @@ public static class GameStateExtractor
                 var intent = intents[0];
                 state.Type = intent.IntentType.ToString();
 
-                // Try to get label
+                // Try to get the label
                 try
                 {
                     var targets = combatState.PlayerCreatures;
