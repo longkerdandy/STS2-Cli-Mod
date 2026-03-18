@@ -4,7 +4,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using PlayCardHandler = STS2.Cli.Mod.Actions.PlayCardHandler;
-using EndTurnActionClass = STS2.Cli.Mod.Actions.EndTurnAction;
+using EndTurnHandler = STS2.Cli.Mod.Actions.EndTurnHandler;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
@@ -205,6 +205,6 @@ public class PipeServer : IDisposable
         Logger.Info("Requested to end turn");
 
         // Execute end turn action via game's ActionQueue
-        return EndTurnActionClass.Execute();
+        return EndTurnHandler.Execute();
     }
 }

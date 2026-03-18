@@ -5,9 +5,9 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Executes end turn action using the game's native PlayerCmd.
+///     Handles end turn action using the game's native PlayerCmd.
 /// </summary>
-public static class EndTurnAction
+public static class EndTurnHandler
 {
     private static readonly ModLogger Logger = new("EndTurnAction");
 
