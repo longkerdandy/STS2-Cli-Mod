@@ -1,7 +1,7 @@
 using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using STS2.Cli.Mod.State.Dto;
+using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.State.Builders;
 
@@ -10,8 +10,10 @@ namespace STS2.Cli.Mod.State.Builders;
 /// </summary>
 public static class CombatStateBuilder
 {
+    private static readonly ModLogger Logger = new("CombatStateBuilder");
+
     /// <summary>
-    ///     Builds the hand state from player's combat state.
+    ///     Builds the hand state from the player's combat state.
     /// </summary>
     public static List<CardStateDto> BuildHand(Player player)
     {
@@ -20,12 +22,10 @@ public static class CombatStateBuilder
         try
         {
             var playerCombatState = player.PlayerCombatState;
-            if (playerCombatState == null) return hand;
-
-            if (playerCombatState.Hand == null) return hand;
+            if (playerCombatState?.Hand == null) return hand;
 
             var cards = playerCombatState.Hand.Cards;
-            for (int i = 0; i < cards.Count; i++)
+            for (var i = 0; i < cards.Count; i++)
             {
                 var card = cards[i];
                 hand.Add(CardStateBuilder.Build(card, i));
@@ -33,7 +33,7 @@ public static class CombatStateBuilder
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to build hand state: {ex.Message}");
+            Logger.Warning($"Failed to build hand state: {ex.Message}");
         }
 
         return hand;
@@ -49,7 +49,7 @@ public static class CombatStateBuilder
         try
         {
             var creatures = combatState.Enemies;
-            for (int i = 0; i < creatures.Count; i++)
+            for (var i = 0; i < creatures.Count; i++)
             {
                 var creature = creatures[i];
                 if (!creature.IsAlive) continue;
@@ -59,7 +59,7 @@ public static class CombatStateBuilder
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to build enemies state: {ex.Message}");
+            Logger.Warning($"Failed to build enemies state: {ex.Message}");
         }
 
         return enemies;

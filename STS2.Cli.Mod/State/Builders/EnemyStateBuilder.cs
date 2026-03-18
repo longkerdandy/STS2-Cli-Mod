@@ -1,9 +1,9 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using STS2.Cli.Mod.State.Dto;
+using STS2.Cli.Mod.Utils;
 using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State.Builders;
@@ -13,6 +13,8 @@ namespace STS2.Cli.Mod.State.Builders;
 /// </summary>
 public static class EnemyStateBuilder
 {
+    private static readonly ModLogger Logger = new("EnemyStateBuilder");
+
     /// <summary>
     ///     Builds an enemy state DTO.
     /// </summary>
@@ -33,19 +35,17 @@ public static class EnemyStateBuilder
             if (monster != null)
             {
                 state.Id = monster.Id.Entry;
-                state.Name = CleanGameText(monster.Title?.GetFormattedText());
+                state.Name = CleanGameText(monster.Title.GetFormattedText());
 
                 // Intent
                 var nextMove = monster.NextMove;
-                if (nextMove is MoveState moveState)
-                {
-                    state.Intent = BuildIntent(moveState, creature, combatState);
-                }
+                // ReSharper disable once ConvertTypeCheckToNullCheck
+                if (nextMove is MoveState) state.Intent = BuildIntent(nextMove, creature, combatState);
             }
             else
             {
                 state.Id = "unknown";
-                state.Name = CleanGameText(creature?.Name);
+                state.Name = CleanGameText(creature.Name);
             }
 
             // Buffs
@@ -53,7 +53,7 @@ public static class EnemyStateBuilder
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to build enemy state: {ex.Message}");
+            Logger.Warning($"Failed to build enemy state: {ex.Message}");
         }
 
         return state;
@@ -75,12 +75,12 @@ public static class EnemyStateBuilder
                 var intent = intents[0];
                 state.Type = intent.IntentType.ToString();
 
-                // Try to get label
+                // Try to get the label
                 try
                 {
                     var targets = combatState.PlayerCreatures;
                     var label = intent.GetIntentLabel(targets, creature);
-                    state.Description = CleanGameText(label?.GetFormattedText());
+                    state.Description = CleanGameText(label.GetFormattedText());
                 }
                 catch
                 {
@@ -90,7 +90,7 @@ public static class EnemyStateBuilder
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to build intent state: {ex.Message}");
+            Logger.Warning($"Failed to build intent state: {ex.Message}");
         }
 
         return state;
@@ -112,10 +112,10 @@ public static class EnemyStateBuilder
                 var buff = new BuffStateDto
                 {
                     Id = power.Id.Entry,
-                    Name = CleanGameText(power.Title?.GetFormattedText()),
+                    Name = CleanGameText(power.Title.GetFormattedText()),
                     Amount = power.DisplayAmount,
                     Type = power.Type.ToString(),
-                    Description = CleanGameText(power.SmartDescription?.GetFormattedText())
+                    Description = CleanGameText(power.SmartDescription.GetFormattedText())
                 };
 
                 buffs.Add(buff);
@@ -123,7 +123,7 @@ public static class EnemyStateBuilder
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to build buffs state: {ex.Message}");
+            Logger.Warning($"Failed to build buffs state: {ex.Message}");
         }
 
         return buffs;

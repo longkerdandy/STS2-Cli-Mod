@@ -1,7 +1,7 @@
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using STS2.Cli.Mod.State.Dto;
+using STS2.Cli.Mod.Utils;
 using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State.Builders;
@@ -11,6 +11,8 @@ namespace STS2.Cli.Mod.State.Builders;
 /// </summary>
 public static class PlayerStateBuilder
 {
+    private static readonly ModLogger Logger = new("PlayerStateBuilder");
+
     /// <summary>
     ///     Builds a player state DTO.
     /// </summary>
@@ -37,7 +39,7 @@ public static class PlayerStateBuilder
                 // Pile counts
                 state.DeckCount = playerCombatState.DrawPile.Cards.Count;
                 state.DiscardCount = playerCombatState.DiscardPile.Cards.Count;
-                state.ExhaustCount = playerCombatState.ExhaustPile?.Cards.Count ?? 0;
+                state.ExhaustCount = playerCombatState.ExhaustPile.Cards.Count;
                 state.HandCount = playerCombatState.Hand.Cards.Count;
             }
 
@@ -46,7 +48,7 @@ public static class PlayerStateBuilder
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to build player state: {ex.Message}");
+            Logger.Warning($"Failed to build player state: {ex.Message}");
         }
 
         return state;
@@ -68,10 +70,10 @@ public static class PlayerStateBuilder
                 var buff = new BuffStateDto
                 {
                     Id = power.Id.Entry,
-                    Name = CleanGameText(power.Title?.GetFormattedText()),
+                    Name = CleanGameText(power.Title.GetFormattedText()),
                     Amount = power.DisplayAmount,
                     Type = power.Type.ToString(),
-                    Description = CleanGameText(power.SmartDescription?.GetFormattedText())
+                    Description = CleanGameText(power.SmartDescription.GetFormattedText())
                 };
 
                 buffs.Add(buff);
@@ -79,7 +81,7 @@ public static class PlayerStateBuilder
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine($"Failed to build buffs state: {ex.Message}");
+            Logger.Warning($"Failed to build buffs state: {ex.Message}");
         }
 
         return buffs;

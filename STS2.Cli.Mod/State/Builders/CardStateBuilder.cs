@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using STS2.Cli.Mod.State.Dto;
+using STS2.Cli.Mod.Utils;
 using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State.Builders;
@@ -10,6 +11,8 @@ namespace STS2.Cli.Mod.State.Builders;
 /// </summary>
 public static class CardStateBuilder
 {
+    private static readonly ModLogger Logger = new("CardStateBuilder");
+
     /// <summary>
     ///     Builds a card state DTO from a CardModel.
     /// </summary>
@@ -33,7 +36,7 @@ public static class CardStateBuilder
             }
             else
             {
-                int cost = card.EnergyCost.GetAmountToSpend();
+                var cost = card.EnergyCost.GetAmountToSpend();
                 state.Cost = cost;
                 state.CostDisplay = cost.ToString();
             }
@@ -52,7 +55,7 @@ public static class CardStateBuilder
         catch (Exception ex)
         {
             // Log error but return partial state
-            System.Diagnostics.Debug.WriteLine($"Failed to build card state for {card.Id}: {ex.Message}");
+            Logger.Warning($"Failed to build card state for {card.Id}: {ex.Message}");
         }
 
         return state;
@@ -71,9 +74,15 @@ public static class CardStateBuilder
         }
         catch
         {
-            // Fallback to basic description
-            try { return card.Description?.GetFormattedText(); }
-            catch { return null; }
+            // Fallback to the basic description
+            try
+            {
+                return card.Description.GetFormattedText();
+            }
+            catch
+            {
+                return null;
+            }
         }
     }
 }
