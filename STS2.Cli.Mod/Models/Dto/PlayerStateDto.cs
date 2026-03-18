@@ -57,4 +57,36 @@ public class PlayerStateDto
     ///     Active buffs/powers on the player.
     /// </summary>
     public List<BuffStateDto> Buffs { get; set; } = new();
+
+    // ===== Character & Resources =====
+
+    /// <summary>
+    ///     Character class ID (e.g., "Ironclad", "Silent", "Defect").
+    /// </summary>
+    public string? CharacterId { get; set; }
+
+    /// <summary>
+    ///     Character display name.
+    /// </summary>
+    public string? CharacterName { get; set; }
+
+    /// <summary>
+    ///     The Regent's stars resource (null for other characters).
+    /// </summary>
+    public int? Stars { get; set; }
+
+    /// <summary>
+    ///     Current gold amount.
+    /// </summary>
+    public int Gold { get; set; }
+
+    /// <summary>
+    ///     Active potions in inventory.
+    /// </summary>
+    public List<PotionStateDto> Potions { get; set; } = new();
+
+    /// <summary>
+    ///     Acquired relics.
+    /// </summary>
+    public List<RelicStateDto> Relics { get; set; } = new();
 }
