@@ -5,19 +5,23 @@ namespace STS2.Cli.Mod.Utils;
 /// <summary>
 ///     Text utility methods for cleaning and formatting game text.
 /// </summary>
-public static partial class TextUtils
+public static class TextUtils
 {
+    // Standard BBCode pattern: matches everything between [ and ] (non-greedy)
+    private static readonly Regex BbCodeRegex = new(@"\[.*?\]", RegexOptions.Compiled);
+    
+    // Rich text pattern: matches everything between < and >
+    private static readonly Regex RichTextRegex = new("<[^>]+>", RegexOptions.Compiled);
+
     /// <summary>
     ///     Removes BBCode tags from text (e.g., [gold], [/gold], [color=red], etc.)
-    ///     Standard pattern: \[.*?\] matches everything between [ and ]
     /// </summary>
     public static string StripBbCode(string? text)
     {
         if (string.IsNullOrEmpty(text))
             return string.Empty;
 
-        // Match anything between [ and ] (non-greedy)
-        return BbCodeRegex().Replace(text, "").Trim();
+        return BbCodeRegex.Replace(text, "").Trim();
     }
 
     /// <summary>
@@ -28,7 +32,7 @@ public static partial class TextUtils
         if (string.IsNullOrEmpty(text))
             return string.Empty;
 
-        return RichTextRegex().Replace(text, "").Trim();
+        return RichTextRegex.Replace(text, "").Trim();
     }
 
     /// <summary>
@@ -47,10 +51,4 @@ public static partial class TextUtils
         
         return cleaned.Trim();
     }
-
-    [GeneratedRegex(@"\[.*?\]", RegexOptions.Compiled)]
-    private static partial Regex BbCodeRegex();
-
-    [GeneratedRegex("<[^>]+>", RegexOptions.Compiled)]
-    private static partial Regex RichTextRegex();
 }
