@@ -1,9 +1,9 @@
 ﻿{
     "id": "STS2.Cli.Mod",
     "name": "STS2 CLI Mod",
-    "author": "STS2-Cli-Mod Team",
+    "author": "LongkerDandy (longkerdandy@gmail.com)",
     "description": "A CLI control mod for Slay the Spire 2. Allows AI Agents to control the game via command line.",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "has_pck": false,
     "has_dll": true,
     "dependencies": [],

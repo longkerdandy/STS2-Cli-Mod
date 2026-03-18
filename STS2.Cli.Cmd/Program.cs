@@ -24,13 +24,20 @@ internal static class Program
         // When a user runs the program without subcommands, displays this description and available commands
         var rootCommand = new RootCommand("STS2 CLI - Control Slay the Spire 2 via command line");
 
+        // Add a global --pretty option for formatted JSON output
+        var prettyOption = new Option<bool>(
+            ["--pretty", "-p"],
+            description: "Format JSON output with indentation for readability",
+            getDefaultValue: () => false);
+        rootCommand.AddGlobalOption(prettyOption);
+
         // Register all subcommands
         // Each subcommand corresponds to a game action, naming consistent with the protocol
-        rootCommand.AddCommand(CreatePingCommand()); // sts2 ping
-        rootCommand.AddCommand(CreateStateCommand()); // sts2 state
-        rootCommand.AddCommand(CreatePlayCardCommand()); // sts2 play_card <index> [--target]
-        rootCommand.AddCommand(CreateEndTurnCommand()); // sts2 end_turn
-        rootCommand.AddCommand(CreateUsePotionCommand()); // sts2 use_potion <slot> [--target]
+        rootCommand.AddCommand(CreatePingCommand(prettyOption)); // sts2 ping
+        rootCommand.AddCommand(CreateStateCommand(prettyOption)); // sts2 state
+        rootCommand.AddCommand(CreatePlayCardCommand(prettyOption)); // sts2 play_card <index> [--target]
+        rootCommand.AddCommand(CreateEndTurnCommand(prettyOption)); // sts2 end_turn
+        rootCommand.AddCommand(CreateUsePotionCommand(prettyOption)); // sts2 use_potion <slot> [--target]
 
         // Parse and execute the command
         // InvokeAsync will:
@@ -47,8 +54,15 @@ internal static class Program
     /// <example>
     ///     $ STS2.Cli.Cmd ping
     ///     {"ok":true,"data":{"connected":true}}
+    ///     $ STS2.Cli.Cmd --pretty ping
+    ///     {
+    ///     "ok": true,
+    ///     "data": {
+    ///     "connected": true
+    ///     }
+    ///     }
     /// </example>
-    private static Command CreatePingCommand()
+    private static Command CreatePingCommand(Option<bool> prettyOption)
     {
         var command = new Command("ping", "Test connection to the mod");
 
@@ -56,7 +70,8 @@ internal static class Program
         // context contains parsed arguments and options
         command.SetHandler(async context =>
         {
-            var exitCode = await CommandRunner.ExecuteAsync("ping");
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            var exitCode = await CommandRunner.ExecuteAsync("ping", pretty: pretty);
             context.ExitCode = exitCode;
         });
 
@@ -68,15 +83,24 @@ internal static class Program
     /// </summary>
     /// <example>
     ///     $ STS2.Cli.Cmd state
-    ///     {"ok":true,"data":{"screen":"COMBAT","player":{...}}}
+    ///     {"ok":true,"data":{"screen":"COMBAT","player": {...}}}
+    ///     $ STS2.Cli.Cmd --pretty state
+    ///     {
+    ///     "ok": true,
+    ///     "data": {
+    ///     "screen": "COMBAT",
+    ///     "player": { ... }
+    ///     }
+    ///     }
     /// </example>
-    private static Command CreateStateCommand()
+    private static Command CreateStateCommand(Option<bool> prettyOption)
     {
         var command = new Command("state", "Get current game state");
 
         command.SetHandler(async context =>
         {
-            var exitCode = await CommandRunner.ExecuteAsync("state");
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            var exitCode = await CommandRunner.ExecuteAsync("state", pretty: pretty);
             context.ExitCode = exitCode;
         });
 
@@ -94,8 +118,9 @@ internal static class Program
     /// <example>
     ///     $ STS2.Cli.Cmd play_card 0
     ///     $ STS2.Cli.Cmd play_card 0 --target jaw_worm_0
+    ///     $ STS2.Cli.Cmd --pretty play_card 0
     /// </example>
-    private static Command CreatePlayCardCommand()
+    private static Command CreatePlayCardCommand(Option<bool> prettyOption)
     {
         var command = new Command("play_card", "Play a card from hand");
 
@@ -112,9 +137,10 @@ internal static class Program
             // Get argument values from parse result
             var index = context.ParseResult.GetValueForArgument(indexArg);
             var target = context.ParseResult.GetValueForOption(targetOption);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
 
             // Send command to mod, command name matches CLI command name
-            var exitCode = await CommandRunner.ExecuteAsync("play_card", [index], target);
+            var exitCode = await CommandRunner.ExecuteAsync("play_card", [index], target, pretty);
             context.ExitCode = exitCode;
         });
 
@@ -127,14 +153,16 @@ internal static class Program
     /// <example>
     ///     $ STS2.Cli.Cmd end_turn
     ///     {"ok":true,"data":{"action":"end_turn"}}
+    ///     $ STS2.Cli.Cmd --pretty end_turn
     /// </example>
-    private static Command CreateEndTurnCommand()
+    private static Command CreateEndTurnCommand(Option<bool> prettyOption)
     {
         var command = new Command("end_turn", "End the current turn");
 
         command.SetHandler(async context =>
         {
-            var exitCode = await CommandRunner.ExecuteAsync("end_turn");
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            var exitCode = await CommandRunner.ExecuteAsync("end_turn", pretty: pretty);
             context.ExitCode = exitCode;
         });
 
@@ -150,8 +178,9 @@ internal static class Program
     /// <example>
     ///     $ STS2.Cli.Cmd use_potion 0
     ///     $ STS2.Cli.Cmd use_potion 0 --target jaw_worm_0
+    ///     $ STS2.Cli.Cmd --pretty use_potion 0
     /// </example>
-    private static Command CreateUsePotionCommand()
+    private static Command CreateUsePotionCommand(Option<bool> prettyOption)
     {
         var command = new Command("use_potion", "Use a potion");
 
@@ -167,7 +196,8 @@ internal static class Program
         {
             var slot = context.ParseResult.GetValueForArgument(slotArg);
             var target = context.ParseResult.GetValueForOption(targetOption);
-            var exitCode = await CommandRunner.ExecuteAsync("use_potion", [slot], target);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            var exitCode = await CommandRunner.ExecuteAsync("use_potion", [slot], target, pretty);
             context.ExitCode = exitCode;
         });
 
