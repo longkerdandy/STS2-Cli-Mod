@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Runs;
+using STS2.Cli.Mod.State.Dto;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.State;
@@ -393,79 +394,4 @@ public static class GameStateExtractor
 
         return buffs;
     }
-}
-
-// State DTOs - using "Dto" suffix to avoid conflicts with game types
-
-public class GameStateDto
-{
-    public string Screen { get; set; } = "UNKNOWN";
-    public long Timestamp { get; set; }
-    public string? Error { get; set; }
-    public CombatStateDto? Combat { get; set; }
-}
-
-public class CombatStateDto
-{
-    public bool IsPlayerTurn { get; set; } = true;
-    public int TurnNumber { get; set; } = 1;
-    public PlayerStateDto Player { get; set; } = new();
-    public List<CardStateDto> Hand { get; set; } = new();
-    public List<EnemyStateDto> Enemies { get; set; } = new();
-}
-
-public class PlayerStateDto
-{
-    public int Hp { get; set; }
-    public int MaxHp { get; set; }
-    public int Energy { get; set; }
-    public int MaxEnergy { get; set; } = 3;
-    public int Block { get; set; }
-    public int HandCount { get; set; }
-    public int DeckCount { get; set; }
-    public int DiscardCount { get; set; }
-    public int ExhaustCount { get; set; }
-    public List<BuffStateDto> Buffs { get; set; } = new();
-}
-
-public class CardStateDto
-{
-    public int Index { get; set; }
-    public string Id { get; set; } = "";
-    public string Name { get; set; } = "";
-    public int Cost { get; set; }
-    public string CostDisplay { get; set; } = "";
-    public bool CanPlay { get; set; }
-    public string? UnplayableReason { get; set; }
-    public string Description { get; set; } = "";
-    public string Type { get; set; } = "";
-    public bool IsUpgraded { get; set; }
-}
-
-public class EnemyStateDto
-{
-    public int Index { get; set; }
-    public string Id { get; set; } = "";
-    public string Name { get; set; } = "";
-    public int Hp { get; set; }
-    public int MaxHp { get; set; }
-    public int Block { get; set; }
-    public bool IsMinion { get; set; }
-    public IntentStateDto Intent { get; set; } = new();
-    public List<BuffStateDto> Buffs { get; set; } = new();
-}
-
-public class IntentStateDto
-{
-    public string Type { get; set; } = "UNKNOWN";
-    public string Description { get; set; } = "";
-}
-
-public class BuffStateDto
-{
-    public string Id { get; set; } = "";
-    public string Name { get; set; } = "";
-    public int Amount { get; set; }
-    public string Type { get; set; } = "";
-    public string Description { get; set; } = "";
 }

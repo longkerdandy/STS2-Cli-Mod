@@ -1,0 +1,57 @@
+namespace STS2.Cli.Mod.State.Dto;
+
+/// <summary>
+///     Player state DTO containing character stats and resources.
+/// </summary>
+public class PlayerStateDto
+{
+    /// <summary>
+    ///     Current HP.
+    /// </summary>
+    public int Hp { get; set; }
+
+    /// <summary>
+    ///     Maximum HP.
+    /// </summary>
+    public int MaxHp { get; set; }
+
+    /// <summary>
+    ///     Current energy.
+    /// </summary>
+    public int Energy { get; set; }
+
+    /// <summary>
+    ///     Maximum energy (default 3).
+    /// </summary>
+    public int MaxEnergy { get; set; } = 3;
+
+    /// <summary>
+    ///     Current block (temporary HP).
+    /// </summary>
+    public int Block { get; set; }
+
+    /// <summary>
+    ///     Number of cards in hand.
+    /// </summary>
+    public int HandCount { get; set; }
+
+    /// <summary>
+    ///     Number of cards in draw pile.
+    /// </summary>
+    public int DeckCount { get; set; }
+
+    /// <summary>
+    ///     Number of cards in discard pile.
+    /// </summary>
+    public int DiscardCount { get; set; }
+
+    /// <summary>
+    ///     Number of cards in exhaust pile.
+    /// </summary>
+    public int ExhaustCount { get; set; }
+
+    /// <summary>
+    ///     Active buffs/powers on the player.
+    /// </summary>
+    public List<BuffStateDto> Buffs { get; set; } = new();
+}
