@@ -1,3 +1,4 @@
+using Godot;
 using MegaCrit.Sts2.Core.Modding;
 using STS2.Cli.Mod.Server;
 using STS2.Cli.Mod.Utils;
@@ -23,6 +24,9 @@ public static class CliModEntry
         Logger.Info("STS2.Cli.Mod loaded successfully!");
         Logger.Info("Version: 0.1.0");
         Logger.Info("========================================");
+
+        // Initialize main thread executor (required for game actions)
+        MainThreadExecutor.Initialize();
 
         // Initialize and start the pipe server (fire and forget)
         try

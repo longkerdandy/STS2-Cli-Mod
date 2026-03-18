@@ -1,4 +1,3 @@
-using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -15,7 +14,7 @@ public static class PlayCardHandler
     private static readonly ModLogger Logger = new("PlayCardAction");
 
     /// <summary>
-///     Plays a card from the player's hand.
+    ///     Plays a card from the player's hand.
     /// </summary>
     public static object Execute(int cardIndex, string? targetId = null)
     {
@@ -83,21 +82,25 @@ public static class PlayCardHandler
                     };
             }
 
-            // Use CallDeferred to ensure execution on the main thread (Godot requirement)
-            // This queues the action to be processed by the game's main loop
-            Callable.From(() =>
+            // Execute on the main thread (required for Godot/Game actions)
+            // Use RunOnMainThread to ensure execution happens before returning response
+            var finalCard = card;
+            var finalTarget = target;
+            MainThreadExecutor.RunOnMainThread(() =>
             {
                 try
                 {
                     RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(
-                        new MegaCrit.Sts2.Core.GameActions.PlayCardAction(card, target));
-                    Logger.Info($"PlayCardAction enqueued on main thread: '{card.Title}'");
+                        new MegaCrit.Sts2.Core.GameActions.PlayCardAction(finalCard, finalTarget));
+                    Logger.Info($"PlayCardAction enqueued: '{finalCard.Title}'");
+                    return true;
                 }
                 catch (Exception ex)
                 {
-                    Logger.Error($"Failed to enqueue PlayCardAction on main thread: {ex.Message}");
+                    Logger.Error($"Failed to enqueue PlayCardAction: {ex.Message}");
+                    throw;
                 }
-            }).CallDeferred();
+            });
 
             var targetName = target?.Monster?.Title.GetFormattedText() ?? "enemy";
             var targetMsg = target != null ? $" targeting {targetName}" : "";
