@@ -84,41 +84,37 @@ Key classes to look for:
 - `Card` / `AbstractCard` - Card information
 - `Monster` / `AbstractMonster` - Enemy state and intent
 
-## Current Phase: v0.1.0 - Full Singleplayer Coverage
+## Current Phase: MVP - Core Combat Loop
 
-**Goal**: Support complete singleplayer game loop (all screens)
+**Goal**: Support basic combat loop with real game integration
 
-**Phase 1: Core Infrastructure** ✅
+**Phase 1: Core Infrastructure** ✅ COMPLETE
 - [x] C# Mod with `[ModInitializer]` entry point
-- [x] Named Pipe server (`sts2-cli-mod`)
-- [x] Mod loads successfully in-game
+- [x] Named Pipe server (`sts2-cli-mod`) with proper ACL permissions
+- [x] Mod loads successfully in-game ("Running Modded" confirmed)
+- [x] Git repository initialized
 
-**Phase 2: CLI Client** (In Progress)
-- [ ] `sts2 ping` - Connection test
-- [ ] `sts2 state` - Get current game state
-- [ ] All scene-specific commands (see CLI Specification)
+**Phase 2: CLI Client** ✅ COMPLETE
+- [x] `sts2 ping` - Connection test working
+- [x] `sts2 state` - Returns game state (mock data)
+- [x] `sts2 play_card <index>` - Command ready
+- [x] `sts2 end_turn` - Command ready
+- [x] `sts2 use_potion <slot>` - Command ready
 
-**Phase 3: State Extraction**
-- [ ] Combat states (monster/elite/boss)
-- [ ] Combat card selection (exhaust/discard/upgrade)
+**Phase 3: Real Game Integration** 🔄 IN PROGRESS
+- [ ] Decompile sts2.dll to find key classes
+- [ ] Combat state extraction (player HP, energy, hand, enemies)
+- [ ] Harmony patches for action execution
+- [ ] End-to-end combat loop test
+
+**Phase 4: Full Singleplayer Coverage** ⏳ PLANNED
+- [ ] Non-combat scenes (map, shop, events)
 - [ ] Post-combat rewards
-- [ ] Map navigation (full DAG with lookahead)
-- [ ] Rest site, Shop, Events/Ancients
-- [ ] Card selection screens (transform/upgrade/remove)
-- [ ] Relic selection, Treasure room
+- [ ] Card selection screens
+- [ ] Rest site, Treasure room
 
-**Phase 4: Action Execution**
-- [ ] Combat actions (play_card, end_turn, use_potion)
-- [ ] Combat selection (select_card, confirm)
-- [ ] Reward claims and card picks
-- [ ] Map node selection
-- [ ] Shop purchases
-- [ ] Event options and dialogue
-- [ ] Rest options
-- [ ] Card/Relic selection screens
-
-**Not in v0.1.0**:
-- Multiplayer support (see STS2MCP for reference)
+**Not in MVP**:
+- Multiplayer support
 - Streaming output (`sts2 watch`)
 - Conditional waiting (`sts2 wait`)
 - Non-JSON output formats

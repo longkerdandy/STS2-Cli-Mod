@@ -18,145 +18,98 @@ The Mod module is an in-process C# mod that:
 
 ---
 
-## Phase 1: Project Setup
+## Completed Work ✅
 
-**Goal**: Create a compilable Mod project framework
+### Phase 1: Project Setup - COMPLETE
 
-### Tasks
+| Task | Status | Notes |
+|------|--------|-------|
+| Create project structure | ✅ | `STS2.Cli.Mod/` .NET 9 class library |
+| Configure assembly references | ✅ | sts2.dll, GodotSharp.dll, 0Harmony.dll |
+| Implement entry point | ✅ | `[ModInitializer("Initialize")]` working |
+| Test compilation | ✅ | Loads successfully, "Running Modded" confirmed |
+| Git support | ✅ | Repository initialized, .gitignore configured |
 
-| # | Task | Deliverable | Verification |
-|---|------|-------------|--------------|
-| 1.1 | Create project structure | `mod/` directory with .NET 9 class library | Project compiles |
-| 1.2 | Configure assembly references | `STS2.CliMod.csproj` with sts2.dll, GodotSharp.dll, 0Harmony.dll | No reference errors |
-| 1.3 | Implement entry point | `[ModInitializer]` attributed class | Logger outputs on load |
-| 1.4 | Test compilation | Build DLL and load in game | "Running Modded" appears |
+### Phase 2: Named Pipe Communication - COMPLETE
 
-### Key Implementation
+| Task | Status | Notes |
+|------|--------|-------|
+| Implement PipeServer | ✅ | Async, non-blocking, Byte mode |
+| Define message protocol | ✅ | JSON Request/Response models |
+| Command routing | ✅ | Maps commands to handlers |
+| Ping/heartbeat | ✅ | `{"ok":true,"data":{"connected":true}}` |
+| Fix connection issues | ✅ | PipeTransmissionMode.Byte + explicit ACL permissions |
+| Fix dispose exceptions | ✅ | `leaveOpen: true` for StreamReader/Writer |
 
-```csharp
-using Godot;
+### CLI Implementation - COMPLETE
 
-[ModInitializer]
-public static class ModInitializer 
-{
-    public static void Initialize() 
-    {
-        Logger.Info("STS2.CliMod loaded successfully!");
-    }
-}
-```
-
-### Project Structure
-
-```
-mod/
-├── STS2.CliMod.csproj
-├── ModInitializer.cs
-└── (future files...)
-```
+| Command | Status | Notes |
+|---------|--------|-------|
+| `sts2 ping` | ✅ | Connection test working |
+| `sts2 state` | ✅ | Returns game state (currently mock data) |
+| `sts2 play_card <index>` | ✅ | Command exists, execution stubbed |
+| `sts2 end_turn` | ✅ | Command exists, execution stubbed |
+| `sts2 use_potion <slot>` | ✅ | Command exists, execution stubbed |
 
 ---
 
-## Phase 2: Named Pipe Communication
+## Current Phase: Game State Extraction & Action Execution
 
-**Goal**: Establish bidirectional communication between Mod and CLI
+### Phase 3: Real Game State Extraction 🔄 IN PROGRESS
 
-### Tasks
+**Current Status**: Mock data implemented, needs real game integration
 
-| # | Task | Deliverable | Notes |
-|---|------|-------------|-------|
-| 2.1 | Implement PipeServer | `PipeServer.cs` class | Async, non-blocking |
-| 2.2 | Define message protocol | `Request` and `Response` models | JSON serialization |
-| 2.3 | Command routing | `CommandRouter.cs` | Maps commands to handlers |
-| 2.4 | Ping/heartbeat | `ping` command response | Connection health check |
+**Goal**: Read actual combat state from the game
 
-### Protocol Specification
+#### Prerequisites
 
-**Request Format**:
-```json
-{"cmd": "ping"}
-{"cmd": "state"}
-{"cmd": "play", "args": [0]}
-{"cmd": "end"}
-```
-
-**Response Format**:
-```json
-{"ok": true, "data": {...}}
-{"ok": false, "error": "ERROR_CODE", "message": "..."}
-```
-
-### Architecture
-
-```
-[CLI] --NamedPipe--> [PipeServer] --CommandRouter--> [Handlers]
-```
-
----
-
-## Phase 3: Game State Extraction
-
-**Goal**: Read combat state from the game
-
-### Prerequisites
-
-- Decompile `sts2.dll` using ILSpy
-- Identify key classes:
+- [ ] Decompile `sts2.dll` using ILSpy
+- [ ] Identify key classes:
   - `CombatManager` / `BattleManager`
   - `Player` / `AbstractPlayer`
   - `AbstractCard`
   - `AbstractMonster`
 
-### Tasks
+#### Tasks
 
-| # | Task | Deliverable | Reference |
-|---|------|-------------|-----------|
-| 3.1 | Decompile analysis | Document key classes and methods | ILSpy output |
-| 3.2 | State extractor | `GameStateExtractor.cs` | SLS2Mods snapshot logic |
-| 3.3 | Player state | HP, max HP, energy, block | CombatManager.Instance.Player |
-| 3.4 | Hand state | Card list with cost, can_play | Player.Hand |
-| 3.5 | Enemy state | HP, intent, powers | CombatManager.Instance.Enemies |
-| 3.6 | Serialization | JSON-safe DTOs | Avoid circular references |
+| # | Task | Deliverable | Status |
+|---|------|-------------|--------|
+| 3.1 | Decompile analysis | Document key classes and methods | ⏳ Pending |
+| 3.2 | State extractor | `GameStateExtractor.cs` | ⏳ Pending |
+| 3.3 | Player state | HP, max HP, energy, block | ⏳ Pending |
+| 3.4 | Hand state | Card list with cost, can_play | ⏳ Pending |
+| 3.5 | Enemy state | HP, intent, powers | ⏳ Pending |
+| 3.6 | Screen detection | COMBAT/MAP/SHOP/EVENT | ⏳ Pending |
 
-### State Structure
-
+**Current Mock Response**:
 ```json
 {
   "screen": "COMBAT",
-  "player": {
-    "hp": 50,
-    "max_hp": 80,
-    "energy": 3,
-    "block": 0
-  },
-  "hand": [
-    {"index": 0, "id": "Strike", "cost": 1, "can_play": true}
-  ],
-  "enemies": [
-    {"index": 0, "name": "Cultist", "hp": 50, "intent": "ATTACK_6"}
-  ],
+  "player": {"hp": 50, "max_hp": 80, "energy": 3, "block": 0},
+  "hand": [{"index": 0, "id": "Strike", "cost": 1, "can_play": true}],
+  "enemies": [{"index": 0, "name": "Cultist", "hp": 50, "intent": "ATTACK_6"}],
   "is_player_turn": true
 }
 ```
 
 ---
 
-## Phase 4: Action Execution
+### Phase 4: Real Action Execution 🔄 IN PROGRESS
+
+**Current Status**: Framework ready, needs Harmony patch integration
 
 **Goal**: Execute in-game actions programmatically
 
-### Tasks
+#### Tasks
 
-| # | Task | Deliverable | Challenge |
-|---|------|-------------|-----------|
-| 4.1 | Harmony patch setup | Patch framework | Find hook points |
-| 4.2 | Play card logic | `PlayCard(int index)` | Target selection |
-| 4.3 | End turn logic | `EndTurn()` | Wait for resolution |
-| 4.4 | Safety validation | Pre-condition checks | Prevent crashes |
+| # | Task | Deliverable | Status |
+|---|------|-------------|--------|
+| 4.1 | Harmony patch setup | Patch framework | ⏳ Pending |
+| 4.2 | Play card logic | `PlayCard(int index)` | ⏳ Pending |
+| 4.3 | End turn logic | `EndTurn()` | ⏳ Pending |
+| 4.4 | Safety validation | Pre-condition checks | ⏳ Pending |
 
-### Implementation Approach
-
-Using HarmonyX to patch game methods:
+#### Implementation Approach
 
 ```csharp
 [HarmonyPatch(typeof(CombatManager), "Update")]
@@ -171,7 +124,7 @@ public class CombatManagerPatch
 }
 ```
 
-### Validation Rules
+#### Validation Rules
 
 - Is player turn?
 - Is card index valid?
@@ -186,12 +139,12 @@ public class CombatManagerPatch
 
 ### Tasks
 
-| # | Task | Acceptance Criteria |
-|---|------|---------------------|
-| 5.1 | E2E testing | All CLI commands work correctly |
-| 5.2 | Error handling | Graceful degradation, no crashes |
-| 5.3 | Performance | No visible game lag |
-| 5.4 | Documentation | Protocol spec complete |
+| # | Task | Acceptance Criteria | Status |
+|---|------|---------------------|--------|
+| 5.1 | E2E testing | All CLI commands work correctly | ⏳ Pending |
+| 5.2 | Error handling | Graceful degradation, no crashes | ✅ Partial |
+| 5.3 | Performance | No visible game lag | ⏳ Pending |
+| 5.4 | Documentation | Protocol spec complete | ⏳ Pending |
 
 ### Test Scenarios
 
@@ -217,21 +170,42 @@ $ sts2 end
 
 ## Phase Summary
 
-| Phase | Focus | Milestone |
-|-------|-------|-----------|
-| 1 | Project setup & communication | Pipe connection works |
-| 2 | State extraction | Can read full combat state |
-| 3 | Action execution | Can play cards and end turn |
-| 4 | Integration & polish | MVP complete |
+| Phase | Focus | Status | Milestone |
+|-------|-------|--------|-----------|
+| 1 | Project setup | ✅ Complete | Mod loads in game |
+| 2 | Named Pipe communication | ✅ Complete | `sts2 ping` works |
+| 3 | Real state extraction | 🔄 In Progress | Read actual game state |
+| 4 | Real action execution | 🔄 In Progress | Play cards, end turn |
+| 5 | Integration & polish | ⏳ Pending | MVP complete |
 
 ---
 
 ## Technical Specifications
 
+### Project Structure
+
+```
+STS2-Cli-Mod/
+├── STS2.Cli.Mod/              # C# Mod (.NET 9)
+│   ├── ModInitializer.cs      # Entry point
+│   ├── Server/PipeServer.cs   # Named Pipe server
+│   ├── Models/                # Request/Response
+│   └── STS2.Cli.Mod.csproj
+├── STS2.Cli.Cmd/              # CLI tool (.NET 9)
+│   ├── Program.cs             # Entry point
+│   ├── Services/PipeClient.cs # Named Pipe client
+│   ├── Services/CommandRunner.cs
+│   ├── Models/                # Request/Response
+│   └── STS2.Cli.Cmd.csproj
+├── plan/
+│   └── mod-development-plan.md
+└── AGENTS.md
+```
+
 ### Dependencies
 
 ```xml
-<!-- STS2.CliMod.csproj -->
+<!-- STS2.Cli.Mod.csproj -->
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -255,20 +229,32 @@ $ sts2 end
 ### Build Commands
 
 ```bash
-# Build mod
-dotnet build mod/ -c Release \
-  -p:STS2GameDir="C:/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2"
+# Build CLI
+dotnet build STS2.Cli.Cmd/ -c Release
 
-# Deploy
-cp mod/bin/Release/net9.0/STS2.CliMod.dll \
-   "C:/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2/mods/"
+# Build Mod
+dotnet build STS2.Cli.Mod/ -c Release
+
+# Run CLI
+dotnet STS2.Cli.Cmd/bin/Release/net9.0/win-x64/sts2.dll ping
 ```
 
 ### Debugging
 
-- **Logs**: `%APPDATA%/SlayTheSpire2/logs/`
+- **Logs**: `%APPDATA%/SlayTheSpire2/logs/godot.log`
 - **Attach**: Use VS Code "Attach to Process"
 - **Hot reload**: Replace DLL when game closed
+
+---
+
+## Key Fixes Applied
+
+| Issue | Solution |
+|-------|----------|
+| Connection hang | `CancellationTokenSource` for timeout instead of `ConnectAsync(timeoutMs)` |
+| Pipe not accessible | `NamedPipeServerStreamAcl.Create` with explicit `PipeSecurity` |
+| Dispose exception | `leaveOpen: true` in StreamReader/Writer constructors |
+| Message mode issues | `PipeTransmissionMode.Byte` instead of `Message` |
 
 ---
 
@@ -293,11 +279,13 @@ cp mod/bin/Release/net9.0/STS2.CliMod.dll \
 
 ## Next Steps
 
-1. **Immediate**: Begin Phase 1 - Project Setup
-2. **Decision**: Whether to fork STS2MCP or build from scratch
-3. **Prerequisite**: Install .NET 9.0 SDK and ILSpy
+1. **Immediate**: Install ILSpy and decompile sts2.dll
+2. **Find**: CombatManager, Player, Card classes
+3. **Implement**: Real state extraction in HandleStateRequest()
+4. **Implement**: Harmony patches for action execution
+5. **Test**: Full combat loop with real game
 
 ---
 
 *Last Updated: 2026-03-18*  
-*Version: v0.1.0-draft*
+*Version: v0.2.0*
