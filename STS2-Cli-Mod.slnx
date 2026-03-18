@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="STS2.Cli.Mod/STS2.Cli.Mod.csproj" />
+  <Project Path="STS2.Cli.Cmd/STS2.Cli.Cmd.csproj" />
+</Solution>

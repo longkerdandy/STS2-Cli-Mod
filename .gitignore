@@ -1,0 +1,42 @@
+# .NET build outputs
+bin/
+obj/
+out/
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+.idea/
+
+# Game references (sensitive/private)
+lib/sts2.dll
+lib/GodotSharp.dll
+lib/0Harmony.dll
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# Deployment
+publish/
+*.zip
+*.tar.gz
+
+# Local config
+*.local.json
+appsettings.Development.json
