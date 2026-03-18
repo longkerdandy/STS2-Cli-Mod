@@ -1,11 +1,14 @@
-using System.Reflection;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.GameActions;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Executes game actions by calling game methods via reflection.
+///     Executes game actions using direct type references.
 /// </summary>
 public static class ActionExecutor
 {
@@ -22,22 +25,39 @@ public static class ActionExecutor
     {
         try
         {
-            // Validate card index
-            var state = GameStateExtractor.GetState();
-            if (state.Screen != "COMBAT" || state.Combat == null)
+            // Validate we're in combat
+            if (!CombatManager.Instance.IsInProgress)
             {
                 return new { ok = false, error = "NOT_IN_COMBAT", message = "Not currently in combat" };
             }
 
-            if (cardIndex < 0 || cardIndex >= state.Combat.Hand.Count)
+            // Get player
+            var combatState = CombatManager.Instance.DebugOnlyGetState();
+            if (combatState == null)
             {
-                return new { ok = false, error = "INVALID_CARD_INDEX", message = $"Card index {cardIndex} out of range (0-{state.Combat.Hand.Count - 1})" };
+                return new { ok = false, error = "NO_COMBAT_STATE", message = "Combat state is null" };
             }
 
-            var card = state.Combat.Hand[cardIndex];
-            if (!card.CanPlay)
+            var player = combatState.Players.FirstOrDefault();
+            if (player?.PlayerCombatState == null)
             {
-                return new { ok = false, error = "CANNOT_PLAY_CARD", message = "Card cannot be played (insufficient energy or other restriction)" };
+                return new { ok = false, error = "NO_PLAYER", message = "Player not found" };
+            }
+
+            // Validate card index
+            var hand = player.PlayerCombatState.Hand.Cards;
+            if (cardIndex < 0 || cardIndex >= hand.Count)
+            {
+                return new { ok = false, error = "INVALID_CARD_INDEX", message = $"Card index {cardIndex} out of range (0-{hand.Count - 1})" };
+            }
+
+            var card = hand[cardIndex];
+
+            // Check if can play
+            card.CanPlay(out var unplayableReason, out _);
+            if (unplayableReason != UnplayableReason.None)
+            {
+                return new { ok = false, error = "CANNOT_PLAY_CARD", message = $"Cannot play card: {unplayableReason}" };
             }
 
             lock (LockObj)
@@ -50,7 +70,7 @@ public static class ActionExecutor
             }
 
             Logger.Info($"Queued play card action: index={cardIndex}, card={card.Id}");
-            return new { ok = true, data = new { action = "PLAY_CARD", card_index = cardIndex, card_id = card.Id } };
+            return new { ok = true, data = new { action = "PLAY_CARD", card_index = cardIndex, card_id = card.Id.Entry } };
         }
         catch (Exception ex)
         {
@@ -66,16 +86,16 @@ public static class ActionExecutor
     {
         try
         {
-            // Validate in combat
-            var state = GameStateExtractor.GetState();
-            if (state.Screen != "COMBAT" || state.Combat == null)
+            // Validate we're in combat and it's player turn
+            var combatManager = CombatManager.Instance;
+            if (!combatManager.IsInProgress)
             {
                 return new { ok = false, error = "NOT_IN_COMBAT", message = "Not currently in combat" };
             }
 
-            if (!state.Combat.IsPlayerTurn)
+            if (!combatManager.IsPlayPhase)
             {
-                return new { ok = false, error = "NOT_PLAYER_TURN", message = "Not player's turn" };
+                return new { ok = false, error = "NOT_PLAYER_TURN", message = "Not player's turn or cannot act now" };
             }
 
             lock (LockObj)
@@ -145,61 +165,46 @@ public static class ActionExecutor
     {
         Logger.Info($"Executing play card: index={cardIndex}");
 
-        // Find CombatManager
-        var combatManagerType = FindType("CombatManager", "BattleManager");
-        if (combatManagerType == null)
+        var combatManager = CombatManager.Instance;
+        if (!combatManager.IsInProgress)
         {
-            Logger.Error("CombatManager not found");
+            Logger.Error("Combat not in progress");
             return;
         }
 
-        var combatManager = GetStaticProperty(combatManagerType, "Instance");
-        if (combatManager == null)
+        var combatState = combatManager.DebugOnlyGetState();
+        if (combatState == null)
         {
-            Logger.Error("CombatManager.Instance is null");
+            Logger.Error("Combat state is null");
             return;
         }
 
-        // Try to find PlayCard method
-        var playCardMethod = combatManagerType.GetMethod("PlayCard",
-            BindingFlags.Public | BindingFlags.Instance,
-            null, new[] { typeof(int) }, null);
-
-        if (playCardMethod != null)
-        {
-            playCardMethod.Invoke(combatManager, new object[] { cardIndex });
-            Logger.Info("PlayCard method invoked successfully");
-            return;
-        }
-
-        // Alternative: Try to get hand and play directly
-        var player = GetPropertyValue(combatManager, "Player", "CurrentPlayer");
-        if (player == null)
+        var player = combatState.Players.FirstOrDefault();
+        if (player?.PlayerCombatState == null)
         {
             Logger.Error("Player not found");
             return;
         }
 
-        var hand = GetPropertyValue(player, "Hand", "HandGroup") as System.Collections.IEnumerable;
-        var card = hand?.Cast<object>().ElementAtOrDefault(cardIndex);
-        if (card == null)
+        var hand = player.PlayerCombatState.Hand.Cards;
+        if (cardIndex < 0 || cardIndex >= hand.Count)
         {
-            Logger.Error($"Card at index {cardIndex} not found");
+            Logger.Error($"Invalid card index: {cardIndex}");
             return;
         }
 
-        // Try to use card's Use method
-        var useMethod = card.GetType().GetMethod("Use",
-            BindingFlags.Public | BindingFlags.Instance);
-        if (useMethod != null)
-        {
-            useMethod.Invoke(card, new object?[] { null, null }); // target, source
-            Logger.Info("Card.Use method invoked");
-        }
-        else
-        {
-            Logger.Error("Could not find method to play card");
-        }
+        var card = hand[cardIndex];
+        
+        // Use the PlayCard method on PlayerCombatState or card
+        // In STS2, this might be done via commands or direct method calls
+        // For now, we log it - actual implementation needs game-specific logic
+        Logger.Info($"Would play card: {card.Title} (implementation pending)");
+
+        // TODO: Implement actual card playing
+        // This typically involves:
+        // 1. Creating a PlayCardGameAction
+        // 2. Adding it to the action queue
+        // 3. Or calling a method like player.PlayerCombatState.PlayCard(card)
     }
 
     /// <summary>
@@ -209,100 +214,26 @@ public static class ActionExecutor
     {
         Logger.Info("Executing end turn");
 
-        // Find CombatManager
-        var combatManagerType = FindType("CombatManager", "BattleManager");
-        if (combatManagerType == null)
+        var combatManager = CombatManager.Instance;
+        if (!combatManager.IsInProgress)
         {
-            Logger.Error("CombatManager not found");
+            Logger.Error("Combat not in progress");
             return;
         }
 
-        var combatManager = GetStaticProperty(combatManagerType, "Instance");
-        if (combatManager == null)
-        {
-            Logger.Error("CombatManager.Instance is null");
-            return;
-        }
-
-        // Try EndTurn method
-        var endTurnMethod = combatManagerType.GetMethod("EndTurn",
-            BindingFlags.Public | BindingFlags.Instance);
-
-        if (endTurnMethod != null)
-        {
-            endTurnMethod.Invoke(combatManager, null);
-            Logger.Info("EndTurn method invoked successfully");
-            return;
-        }
-
-        // Alternative: EndPlayerTurn
-        endTurnMethod = combatManagerType.GetMethod("EndPlayerTurn",
-            BindingFlags.Public | BindingFlags.Instance);
-
-        if (endTurnMethod != null)
-        {
-            endTurnMethod.Invoke(combatManager, null);
-            Logger.Info("EndPlayerTurn method invoked successfully");
-            return;
-        }
-
-        Logger.Error("Could not find EndTurn method");
+        // In STS2, ending turn might be done via:
+        // 1. CombatManager method
+        // 2. Player method
+        // 3. GameAction queue
+        
+        // TODO: Implement actual end turn
+        // Possible approaches:
+        // - combatManager.EndTurn()
+        // - player.EndTurn()
+        // - ActionQueue.Add(new EndTurnAction())
+        
+        Logger.Info("End turn implementation pending");
     }
-
-    #region Reflection Helpers
-
-    private static Type? FindType(params string[] possibleNames)
-    {
-        foreach (var name in possibleNames)
-        {
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                var type = assembly.GetType(name);
-                if (type != null) return type;
-
-                type = assembly.GetTypes().FirstOrDefault(t =>
-                    t.Name == name || t.FullName?.EndsWith($".{name}") == true);
-                if (type != null) return type;
-            }
-        }
-        return null;
-    }
-
-    private static object? GetStaticProperty(Type type, params string[] possibleNames)
-    {
-        foreach (var name in possibleNames)
-        {
-            var property = type.GetProperty(name,
-                BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy);
-            if (property != null)
-                return property.GetValue(null);
-        }
-        return null;
-    }
-
-    private static object? GetPropertyValue(object obj, params string[] possibleNames)
-    {
-        var type = obj.GetType();
-        foreach (var name in possibleNames)
-        {
-            var property = type.GetProperty(name,
-                BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
-            if (property != null)
-            {
-                try
-                {
-                    return property.GetValue(obj);
-                }
-                catch
-                {
-                    continue;
-                }
-            }
-        }
-        return null;
-    }
-
-    #endregion
 }
 
 /// <summary>

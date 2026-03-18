@@ -202,7 +202,8 @@ public class PipeServer : IDisposable
                     block = state.Combat.Player.Block,
                     deck_count = state.Combat.Player.DeckCount,
                     discard_count = state.Combat.Player.DiscardCount,
-                    buffs = state.Combat.Player.Buffs.Select(b => new { b.Id, b.Name, b.Amount }).ToArray()
+                    exhaust_count = state.Combat.Player.ExhaustCount,
+                    buffs = state.Combat.Player.Buffs.Select(b => new { b.Id, b.Name, b.Amount, b.Type }).ToArray()
                 },
                 hand = state.Combat.Hand.Select(c => new
                 {
@@ -210,8 +211,12 @@ public class PipeServer : IDisposable
                     c.Id,
                     c.Name,
                     c.Cost,
+                    cost_display = c.CostDisplay,
                     c.CanPlay,
-                    c.Description
+                    c.UnplayableReason,
+                    c.Description,
+                    c.Type,
+                    c.IsUpgraded
                 }).ToArray(),
                 enemies = state.Combat.Enemies.Select(e => new
                 {
@@ -224,14 +229,13 @@ public class PipeServer : IDisposable
                     e.IsMinion,
                     intent = new
                     {
-                        e.Intent.Type,
-                        e.Intent.Damage,
-                        hit_count = e.Intent.HitCount,
-                        e.Intent.Description
+                        type = e.Intent.Type,
+                        description = e.Intent.Description
                     },
-                    buffs = e.Buffs.Select(b => new { b.Id, b.Name, b.Amount }).ToArray()
+                    buffs = e.Buffs.Select(b => new { b.Id, b.Name, b.Amount, b.Type }).ToArray()
                 }).ToArray()
             },
+            "MENU" => new { screen = state.Screen, message = "In main menu" },
             _ => new { screen = state.Screen, timestamp = state.Timestamp }
         };
 
