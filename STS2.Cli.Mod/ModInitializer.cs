@@ -1,5 +1,7 @@
 using Godot;
+using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
+using STS2.Cli.Mod.Patches;
 using STS2.Cli.Mod.Server;
 
 namespace STS2.Cli.Mod;
@@ -12,6 +14,7 @@ namespace STS2.Cli.Mod;
 public static class CliModEntry
 {
     private static PipeServer? _pipeServer;
+    private static Harmony? _harmony;
 
     /// <summary>
     /// Initializes the mod and starts the pipe server.
@@ -22,6 +25,18 @@ public static class CliModEntry
         Logger.Info("STS2.Cli.Mod loaded successfully!");
         Logger.Info("Version: 0.1.0");
         Logger.Info("========================================");
+
+        // Initialize Harmony
+        try
+        {
+            _harmony = new Harmony("sts2.climod");
+            CombatManagerPatch.Apply(_harmony);
+            Logger.Info("Harmony patches applied");
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to apply Harmony patches: {ex.Message}");
+        }
 
         // Initialize and start the pipe server (fire and forget)
         try

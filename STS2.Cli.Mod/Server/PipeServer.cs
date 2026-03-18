@@ -3,7 +3,9 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
+using STS2.Cli.Mod.Actions;
 using STS2.Cli.Mod.Models;
+using STS2.Cli.Mod.State;
 
 namespace STS2.Cli.Mod.Server;
 
@@ -176,19 +178,64 @@ public class PipeServer : IDisposable
 
     private object HandleStateRequest()
     {
-        // TODO: Phase 3 - Implement game state extraction
-        return new
+        var state = GameStateExtractor.GetState();
+        
+        if (state.Error != null)
         {
-            ok = true,
-            data = new
+            return new { ok = false, error = "STATE_EXTRACTION_ERROR", message = state.Error };
+        }
+
+        // Convert to response format
+        object? data = state.Screen switch
+        {
+            "COMBAT" when state.Combat != null => new
             {
-                screen = "COMBAT",
-                player = new { hp = 50, max_hp = 80, energy = 3, block = 0 },
-                hand = new[] { new { index = 0, id = "Strike", cost = 1, can_play = true } },
-                enemies = new[] { new { index = 0, name = "Cultist", hp = 50, intent = "ATTACK_6" } },
-                is_player_turn = true
-            }
+                screen = state.Screen,
+                is_player_turn = state.Combat.IsPlayerTurn,
+                turn_number = state.Combat.TurnNumber,
+                player = new
+                {
+                    hp = state.Combat.Player.Hp,
+                    max_hp = state.Combat.Player.MaxHp,
+                    energy = state.Combat.Player.Energy,
+                    max_energy = state.Combat.Player.MaxEnergy,
+                    block = state.Combat.Player.Block,
+                    deck_count = state.Combat.Player.DeckCount,
+                    discard_count = state.Combat.Player.DiscardCount,
+                    buffs = state.Combat.Player.Buffs.Select(b => new { b.Id, b.Name, b.Amount }).ToArray()
+                },
+                hand = state.Combat.Hand.Select(c => new
+                {
+                    c.Index,
+                    c.Id,
+                    c.Name,
+                    c.Cost,
+                    c.CanPlay,
+                    c.Description
+                }).ToArray(),
+                enemies = state.Combat.Enemies.Select(e => new
+                {
+                    e.Index,
+                    e.Id,
+                    e.Name,
+                    e.Hp,
+                    max_hp = e.MaxHp,
+                    e.Block,
+                    e.IsMinion,
+                    intent = new
+                    {
+                        e.Intent.Type,
+                        e.Intent.Damage,
+                        hit_count = e.Intent.HitCount,
+                        e.Intent.Description
+                    },
+                    buffs = e.Buffs.Select(b => new { b.Id, b.Name, b.Amount }).ToArray()
+                }).ToArray()
+            },
+            _ => new { screen = state.Screen, timestamp = state.Timestamp }
         };
+
+        return new { ok = true, data };
     }
 
     private object HandlePlayRequest(int[]? args)
@@ -199,15 +246,15 @@ public class PipeServer : IDisposable
         var cardIndex = args[0];
         Logger.Info($"Requested to play card at index {cardIndex}");
 
-        // TODO: Phase 4 - Implement card playing
-        return new { ok = true, data = new { action = "PLAY_CARD", card_index = cardIndex } };
+        // Queue action for execution by Harmony patch
+        return ActionExecutor.QueuePlayCard(cardIndex);
     }
 
     private object HandleEndRequest()
     {
         Logger.Info("Requested to end turn");
 
-        // TODO: Phase 4 - Implement end turn
-        return new { ok = true, data = new { action = "END_TURN" } };
+        // Queue action for execution by Harmony patch
+        return ActionExecutor.QueueEndTurn();
     }
 }
