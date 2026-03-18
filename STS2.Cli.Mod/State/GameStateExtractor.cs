@@ -28,10 +28,7 @@ public static class GameStateExtractor
             };
 
             // Extract combat state if in combat
-            if (state.Screen == "COMBAT")
-            {
-                state.Combat = ExtractCombatState();
-            }
+            if (state.Screen == "COMBAT") state.Combat = ExtractCombatState();
 
             return state;
         }
@@ -48,16 +45,10 @@ public static class GameStateExtractor
     private static string DetectScreen()
     {
         // Check if a run is in progress
-        if (!RunManager.Instance.IsInProgress)
-        {
-            return "MENU";
-        }
+        if (!RunManager.Instance.IsInProgress) return "MENU";
 
         // Check CombatManager for active combat
-        if (CombatManager.Instance.IsInProgress)
-        {
-            return "COMBAT";
-        }
+        if (CombatManager.Instance.IsInProgress) return "COMBAT";
 
         // TODO: Detect other screens (MAP, SHOP, EVENT, etc.)
         return "UNKNOWN";
@@ -120,15 +111,13 @@ public static class GameStateExtractor
         {
             // In a single player game, get the first player
             var players = combatState.Players;
-            if (players.Count > 0)
-            {
-                return players[0];
-            }
+            if (players.Count > 0) return players[0];
         }
         catch (Exception ex)
         {
             Logger.Warning($"Failed to get local player: {ex.Message}");
         }
+
         return null;
     }
 }

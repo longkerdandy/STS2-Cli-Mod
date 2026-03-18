@@ -5,14 +5,9 @@ namespace STS2.Cli.Mod.Utils;
 /// <summary>
 ///     Simple logger wrapper around Godot's Logger.
 /// </summary>
-public class ModLogger
+public class ModLogger(string name)
 {
-    private readonly string _prefix;
-
-    public ModLogger(string name)
-    {
-        _prefix = $"[STS2.Cli.Mod][{name}]";
-    }
+    private readonly string _prefix = $"[STS2.Cli.Mod][{name}]";
 
     public void Info(string message)
     {

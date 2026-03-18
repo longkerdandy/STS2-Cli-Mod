@@ -8,13 +8,13 @@ namespace STS2.Cli.Mod.Utils;
 public static partial class TextUtils
 {
     // Known BBCode tags in STS2
-    private static readonly string[] BbCodeTags = new[]
-    {
+    private static readonly string[] BbCodeTags =
+    [
         "gold", "color", "b", "i", "u", "s", "sub", "sup", 
         "center", "left", "right", "indent", "code", "quote",
         "url", "img", "list", "table", "tr", "td", "th",
         "player", "enemy", "block", "damage", "keyword"
-    };
+    ];
 
     /// <summary>
     ///     Escapes a string for use in a regular expression.
@@ -70,25 +70,7 @@ public static partial class TextUtils
     }
 
     /// <summary>
-    ///     Cleans dynamic variables like {Block:diff()}, {Damage:diff()} to placeholders.
-    /// </summary>
-    public static string CleanDynamicVars(string? text)
-    {
-        if (string.IsNullOrEmpty(text))
-            return string.Empty;
-
-        // Replace {VariableName:diff()} with [X] (unknown value)
-        // These are SmartDescription dynamic variables that need game context to resolve
-        var result = DynamicVarRegex().Replace(text, "[X]");
-        
-        // Clean up any remaining {var} patterns
-        result = SimpleVarRegex().Replace(result, "[X]");
-        
-        return result;
-    }
-
-    /// <summary>
-    ///     Cleans game text by removing BBCode, rich text tags, and simplifying dynamic vars.
+    ///     Cleans game text by removing BBCode and rich text tags.
     /// </summary>
     public static string CleanGameText(string? text)
     {
@@ -97,7 +79,6 @@ public static partial class TextUtils
 
         var cleaned = StripBbCode(text);
         cleaned = StripRichText(cleaned);
-        cleaned = CleanDynamicVars(cleaned);
         
         // Normalize whitespace
         cleaned = Regex.Replace(cleaned, @"\s+", " ");
@@ -107,10 +88,4 @@ public static partial class TextUtils
 
     [GeneratedRegex("<[^>]+>", RegexOptions.Compiled)]
     private static partial Regex RichTextRegex();
-
-    [GeneratedRegex(@"\{\w+:diff\(\)\}", RegexOptions.Compiled)]
-    private static partial Regex DynamicVarRegex();
-
-    [GeneratedRegex(@"\{\w+\}", RegexOptions.Compiled)]
-    private static partial Regex SimpleVarRegex();
 }
