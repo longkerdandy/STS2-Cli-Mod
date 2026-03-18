@@ -39,7 +39,7 @@ public static class PlayCardAction
             }
 
             // Get player
-            var player = GetLocalPlayer();
+            var player = ActionUtils.GetLocalPlayer();
             if (player?.PlayerCombatState == null)
             {
                 return new { ok = false, error = "NO_PLAYER", message = "Player not found or not in combat" };
@@ -94,30 +94,6 @@ public static class PlayCardAction
         {
             Logger.Error($"Failed to play card: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
-        }
-    }
-
-    /// <summary>
-    ///     Gets the local player from the current run.
-    /// </summary>
-    private static Player? GetLocalPlayer()
-    {
-        try
-        {
-            if (!RunManager.Instance.IsInProgress)
-                return null;
-
-            var runState = RunManager.Instance.DebugOnlyGetState();
-            if (runState == null)
-                return null;
-
-            // In single player, get the first player
-            return runState.Players.FirstOrDefault();
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get local player: {ex.Message}");
-            return null;
         }
     }
 

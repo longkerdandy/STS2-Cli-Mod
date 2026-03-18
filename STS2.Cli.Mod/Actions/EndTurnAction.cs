@@ -1,6 +1,5 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -36,7 +35,7 @@ public static class EndTurnAction
             }
 
             // Get player
-            var player = GetLocalPlayer();
+            var player = ActionUtils.GetLocalPlayer();
             if (player == null)
             {
                 return new { ok = false, error = "NO_PLAYER", message = "Player not found" };
@@ -51,30 +50,6 @@ public static class EndTurnAction
         {
             Logger.Error($"Failed to end turn: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
-        }
-    }
-
-    /// <summary>
-    ///     Gets the local player from the current run.
-    /// </summary>
-    private static Player? GetLocalPlayer()
-    {
-        try
-        {
-            if (!RunManager.Instance.IsInProgress)
-                return null;
-
-            var runState = RunManager.Instance.DebugOnlyGetState();
-            if (runState == null)
-                return null;
-
-            // In single player, get the first player
-            return runState.Players.FirstOrDefault();
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get local player: {ex.Message}");
-            return null;
         }
     }
 }
