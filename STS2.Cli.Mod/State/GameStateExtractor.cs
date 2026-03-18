@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.State.Dto;
 using STS2.Cli.Mod.Utils;
+using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State;
 
@@ -237,8 +238,8 @@ public static class GameStateExtractor
             state.CanPlay = unplayableReason == UnplayableReason.None;
             state.UnplayableReason = unplayableReason != UnplayableReason.None ? unplayableReason.ToString() : null;
 
-            // Description
-            state.Description = card.Description.GetFormattedText();
+            // Description - clean BBCode tags like [gold], [/gold]
+            state.Description = CleanGameText(card.Description.GetFormattedText());
 
             // Type
             state.Type = card.Type.ToString();
@@ -297,7 +298,7 @@ public static class GameStateExtractor
             if (monster != null)
             {
                 state.Id = monster.Id.Entry;
-                state.Name = monster.Title.GetFormattedText();
+                state.Name = CleanGameText(monster.Title.GetFormattedText());
 
                 // Intent
                 var nextMove = monster.NextMove;
@@ -309,7 +310,7 @@ public static class GameStateExtractor
             else
             {
                 state.Id = "unknown";
-                state.Name = creature.Name;
+                state.Name = CleanGameText(creature.Name);
             }
 
             // Buffs
@@ -344,7 +345,7 @@ public static class GameStateExtractor
                 {
                     var targets = combatState.PlayerCreatures;
                     var label = intent.GetIntentLabel(targets, creature);
-                    state.Description = label.GetFormattedText();
+                    state.Description = CleanGameText(label.GetFormattedText());
                 }
                 catch
                 {
@@ -376,10 +377,10 @@ public static class GameStateExtractor
                 var buff = new BuffStateDto
                 {
                     Id = power.Id.Entry,
-                    Name = power.Title.GetFormattedText(),
+                    Name = CleanGameText(power.Title.GetFormattedText()),
                     Amount = power.DisplayAmount,
                     Type = power.Type.ToString(),
-                    Description = power.SmartDescription.GetFormattedText()
+                    Description = CleanGameText(power.SmartDescription.GetFormattedText())
                 };
 
                 buffs.Add(buff);

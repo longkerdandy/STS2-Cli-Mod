@@ -7,6 +7,7 @@ using STS2.Cli.Mod.Actions;
 using STS2.Cli.Mod.Models;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.State.Dto;
+using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Server;
 
@@ -131,20 +132,20 @@ public class PipeServer : IDisposable
             catch (Exception)
             {
                 await writer.WriteLineAsync(JsonSerializer.Serialize(new
-                    { ok = false, error = "INVALID_REQUEST", message = "Failed to parse request" }));
+                    { ok = false, error = "INVALID_REQUEST", message = "Failed to parse request" }, JsonOptions.Default));
                 return;
             }
 
             if (request == null)
             {
                 await writer.WriteLineAsync(JsonSerializer.Serialize(new
-                    { ok = false, error = "INVALID_REQUEST", message = "Failed to parse request" }));
+                    { ok = false, error = "INVALID_REQUEST", message = "Failed to parse request" }, JsonOptions.Default));
                 return;
             }
 
             // Process the request
             var response = ProcessRequest(request);
-            var responseJson = JsonSerializer.Serialize(response);
+            var responseJson = JsonSerializer.Serialize(response, JsonOptions.Default);
 
             await writer.WriteLineAsync(responseJson);
         }
