@@ -23,6 +23,38 @@ public static class PlayerStateBuilder
 
         try
         {
+            // Character information
+            state.CharacterId = player.Character.Id.Entry;
+            state.CharacterName = StripGameTags(player.Character.Title.GetFormattedText());
+            state.Gold = player.Gold;
+
+            // Potions
+            var slotIndex = 0;
+            foreach (var potion in player.PotionSlots)
+            {
+                if (potion != null)
+                    state.Potions.Add(new PotionStateDto
+                    {
+                        Slot = slotIndex,
+                        Id = potion.Id.Entry,
+                        Name = StripGameTags(potion.Title.GetFormattedText()),
+                        Description = StripGameTags(potion.DynamicDescription.GetFormattedText()),
+                        CanUseInCombat = potion.Usage is PotionUsage.CombatOnly or PotionUsage.AnyTime,
+                        TargetType = potion.TargetType.ToString()
+                    });
+                slotIndex++;
+            }
+
+            // Relics
+            foreach (var relic in player.Relics)
+                state.Relics.Add(new RelicStateDto
+                {
+                    Id = relic.Id.Entry,
+                    Name = StripGameTags(relic.Title.GetFormattedText()),
+                    Description = StripGameTags(relic.DynamicDescription.GetFormattedText()),
+                    Counter = relic.ShowCounter ? relic.DisplayAmount : null
+                });
+
             var creature = player.Creature;
             var playerCombatState = player.PlayerCombatState;
 
@@ -44,95 +76,12 @@ public static class PlayerStateBuilder
                 state.HandCount = playerCombatState.Hand.Cards.Count;
 
                 // The Regent's stars resource
-                if (player.Character?.ShouldAlwaysShowStarCounter == true || playerCombatState.Stars > 0)
-                {
+                if (player.Character.ShouldAlwaysShowStarCounter || playerCombatState.Stars > 0)
                     state.Stars = playerCombatState.Stars;
-                }
             }
 
             // Buffs/Powers from Creature
             state.Buffs = BuildBuffs(creature.Powers);
-
-            // ===== Character Info =====
-            try
-            {
-                state.CharacterId = player.Character?.Id.Entry;
-                state.CharacterName = StripGameTags(player.Character?.Title?.GetFormattedText());
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning($"Failed to build character info: {ex.Message}");
-            }
-
-            // ===== Gold =====
-            try
-            {
-                state.Gold = player.Gold;
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning($"Failed to get gold: {ex.Message}");
-            }
-
-            // ===== Relics =====
-            try
-            {
-                foreach (var relic in player.Relics)
-                {
-                    try
-                    {
-                        state.Relics.Add(new RelicStateDto
-                        {
-                            Id = relic.Id.Entry,
-                            Name = StripGameTags(relic.Title?.GetFormattedText()) ?? "Unknown",
-                            Description = StripGameTags(relic.DynamicDescription?.GetFormattedText()),
-                            Counter = relic.ShowCounter ? relic.DisplayAmount : null
-                        });
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warning($"Failed to build relic state: {ex.Message}");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning($"Failed to build relics list: {ex.Message}");
-            }
-
-            // ===== Potions =====
-            try
-            {
-                int slotIndex = 0;
-                foreach (var potion in player.PotionSlots)
-                {
-                    try
-                    {
-                        if (potion != null)
-                        {
-                            state.Potions.Add(new PotionStateDto
-                            {
-                                Slot = slotIndex,
-                                Id = potion.Id.Entry,
-                                Name = StripGameTags(potion.Title?.GetFormattedText()) ?? "Unknown",
-                                Description = StripGameTags(potion.DynamicDescription?.GetFormattedText()),
-                                CanUseInCombat = potion.Usage == PotionUsage.CombatOnly || 
-                                                potion.Usage == PotionUsage.AnyTime,
-                                TargetType = potion.TargetType.ToString()
-                            });
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warning($"Failed to build potion state for slot {slotIndex}: {ex.Message}");
-                    }
-                    slotIndex++;
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning($"Failed to build potions list: {ex.Message}");
-            }
         }
         catch (Exception ex)
         {

@@ -6,6 +6,7 @@ namespace STS2.Cli.Mod.Models.Dto;
 ///     Buff/Power state DTO representing a status effect on a creature.
 /// </summary>
 [SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class BuffStateDto
 {
     /// <summary>

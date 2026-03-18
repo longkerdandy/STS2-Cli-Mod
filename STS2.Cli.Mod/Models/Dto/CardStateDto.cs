@@ -6,6 +6,7 @@ namespace STS2.Cli.Mod.Models.Dto;
 ///     Card state DTO representing a single card in the hand.
 /// </summary>
 [SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class CardStateDto
 {
     /// <summary>

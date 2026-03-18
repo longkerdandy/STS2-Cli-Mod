@@ -180,7 +180,7 @@ public class PipeServer : IDisposable
             {
                 "ping" => new { ok = true, data = new { connected = true } },
                 "state" => HandleStateRequest(),
-                "play_card" => HandlePlayCardRequest(request.Args),
+                "play_card" => HandlePlayCardRequest(request.Args, request.Target),
                 "end_turn" => HandleEndTurnRequest(),
                 _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
             };
@@ -211,17 +211,18 @@ public class PipeServer : IDisposable
     ///     Handles the 'play_card' command by validating arguments and invoking the play card handler.
     /// </summary>
     /// <param name="args">Command arguments, expects card index as first element</param>
+    /// <param name="target">Optional target entity ID for targeted cards</param>
     /// <returns>Response indicating success or failure of the play card action</returns>
-    private object HandlePlayCardRequest(int[]? args)
+    private object HandlePlayCardRequest(int[]? args, string? target)
     {
         if (args == null || args.Length == 0)
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Card index required" };
 
         var cardIndex = args[0];
-        Logger.Info($"Requested to play card at index {cardIndex}");
+        Logger.Info($"Requested to play card at index {cardIndex}, target={target ?? "none"}");
 
         // Execute play card action
-        return PlayCardHandler.Execute(cardIndex);
+        return PlayCardHandler.Execute(cardIndex, target);
     }
 
     /// <summary>

@@ -6,6 +6,7 @@ namespace STS2.Cli.Mod.Models.Dto;
 ///     Enemy state DTO representing a single enemy in combat.
 /// </summary>
 [SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class EnemyStateDto
 {
     /// <summary>

@@ -6,6 +6,7 @@ namespace STS2.Cli.Mod.Models.Dto;
 ///     Root game state DTO containing overall game information.
 /// </summary>
 [SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class GameStateDto
 {
     /// <summary>

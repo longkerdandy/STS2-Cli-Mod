@@ -11,12 +11,12 @@ public class RelicStateDto
     /// <summary>
     ///     Relic ID (e.g., "BurningBlood").
     /// </summary>
-    public string Id { get; set; } = "";
+    public string? Id { get; set; }
 
     /// <summary>
     ///     Display name.
     /// </summary>
-    public string Name { get; set; } = "";
+    public string? Name { get; set; }
 
     /// <summary>
     ///     Effect description with dynamic values resolved.

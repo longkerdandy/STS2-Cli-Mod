@@ -16,12 +16,12 @@ public class PotionStateDto
     /// <summary>
     ///     Potion ID (e.g., "FirePotion").
     /// </summary>
-    public string Id { get; set; } = "";
+    public string? Id { get; set; }
 
     /// <summary>
     ///     Display name.
     /// </summary>
-    public string Name { get; set; } = "";
+    public string? Name { get; set; }
 
     /// <summary>
     ///     Effect description with dynamic values resolved.
@@ -29,7 +29,7 @@ public class PotionStateDto
     public string? Description { get; set; }
 
     /// <summary>
-    ///     Whether potion can be used in current context.
+    ///     Whether potion can be used in the current context.
     /// </summary>
     public bool CanUseInCombat { get; set; }
 

@@ -1,3 +1,4 @@
+using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -14,7 +15,7 @@ public static class PlayCardHandler
     private static readonly ModLogger Logger = new("PlayCardAction");
 
     /// <summary>
-    ///     Plays a card from the player's hand.
+///     Plays a card from the player's hand.
     /// </summary>
     public static object Execute(int cardIndex, string? targetId = null)
     {
@@ -82,13 +83,25 @@ public static class PlayCardHandler
                     };
             }
 
-            // Enqueue the play card action via the game's ActionQueue
-            RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(
-                new MegaCrit.Sts2.Core.GameActions.PlayCardAction(card, target));
+            // Use CallDeferred to ensure execution on the main thread (Godot requirement)
+            // This queues the action to be processed by the game's main loop
+            Callable.From(() =>
+            {
+                try
+                {
+                    RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(
+                        new MegaCrit.Sts2.Core.GameActions.PlayCardAction(card, target));
+                    Logger.Info($"PlayCardAction enqueued on main thread: '{card.Title}'");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Failed to enqueue PlayCardAction on main thread: {ex.Message}");
+                }
+            }).CallDeferred();
 
             var targetName = target?.Monster?.Title.GetFormattedText() ?? "enemy";
             var targetMsg = target != null ? $" targeting {targetName}" : "";
-            Logger.Info($"Enqueued PlayCardAction: '{card.Title}'{targetMsg}");
+            Logger.Info($"Requested to play card: '{card.Title}'{targetMsg}");
 
             return new
             {
