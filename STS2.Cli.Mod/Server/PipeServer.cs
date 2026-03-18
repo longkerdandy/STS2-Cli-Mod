@@ -51,13 +51,18 @@ public class PipeServer : IDisposable
     /// <summary>
     ///     Stops the pipe server.
     /// </summary>
-    public async Task StopAsync()
+    private async Task StopAsync()
     {
         if (_cts != null) await _cts.CancelAsync();
         if (_pipeServer != null) await _pipeServer.DisposeAsync();
         if (_listenerTask != null) await Task.WhenAny(_listenerTask, Task.Delay(TimeSpan.FromSeconds(2)));
     }
 
+    /// <summary>
+    ///     Main server loop that creates pipe instances and waits for client connections.
+    ///     Automatically recreates the pipe after each client disconnects.
+    /// </summary>
+    /// <param name="ct">Cancellation token to stop the server loop</param>
     private async Task RunServerLoopAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
@@ -103,6 +108,12 @@ public class PipeServer : IDisposable
             }
     }
 
+    /// <summary>
+    ///     Handles a single client connection.
+    ///     Reads one request, processes it, writes the response, then closes the connection.
+    /// </summary>
+    /// <param name="pipe">The connected named pipe stream</param>
+    /// <param name="ct">Cancellation token</param>
     private async Task HandleClientAsync(NamedPipeServerStream pipe, CancellationToken ct)
     {
         // leaveOpen: true - pipe lifecycle is managed by the caller (RunServerLoopAsync)
@@ -156,6 +167,11 @@ public class PipeServer : IDisposable
         }
     }
 
+    /// <summary>
+    ///     Processes a parsed request and routes it to the appropriate handler.
+    /// </summary>
+    /// <param name="request">The parsed request object</param>
+    /// <returns>Response object to be serialized as JSON</returns>
     private object ProcessRequest(Request request)
     {
         try
@@ -164,8 +180,8 @@ public class PipeServer : IDisposable
             {
                 "ping" => new { ok = true, data = new { connected = true } },
                 "state" => HandleStateRequest(),
-                "play_card" => HandlePlayRequest(request.Args),
-                "end_turn" => HandleEndRequest(),
+                "play_card" => HandlePlayCardRequest(request.Args),
+                "end_turn" => HandleEndTurnRequest(),
                 _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
             };
         }
@@ -175,6 +191,10 @@ public class PipeServer : IDisposable
         }
     }
 
+    /// <summary>
+    ///     Handles the 'state' command by extracting current game state.
+    /// </summary>
+    /// <returns>Response containing the game state DTO</returns>
     private object HandleStateRequest()
     {
         var state = GameStateExtractor.GetState();
@@ -183,12 +203,16 @@ public class PipeServer : IDisposable
         {
             return new { ok = false, error = "STATE_EXTRACTION_ERROR", message = state.Error };
         }
-
-        // Return DTO directly - simpler and includes all fields
+        
         return new { ok = true, data = state };
     }
 
-    private object HandlePlayRequest(int[]? args)
+    /// <summary>
+    ///     Handles the 'play_card' command by validating arguments and invoking the play card handler.
+    /// </summary>
+    /// <param name="args">Command arguments, expects card index as first element</param>
+    /// <returns>Response indicating success or failure of the play card action</returns>
+    private object HandlePlayCardRequest(int[]? args)
     {
         if (args == null || args.Length == 0)
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Card index required" };
@@ -196,15 +220,19 @@ public class PipeServer : IDisposable
         var cardIndex = args[0];
         Logger.Info($"Requested to play card at index {cardIndex}");
 
-        // Execute play card action via game's ActionQueue
+        // Execute play card action
         return PlayCardHandler.Execute(cardIndex);
     }
 
-    private object HandleEndRequest()
+    /// <summary>
+    ///     Handles the 'end_turn' command by invoking the end turn handler.
+    /// </summary>
+    /// <returns>Response indicating success or failure of the end turn action</returns>
+    private object HandleEndTurnRequest()
     {
         Logger.Info("Requested to end turn");
 
-        // Execute end turn action via game's ActionQueue
+        // Execute end turn action
         return EndTurnHandler.Execute();
     }
 }
