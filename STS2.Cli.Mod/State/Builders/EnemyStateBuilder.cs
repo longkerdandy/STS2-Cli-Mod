@@ -35,7 +35,7 @@ public static class EnemyStateBuilder
             if (monster != null)
             {
                 state.Id = monster.Id.Entry;
-                state.Name = CleanGameText(monster.Title.GetFormattedText());
+                state.Name = StripGameTags(monster.Title.GetFormattedText());
 
                 // Intent
                 var nextMove = monster.NextMove;
@@ -45,7 +45,7 @@ public static class EnemyStateBuilder
             else
             {
                 state.Id = "unknown";
-                state.Name = CleanGameText(creature.Name);
+                state.Name = StripGameTags(creature.Name);
             }
 
             // Buffs
@@ -80,7 +80,7 @@ public static class EnemyStateBuilder
                 {
                     var targets = combatState.PlayerCreatures;
                     var label = intent.GetIntentLabel(targets, creature);
-                    state.Description = CleanGameText(label.GetFormattedText());
+                    state.Description = StripGameTags(label.GetFormattedText());
                 }
                 catch
                 {
@@ -112,10 +112,10 @@ public static class EnemyStateBuilder
                 var buff = new BuffStateDto
                 {
                     Id = power.Id.Entry,
-                    Name = CleanGameText(power.Title.GetFormattedText()),
+                    Name = StripGameTags(power.Title.GetFormattedText()),
                     Amount = power.DisplayAmount,
                     Type = power.Type.ToString(),
-                    Description = CleanGameText(power.SmartDescription.GetFormattedText())
+                    Description = StripGameTags(power.SmartDescription.GetFormattedText())
                 };
 
                 buffs.Add(buff);

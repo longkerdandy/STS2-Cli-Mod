@@ -16,7 +16,7 @@ public static class TextUtils
     /// <summary>
     ///     Removes BBCode tags from text (e.g., [gold], [/gold], [color=red], etc.)
     /// </summary>
-    public static string StripBbCode(string? text)
+    private static string StripBbCode(string? text)
     {
         if (string.IsNullOrEmpty(text))
             return string.Empty;
@@ -25,9 +25,9 @@ public static class TextUtils
     }
 
     /// <summary>
-    ///     Strips rich text tags (Unity/Godot style: &lt;color&gt;, &lt;b&gt;, etc.)
+    ///     Strips rich text tags (Unity/Godot style tags like <c>&lt;color&gt;</c>, <c>&lt;b&gt;</c>, etc.)
     /// </summary>
-    public static string StripRichText(string? text)
+    private static string StripRichText(string? text)
     {
         if (string.IsNullOrEmpty(text))
             return string.Empty;
@@ -36,9 +36,9 @@ public static class TextUtils
     }
 
     /// <summary>
-    ///     Cleans game text by removing BBCode and rich text tags.
+    ///     Strips game tags like BBCode and rich text.
     /// </summary>
-    public static string CleanGameText(string? text)
+    public static string StripGameTags(string? text)
     {
         if (string.IsNullOrEmpty(text))
             return string.Empty;

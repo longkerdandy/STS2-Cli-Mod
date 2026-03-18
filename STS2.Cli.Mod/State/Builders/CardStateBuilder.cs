@@ -47,7 +47,7 @@ public static class CardStateBuilder
             state.UnplayableReason = unplayableReason != UnplayableReason.None ? unplayableReason.ToString() : null;
 
             // Description - use GetDescriptionForPile for resolved dynamic vars
-            state.Description = CleanGameText(SafeGetCardDescription(card));
+            state.Description = StripGameTags(SafeGetCardDescription(card));
 
             // Type
             state.Type = card.Type.ToString();

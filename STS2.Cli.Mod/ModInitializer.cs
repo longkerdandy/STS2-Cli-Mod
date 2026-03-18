@@ -3,6 +3,7 @@ using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
 using STS2.Cli.Mod.Patches;
 using STS2.Cli.Mod.Server;
+using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod;
 
@@ -13,6 +14,7 @@ namespace STS2.Cli.Mod;
 [ModInitializer("Initialize")]
 public static class CliModEntry
 {
+    private static readonly ModLogger Logger = new("ModEntry");
     private static PipeServer? _pipeServer;
     private static Harmony? _harmony;
 
@@ -60,26 +62,5 @@ public static class CliModEntry
             Logger.Error($"Failed to initialize pipe server: {ex.Message}");
             Logger.Error($"Stack trace: {ex.StackTrace}");
         }
-    }
-}
-
-/// <summary>
-/// Simple logger that writes to Godot's log system.
-/// </summary>
-public static class Logger
-{
-    public static void Info(string message)
-    {
-        GD.Print($"[STS2.Cli.Mod] {message}");
-    }
-
-    public static void Warning(string message)
-    {
-        GD.PushWarning($"[STS2.Cli.Mod] {message}");
-    }
-
-    public static void Error(string message)
-    {
-        GD.PushError($"[STS2.Cli.Mod] {message}");
     }
 }

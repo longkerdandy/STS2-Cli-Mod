@@ -70,10 +70,10 @@ public static class PlayerStateBuilder
                 var buff = new BuffStateDto
                 {
                     Id = power.Id.Entry,
-                    Name = CleanGameText(power.Title.GetFormattedText()),
+                    Name = StripGameTags(power.Title.GetFormattedText()),
                     Amount = power.DisplayAmount,
                     Type = power.Type.ToString(),
-                    Description = CleanGameText(power.SmartDescription.GetFormattedText())
+                    Description = StripGameTags(power.SmartDescription.GetFormattedText())
                 };
 
                 buffs.Add(buff);

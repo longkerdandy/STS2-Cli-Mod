@@ -17,6 +17,7 @@ namespace STS2.Cli.Mod.Server;
 /// </summary>
 public class PipeServer : IDisposable
 {
+    private static readonly ModLogger Logger = new("PipeServer");
     private CancellationTokenSource? _cts;
     private Task? _listenerTask;
     private NamedPipeServerStream? _pipeServer;
