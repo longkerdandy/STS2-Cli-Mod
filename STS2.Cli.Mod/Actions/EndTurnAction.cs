@@ -1,11 +1,11 @@
 using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Commands;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Executes end turn action using the game's native ActionQueue.
+///     Executes end turn action using the game's native PlayerCmd.
 /// </summary>
 public static class EndTurnAction
 {
@@ -41,10 +41,11 @@ public static class EndTurnAction
                 return new { ok = false, error = "NO_PLAYER", message = "Player not found" };
             }
 
-            // TODO: Find correct EndTurn command/action class
-            // For now, this is a placeholder - need to research the correct API
-            Logger.Warning("EndTurn action not yet implemented - need to find correct Command class");
-            return new { ok = false, error = "NOT_IMPLEMENTED", message = "End turn action requires finding the correct game API (EndTurnCommand or similar)" };
+            // Use PlayerCmd.EndTurn (same as game UI)
+            PlayerCmd.EndTurn(player, canBackOut: false);
+
+            Logger.Info("EndTurn action executed via PlayerCmd");
+            return new { ok = true, data = new { action = "END_TURN" } };
         }
         catch (Exception ex)
         {

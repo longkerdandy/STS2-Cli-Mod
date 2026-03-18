@@ -23,11 +23,9 @@ public static class ActionUtils
                 return null;
 
             var runState = RunManager.Instance.DebugOnlyGetState();
-            if (runState == null)
-                return null;
 
-            // In single player, get the first player
-            return runState.Players.FirstOrDefault();
+            // In the single player game, get the first player
+            return runState?.Players.FirstOrDefault();
         }
         catch (Exception ex)
         {
