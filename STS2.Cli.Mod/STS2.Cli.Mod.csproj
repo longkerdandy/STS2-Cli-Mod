@@ -28,11 +28,7 @@
       <HintPath>$(STS2GameDir)\data_sts2_windows_x86_64\GodotSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- HarmonyX for patching -->
-    <Reference Include="0Harmony">
-      <HintPath>$(STS2GameDir)\data_sts2_windows_x86_64\0Harmony.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
+
   </ItemGroup>
 
   <!-- Mod manifest file -->

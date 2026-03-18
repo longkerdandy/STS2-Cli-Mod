@@ -1,251 +1,209 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
+using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Executes game actions using direct type references.
+///     Executes game actions using the game's native ActionQueue.
 /// </summary>
 public static class ActionExecutor
 {
     private static readonly ModLogger Logger = new("ActionExecutor");
 
-    // Pending actions queue for Harmony patches to process
-    private static readonly Queue<GameAction> PendingActions = new();
-    private static readonly object LockObj = new();
-
     /// <summary>
-    ///     Queues a play card action.
+    ///     Plays a card from the player's hand.
     /// </summary>
-    public static object QueuePlayCard(int cardIndex)
+    public static object PlayCard(int cardIndex, string? targetId = null)
     {
         try
         {
-            // Validate we're in combat
+            // Validate combat state
             if (!CombatManager.Instance.IsInProgress)
             {
                 return new { ok = false, error = "NOT_IN_COMBAT", message = "Not currently in combat" };
             }
 
-            // Get player
-            var combatState = CombatManager.Instance.DebugOnlyGetState();
-            if (combatState == null)
+            if (!CombatManager.Instance.IsPlayPhase)
             {
-                return new { ok = false, error = "NO_COMBAT_STATE", message = "Combat state is null" };
+                return new { ok = false, error = "NOT_PLAYER_TURN", message = "Not in play phase - cannot act during enemy turn" };
             }
 
-            var player = combatState.Players.FirstOrDefault();
+            if (CombatManager.Instance.PlayerActionsDisabled)
+            {
+                return new { ok = false, error = "ACTIONS_DISABLED", message = "Player actions are currently disabled" };
+            }
+
+            // Get player
+            var player = GetLocalPlayer();
             if (player?.PlayerCombatState == null)
             {
-                return new { ok = false, error = "NO_PLAYER", message = "Player not found" };
+                return new { ok = false, error = "NO_PLAYER", message = "Player not found or not in combat" };
+            }
+
+            if (!player.Creature.IsAlive)
+            {
+                return new { ok = false, error = "PLAYER_DEAD", message = "Player is dead - cannot play cards" };
             }
 
             // Validate card index
-            var hand = player.PlayerCombatState.Hand.Cards;
-            if (cardIndex < 0 || cardIndex >= hand.Count)
+            var hand = player.PlayerCombatState.Hand;
+            if (hand == null || cardIndex < 0 || cardIndex >= hand.Cards.Count)
             {
-                return new { ok = false, error = "INVALID_CARD_INDEX", message = $"Card index {cardIndex} out of range (0-{hand.Count - 1})" };
+                return new { ok = false, error = "INVALID_CARD_INDEX", message = $"Card index {cardIndex} out of range (hand has {hand?.Cards.Count ?? 0} cards)" };
             }
 
-            var card = hand[cardIndex];
+            var card = hand.Cards[cardIndex];
 
-            // Check if can play
-            card.CanPlay(out var unplayableReason, out _);
-            if (unplayableReason != UnplayableReason.None)
+            // Check if card can be played
+            if (!card.CanPlay(out var reason, out _))
             {
-                return new { ok = false, error = "CANNOT_PLAY_CARD", message = $"Cannot play card: {unplayableReason}" };
+                return new { ok = false, error = "CANNOT_PLAY_CARD", message = $"Card '{card.Title}' cannot be played: {reason}" };
             }
 
-            lock (LockObj)
+            // Resolve target if needed
+            Creature? target = null;
+            if (card.TargetType == TargetType.AnyEnemy)
             {
-                PendingActions.Enqueue(new GameAction
+                if (string.IsNullOrEmpty(targetId))
                 {
-                    Type = ActionType.PlayCard,
-                    CardIndex = cardIndex
-                });
+                    return new { ok = false, error = "TARGET_REQUIRED", message = "Card requires a target. Provide 'target' with an entity_id." };
+                }
+
+                target = ResolveTarget(targetId);
+                if (target == null)
+                {
+                    return new { ok = false, error = "TARGET_NOT_FOUND", message = $"Target '{targetId}' not found among alive enemies" };
+                }
             }
 
-            Logger.Info($"Queued play card action: index={cardIndex}, card={card.Id}");
-            return new { ok = true, data = new { action = "PLAY_CARD", card_index = cardIndex, card_id = card.Id.Entry } };
+            // Enqueue the play card action via game's ActionQueue
+            RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(new PlayCardAction(card, target));
+
+            var targetName = target?.Monster?.Title?.GetFormattedText() ?? "enemy";
+            var targetMsg = target != null ? $" targeting {targetName}" : "";
+            Logger.Info($"Enqueued PlayCardAction: '{card.Title}'{targetMsg}");
+
+            return new { ok = true, data = new { action = "PLAY_CARD", card_index = cardIndex, card_id = card.Id.Entry, target = targetId } };
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to queue play card: {ex.Message}");
+            Logger.Error($"Failed to play card: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
         }
     }
 
     /// <summary>
-    ///     Queues an end turn action.
+    ///     Ends the player's turn.
     /// </summary>
-    public static object QueueEndTurn()
+    public static object EndTurn()
     {
         try
         {
-            // Validate we're in combat and it's player turn
-            var combatManager = CombatManager.Instance;
-            if (!combatManager.IsInProgress)
+            // Validate combat state
+            if (!CombatManager.Instance.IsInProgress)
             {
                 return new { ok = false, error = "NOT_IN_COMBAT", message = "Not currently in combat" };
             }
 
-            if (!combatManager.IsPlayPhase)
+            if (!CombatManager.Instance.IsPlayPhase)
             {
-                return new { ok = false, error = "NOT_PLAYER_TURN", message = "Not player's turn or cannot act now" };
+                return new { ok = false, error = "NOT_PLAYER_TURN", message = "Not in play phase - cannot end turn during enemy turn" };
             }
 
-            lock (LockObj)
+            if (CombatManager.Instance.PlayerActionsDisabled)
             {
-                PendingActions.Enqueue(new GameAction
-                {
-                    Type = ActionType.EndTurn
-                });
+                return new { ok = false, error = "ACTIONS_DISABLED", message = "Player actions are currently disabled (turn may already be ending)" };
             }
 
-            Logger.Info("Queued end turn action");
-            return new { ok = true, data = new { action = "END_TURN" } };
+            // Get player
+            var player = GetLocalPlayer();
+            if (player == null)
+            {
+                return new { ok = false, error = "NO_PLAYER", message = "Player not found" };
+            }
+
+            // TODO: Find correct EndTurn command/action class
+            // For now, this is a placeholder - need to research the correct API
+            Logger.Warning("EndTurn action not yet implemented - need to find correct Command class");
+            return new { ok = false, error = "NOT_IMPLEMENTED", message = "End turn action requires finding the correct game API (EndTurnCommand or similar)" };
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to queue end turn: {ex.Message}");
+            Logger.Error($"Failed to end turn: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
         }
     }
 
     /// <summary>
-    ///     Gets and clears pending actions.
-    ///     Called by Harmony patch to process actions on main thread.
+    ///     Gets the local player from the current run.
     /// </summary>
-    public static List<GameAction> GetPendingActions()
+    private static Player? GetLocalPlayer()
     {
-        lock (LockObj)
+        try
         {
-            var actions = PendingActions.ToList();
-            PendingActions.Clear();
-            return actions;
+            if (!RunManager.Instance.IsInProgress)
+                return null;
+
+            var runState = RunManager.Instance.DebugOnlyGetState();
+            if (runState == null)
+                return null;
+
+            // In single player, get the first player
+            return runState.Players.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get local player: {ex.Message}");
+            return null;
         }
     }
 
     /// <summary>
-    ///     Executes pending actions immediately.
-    ///     Should be called from Harmony patch on main thread.
+    ///     Resolves a target creature by entity ID.
     /// </summary>
-    public static void ExecutePendingActions()
+    private static Creature? ResolveTarget(string entityId)
     {
-        var actions = GetPendingActions();
-        foreach (var action in actions)
+        try
         {
-            try
+            var combatState = CombatManager.Instance.DebugOnlyGetState();
+            if (combatState == null)
+                return null;
+
+            // Try to parse as combat ID (numeric)
+            if (uint.TryParse(entityId, out uint combatId))
             {
-                switch (action.Type)
-                {
-                    case ActionType.PlayCard:
-                        ExecutePlayCard(action.CardIndex);
-                        break;
-                    case ActionType.EndTurn:
-                        ExecuteEndTurn();
-                        break;
-                }
+                return combatState.GetCreature(combatId);
             }
-            catch (Exception ex)
+
+            // Try to match by entity_id pattern (e.g., "jaw_worm_0")
+            var entityCounts = new Dictionary<string, int>();
+            foreach (var creature in combatState.Enemies)
             {
-                Logger.Error($"Failed to execute action {action.Type}: {ex.Message}");
+                if (!creature.IsAlive)
+                    continue;
+
+                string baseId = creature.Monster?.Id.Entry ?? "unknown";
+                if (!entityCounts.TryGetValue(baseId, out int count))
+                    count = 0;
+
+                entityCounts[baseId] = count + 1;
+                string generatedId = $"{baseId}_{count}";
+
+                if (generatedId == entityId)
+                    return creature;
             }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to resolve target '{entityId}': {ex.Message}");
+            return null;
         }
     }
-
-    /// <summary>
-    ///     Directly plays a card by index.
-    /// </summary>
-    private static void ExecutePlayCard(int cardIndex)
-    {
-        Logger.Info($"Executing play card: index={cardIndex}");
-
-        var combatManager = CombatManager.Instance;
-        if (!combatManager.IsInProgress)
-        {
-            Logger.Error("Combat not in progress");
-            return;
-        }
-
-        var combatState = combatManager.DebugOnlyGetState();
-        if (combatState == null)
-        {
-            Logger.Error("Combat state is null");
-            return;
-        }
-
-        var player = combatState.Players.FirstOrDefault();
-        if (player?.PlayerCombatState == null)
-        {
-            Logger.Error("Player not found");
-            return;
-        }
-
-        var hand = player.PlayerCombatState.Hand.Cards;
-        if (cardIndex < 0 || cardIndex >= hand.Count)
-        {
-            Logger.Error($"Invalid card index: {cardIndex}");
-            return;
-        }
-
-        var card = hand[cardIndex];
-        
-        // Use the PlayCard method on PlayerCombatState or card
-        // In STS2, this might be done via commands or direct method calls
-        // For now, we log it - actual implementation needs game-specific logic
-        Logger.Info($"Would play card: {card.Title} (implementation pending)");
-
-        // TODO: Implement actual card playing
-        // This typically involves:
-        // 1. Creating a PlayCardGameAction
-        // 2. Adding it to the action queue
-        // 3. Or calling a method like player.PlayerCombatState.PlayCard(card)
-    }
-
-    /// <summary>
-    ///     Directly ends the turn.
-    /// </summary>
-    private static void ExecuteEndTurn()
-    {
-        Logger.Info("Executing end turn");
-
-        var combatManager = CombatManager.Instance;
-        if (!combatManager.IsInProgress)
-        {
-            Logger.Error("Combat not in progress");
-            return;
-        }
-
-        // In STS2, ending turn might be done via:
-        // 1. CombatManager method
-        // 2. Player method
-        // 3. GameAction queue
-        
-        // TODO: Implement actual end turn
-        // Possible approaches:
-        // - combatManager.EndTurn()
-        // - player.EndTurn()
-        // - ActionQueue.Add(new EndTurnAction())
-        
-        Logger.Info("End turn implementation pending");
-    }
-}
-
-/// <summary>
-///     Represents a queued game action.
-/// </summary>
-public class GameAction
-{
-    public ActionType Type { get; set; }
-    public int CardIndex { get; set; }
-}
-
-public enum ActionType
-{
-    PlayCard,
-    EndTurn
 }

@@ -249,15 +249,15 @@ public class PipeServer : IDisposable
         var cardIndex = args[0];
         Logger.Info($"Requested to play card at index {cardIndex}");
 
-        // Queue action for execution by Harmony patch
-        return ActionExecutor.QueuePlayCard(cardIndex);
+        // Execute play card action via game's ActionQueue
+        return ActionExecutor.PlayCard(cardIndex);
     }
 
     private object HandleEndRequest()
     {
         Logger.Info("Requested to end turn");
 
-        // Queue action for execution by Harmony patch
-        return ActionExecutor.QueueEndTurn();
+        // Execute end turn action via game's ActionQueue
+        return ActionExecutor.EndTurn();
     }
 }
