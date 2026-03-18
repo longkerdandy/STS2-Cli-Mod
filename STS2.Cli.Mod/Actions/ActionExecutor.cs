@@ -2,7 +2,6 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
-using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;

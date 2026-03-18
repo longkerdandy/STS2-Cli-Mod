@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace STS2.Cli.Mod.Models;
+namespace STS2.Cli.Mod.Models.Message;
 
 /// <summary>
 /// Response model from the mod.

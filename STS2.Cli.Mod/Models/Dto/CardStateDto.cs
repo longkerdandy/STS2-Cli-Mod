@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace STS2.Cli.Mod.State.Dto;
+namespace STS2.Cli.Mod.Models.Dto;
 
 /// <summary>
 ///     Card state DTO representing a single card in the hand.

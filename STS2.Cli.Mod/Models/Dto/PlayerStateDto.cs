@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace STS2.Cli.Mod.State.Dto;
+namespace STS2.Cli.Mod.Models.Dto;
 
 /// <summary>
 ///     Player state DTO containing character stats and resources.

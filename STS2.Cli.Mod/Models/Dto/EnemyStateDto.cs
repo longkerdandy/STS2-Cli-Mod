@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace STS2.Cli.Mod.State.Dto;
+namespace STS2.Cli.Mod.Models.Dto;
 
 /// <summary>
 ///     Enemy state DTO representing a single enemy in combat.

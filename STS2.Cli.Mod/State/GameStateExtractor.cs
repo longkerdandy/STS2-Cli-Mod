@@ -1,8 +1,8 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Runs;
+using STS2.Cli.Mod.Models.Dto;
 using STS2.Cli.Mod.State.Builders;
-using STS2.Cli.Mod.State.Dto;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.State;
@@ -112,13 +112,13 @@ public static class GameStateExtractor
     }
 
     /// <summary>
-    ///     Gets the local player from combat state.
+    ///     Gets the local player from the combat state.
     /// </summary>
     private static Player? GetLocalPlayer(CombatState combatState)
     {
         try
         {
-            // In single player, get the first player
+            // In a single player game, get the first player
             var players = combatState.Players;
             if (players.Count > 0)
             {

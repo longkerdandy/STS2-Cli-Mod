@@ -4,9 +4,9 @@ using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using STS2.Cli.Mod.Actions;
-using STS2.Cli.Mod.Models;
+using STS2.Cli.Mod.Models.Dto;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State;
-using STS2.Cli.Mod.State.Dto;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Server;
@@ -44,7 +44,6 @@ public class PipeServer : IDisposable
         _cts = new CancellationTokenSource();
         _listenerTask = RunServerLoopAsync(_cts.Token);
 
-        Logger.Info("Named Pipe Server starting...");
         return Task.CompletedTask;
     }
 
@@ -56,25 +55,22 @@ public class PipeServer : IDisposable
         if (_cts != null) await _cts.CancelAsync();
         if (_pipeServer != null) await _pipeServer.DisposeAsync();
         if (_listenerTask != null) await Task.WhenAny(_listenerTask, Task.Delay(TimeSpan.FromSeconds(2)));
-
-        Logger.Info("Named Pipe Server stopped");
     }
 
     private async Task RunServerLoopAsync(CancellationToken ct)
     {
-        Logger.Info("Server loop starting...");
         while (!ct.IsCancellationRequested)
             try
             {
                 Logger.Info("Creating Named Pipe instance...");
-                
+
                 // Set up security to allow all users access
                 var pipeSecurity = new PipeSecurity();
                 pipeSecurity.AddAccessRule(new PipeAccessRule(
                     new SecurityIdentifier(WellKnownSidType.WorldSid, null),
                     PipeAccessRights.ReadWrite,
                     AccessControlType.Allow));
-                
+
                 _pipeServer = NamedPipeServerStreamAcl.Create(
                     "sts2-cli-mod",
                     PipeDirection.InOut,
@@ -127,7 +123,7 @@ public class PipeServer : IDisposable
             Request? request;
             try
             {
-                request = JsonSerializer.Deserialize<Request>(requestJson);
+                request = JsonSerializer.Deserialize<Request>(requestJson, JsonOptions.Default);
             }
             catch (Exception)
             {

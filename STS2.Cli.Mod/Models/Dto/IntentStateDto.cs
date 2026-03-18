@@ -1,4 +1,4 @@
-namespace STS2.Cli.Mod.State.Dto;
+namespace STS2.Cli.Mod.Models.Dto;
 
 /// <summary>
 ///     Intent state DTO representing an enemy's upcoming action.
