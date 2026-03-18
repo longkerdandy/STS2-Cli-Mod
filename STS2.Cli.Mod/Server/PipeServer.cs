@@ -8,6 +8,7 @@ using EndTurnHandler = STS2.Cli.Mod.Actions.EndTurnHandler;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
+using MainThreadExecutor = STS2.Cli.Mod.Utils.MainThreadExecutor;
 
 namespace STS2.Cli.Mod.Server;
 
@@ -169,6 +170,7 @@ public class PipeServer : IDisposable
 
     /// <summary>
     ///     Processes a parsed request and routes it to the appropriate handler.
+    ///     All game actions are executed on the main thread to ensure thread safety.
     /// </summary>
     /// <param name="request">The parsed request object</param>
     /// <returns>Response object to be serialized as JSON</returns>
@@ -176,14 +178,19 @@ public class PipeServer : IDisposable
     {
         try
         {
-            return request.Cmd.ToLower() switch
+            // Execute the command handler on the main thread
+            // This ensures all game state access and modifications are thread-safe
+            return MainThreadExecutor.RunOnMainThread(() =>
             {
-                "ping" => new { ok = true, data = new { connected = true } },
-                "state" => HandleStateRequest(),
-                "play_card" => HandlePlayCardRequest(request.Args, request.Target),
-                "end_turn" => HandleEndTurnRequest(),
-                _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
-            };
+                return request.Cmd.ToLower() switch
+                {
+                    "ping" => new { ok = true, data = new { connected = true } },
+                    "state" => HandleStateRequest(),
+                    "play_card" => HandlePlayCardRequest(request.Args, request.Target),
+                    "end_turn" => HandleEndTurnRequest(),
+                    _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
+                };
+            });
         }
         catch (Exception ex)
         {

@@ -82,25 +82,31 @@ public static class PlayCardHandler
                     };
             }
 
-            // Execute on the main thread (required for Godot/Game actions)
-            // Use RunOnMainThread to ensure execution happens before returning response
-            var finalCard = card;
-            var finalTarget = target;
-            MainThreadExecutor.RunOnMainThread(() =>
+            // Execute play card action via the game's action queue
+            // This is the same path used by the game's own UI
+            try
             {
-                try
-                {
-                    RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(
-                        new MegaCrit.Sts2.Core.GameActions.PlayCardAction(finalCard, finalTarget));
-                    Logger.Info($"PlayCardAction enqueued: '{finalCard.Title}'");
-                    return true;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Failed to enqueue PlayCardAction: {ex.Message}");
-                    throw;
-                }
-            });
+                // Check if we're still in a valid state before enqueueing
+                if (!CombatManager.Instance.IsInProgress)
+                    return new { ok = false, error = "COMBAT_ENDED", message = "Combat ended before card could be played" };
+                
+                // Log state before playing
+                var handCountBefore = player.PlayerCombatState.Hand.Cards.Count;
+                var energyBefore = player.PlayerCombatState.Energy;
+                Logger.Info($"Before play: Hand={handCountBefore}, Energy={energyBefore}");
+                
+                // Create and enqueue the PlayCardAction
+                var action = new MegaCrit.Sts2.Core.GameActions.PlayCardAction(card, target);
+                RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);
+                
+                Logger.Info($"PlayCardAction enqueued: {card.Title}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to enqueue PlayCardAction: {ex.Message}");
+                Logger.Error($"Stack trace: {ex.StackTrace}");
+                throw;
+            }
 
             var targetName = target?.Monster?.Title.GetFormattedText() ?? "enemy";
             var targetMsg = target != null ? $" targeting {targetName}" : "";
@@ -121,6 +127,9 @@ public static class PlayCardHandler
 
     /// <summary>
     ///     Resolves a target creature by entity ID.
+    ///     Supports:
+    ///     - Numeric index: "0", "1", "2"... (index in the alive enemies list)
+    ///     - Entity ID pattern: "jaw_worm_0", "cultist_0"...
     /// </summary>
     private static Creature? ResolveTarget(string entityId)
     {
@@ -130,16 +139,25 @@ public static class PlayCardHandler
             if (combatState == null)
                 return null;
 
-            // Try to parse as combat ID (numeric)
-            if (uint.TryParse(entityId, out var combatId)) return combatState.GetCreature(combatId);
+            // Get alive enemies list
+            var aliveEnemies = combatState.Enemies.Where(e => e.IsAlive).ToList();
+
+            // Try to parse as enemy index (0, 1, 2...)
+            if (int.TryParse(entityId, out var enemyIndex))
+            {
+                if (enemyIndex >= 0 && enemyIndex < aliveEnemies.Count)
+                {
+                    Logger.Info($"Resolved target by index: {enemyIndex} -> {aliveEnemies[enemyIndex].Monster?.Title.GetFormattedText() ?? "unknown"}");
+                    return aliveEnemies[enemyIndex];
+                }
+                Logger.Warning($"Enemy index {enemyIndex} out of range (only {aliveEnemies.Count} alive enemies)");
+                return null;
+            }
 
             // Try to match by entity_id pattern (e.g., "jaw_worm_0")
             var entityCounts = new Dictionary<string, int>();
-            foreach (var creature in combatState.Enemies)
+            foreach (var creature in aliveEnemies)
             {
-                if (!creature.IsAlive)
-                    continue;
-
                 var baseId = creature.Monster?.Id.Entry ?? "unknown";
                 var count = entityCounts.GetValueOrDefault(baseId, 0);
 
@@ -147,9 +165,13 @@ public static class PlayCardHandler
                 var generatedId = $"{baseId}_{count}";
 
                 if (generatedId == entityId)
+                {
+                    Logger.Info($"Resolved target by ID: {entityId} -> {creature.Monster?.Title.GetFormattedText() ?? "unknown"}");
                     return creature;
+                }
             }
 
+            Logger.Warning($"Could not resolve target '{entityId}'");
             return null;
         }
         catch (Exception ex)

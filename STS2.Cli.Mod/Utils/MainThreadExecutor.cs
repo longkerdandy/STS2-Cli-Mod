@@ -51,44 +51,63 @@ public static class MainThreadExecutor
             }
             processed++;
         }
-    }
-
-    /// <summary>
-    ///     Enqueues an action to be executed on the main thread.
-    /// </summary>
-    public static void Enqueue(Action action)
-    {
-        if (!_initialized)
+        
+        if (processed > 0)
         {
-            Logger.Warning("Main thread executor not initialized, initializing now...");
-            Initialize();
+            Logger.Info($"Processed {processed} actions from main thread queue");
         }
-        _mainThreadQueue.Enqueue(action);
     }
 
     /// <summary>
     ///     Executes a function on the main thread and returns the result.
+    ///     Always defers to next frame to ensure Godot scene tree safety.
     /// </summary>
     public static T RunOnMainThread<T>(Func<T> func)
     {
-        if (Thread.CurrentThread.Name == "Main Thread" || Engine.GetMainLoop() is SceneTree)
-        {
-            // Already on main thread, execute directly
-            return func();
-        }
-
         var tcs = new TaskCompletionSource<T>();
-        Enqueue(() =>
+        
+        Logger.Info($"Enqueuing action for main thread execution (queue size: {_mainThreadQueue.Count + 1})");
+        
+        _mainThreadQueue.Enqueue(() =>
         {
             try
             {
-                tcs.SetResult(func());
+                Logger.Info("Executing action on main thread");
+                var result = func();
+                Logger.Info("Action completed successfully");
+                tcs.SetResult(result);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Action failed: {ex.Message}");
+                tcs.SetException(ex);
+            }
+        });
+        
+        return tcs.Task.GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    ///     Executes an action on the main thread.
+    ///     Always defers to next frame to ensure Godot scene tree safety.
+    /// </summary>
+    public static void RunOnMainThread(Action action)
+    {
+        var tcs = new TaskCompletionSource<object?>();
+        
+        _mainThreadQueue.Enqueue(() =>
+        {
+            try
+            {
+                action();
+                tcs.SetResult(null);
             }
             catch (Exception ex)
             {
                 tcs.SetException(ex);
             }
         });
-        return tcs.Task.GetAwaiter().GetResult();
+        
+        tcs.Task.GetAwaiter().GetResult();
     }
 }
