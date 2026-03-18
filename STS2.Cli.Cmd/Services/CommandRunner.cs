@@ -1,4 +1,5 @@
 using System.Text.Json;
+using STS2.Cli.Cmd.Utils;
 
 namespace STS2.Cli.Cmd.Services;
 
@@ -69,12 +70,12 @@ public static class CommandRunner
     private static void WriteSuccess(object? data)
     {
         var response = new { ok = true, data };
-        Console.WriteLine(JsonSerializer.Serialize(response));
+        Console.WriteLine(JsonSerializer.Serialize(response, JsonOptions.Default));
     }
 
     private static void WriteError(string error, string message)
     {
         var response = new { ok = false, error, message };
-        Console.Error.WriteLine(JsonSerializer.Serialize(response));
+        Console.Error.WriteLine(JsonSerializer.Serialize(response, JsonOptions.Default));
     }
 }

@@ -1,19 +1,14 @@
 using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 using MegaCrit.Sts2.Core.Runs;
+using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.State.Dto;
 using STS2.Cli.Mod.Utils;
-using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State;
 
 /// <summary>
 ///     Extracts game state from Slay the Spire 2 using direct type references.
-///     Based on actual class names from decompiled sts2.dll.
 /// </summary>
 public static class GameStateExtractor
 {
@@ -100,12 +95,12 @@ public static class GameStateExtractor
             var player = GetLocalPlayer(combatState);
             if (player != null)
             {
-                result.Player = BuildPlayerState(player);
-                result.Hand = BuildHandState(player);
+                result.Player = PlayerStateBuilder.Build(player);
+                result.Hand = CombatStateBuilder.BuildHand(player);
             }
 
             // Extract enemies
-            result.Enemies = BuildEnemiesState(combatState);
+            result.Enemies = CombatStateBuilder.BuildEnemies(combatState);
 
             return result;
         }
@@ -117,13 +112,13 @@ public static class GameStateExtractor
     }
 
     /// <summary>
-    ///     Gets the local player from the combat state.
+    ///     Gets the local player from combat state.
     /// </summary>
     private static Player? GetLocalPlayer(CombatState combatState)
     {
         try
         {
-            // In the single player, get the first player
+            // In single player, get the first player
             var players = combatState.Players;
             if (players.Count > 0)
             {
@@ -135,262 +130,5 @@ public static class GameStateExtractor
             Logger.Warning($"Failed to get local player: {ex.Message}");
         }
         return null;
-    }
-
-    /// <summary>
-    ///     Builds player state from the Player object.
-    /// </summary>
-    private static PlayerStateDto BuildPlayerState(Player player)
-    {
-        var state = new PlayerStateDto();
-
-        try
-        {
-            var creature = player.Creature;
-            var playerCombatState = player.PlayerCombatState;
-
-            // Basic stats from Creature
-            state.Hp = creature.CurrentHp;
-            state.MaxHp = creature.MaxHp;
-            state.Block = creature.Block;
-
-            // Combat stats from PlayerCombatState
-            if (playerCombatState != null)
-            {
-                state.Energy = playerCombatState.Energy;
-                state.MaxEnergy = playerCombatState.MaxEnergy;
-
-                // Pile counts
-                state.DeckCount = playerCombatState.DrawPile.Cards.Count;
-                state.DiscardCount = playerCombatState.DiscardPile.Cards.Count;
-                state.ExhaustCount = playerCombatState.ExhaustPile?.Cards.Count ?? 0;
-                state.HandCount = playerCombatState.Hand.Cards.Count;
-            }
-
-            // Buffs/Powers from Creature
-            state.Buffs = BuildBuffsState(creature.Powers);
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to build player state: {ex.Message}");
-        }
-
-        return state;
-    }
-
-    /// <summary>
-    ///     Builds hand state from the player's combat state.
-    /// </summary>
-    private static List<CardStateDto> BuildHandState(Player player)
-    {
-        var hand = new List<CardStateDto>();
-
-        try
-        {
-            var playerCombatState = player.PlayerCombatState;
-            if (playerCombatState == null) return hand;
-
-            var cards = playerCombatState.Hand.Cards;
-            for (int i = 0; i < cards.Count; i++)
-            {
-                var card = cards[i];
-                hand.Add(BuildCardState(card, i));
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to build hand state: {ex.Message}");
-        }
-
-        return hand;
-    }
-
-    /// <summary>
-    ///     Builds a single card state.
-    /// </summary>
-    private static CardStateDto BuildCardState(CardModel card, int index)
-    {
-        var state = new CardStateDto
-        {
-            Index = index,
-            Id = card.Id.Entry,
-            Name = card.Title,
-            IsUpgraded = card.IsUpgraded
-        };
-
-        try
-        {
-            // Cost display
-            if (card.EnergyCost.CostsX)
-            {
-                state.Cost = -1; // X cost represented as -1
-                state.CostDisplay = "X";
-            }
-            else
-            {
-                int cost = card.EnergyCost.GetAmountToSpend();
-                state.Cost = cost;
-                state.CostDisplay = cost.ToString();
-            }
-
-            // Can play check
-            card.CanPlay(out var unplayableReason, out _);
-            state.CanPlay = unplayableReason == UnplayableReason.None;
-            state.UnplayableReason = unplayableReason != UnplayableReason.None ? unplayableReason.ToString() : null;
-
-            // Description - clean BBCode tags like [gold], [/gold]
-            state.Description = CleanGameText(card.Description.GetFormattedText());
-
-            // Type
-            state.Type = card.Type.ToString();
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to build card state for {card.Id}: {ex.Message}");
-        }
-
-        return state;
-    }
-
-    /// <summary>
-    ///     Builds enemies state from CombatState.
-    /// </summary>
-    private static List<EnemyStateDto> BuildEnemiesState(CombatState combatState)
-    {
-        var enemies = new List<EnemyStateDto>();
-
-        try
-        {
-            var creatures = combatState.Enemies;
-            for (int i = 0; i < creatures.Count; i++)
-            {
-                var creature = creatures[i];
-                if (!creature.IsAlive) continue;
-
-                enemies.Add(BuildEnemyState(creature, i, combatState));
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to build enemies state: {ex.Message}");
-        }
-
-        return enemies;
-    }
-
-    /// <summary>
-    ///     Builds a single enemy state.
-    /// </summary>
-    private static EnemyStateDto BuildEnemyState(Creature creature, int index, CombatState combatState)
-    {
-        var state = new EnemyStateDto
-        {
-            Index = index,
-            Hp = creature.CurrentHp,
-            MaxHp = creature.MaxHp,
-            Block = creature.Block,
-            IsMinion = creature.IsPet
-        };
-
-        try
-        {
-            var monster = creature.Monster;
-            if (monster != null)
-            {
-                state.Id = monster.Id.Entry;
-                state.Name = CleanGameText(monster.Title.GetFormattedText());
-
-                // Intent
-                var nextMove = monster.NextMove;
-                if (nextMove is MoveState moveState)
-                {
-                    state.Intent = BuildIntentState(moveState, creature, combatState);
-                }
-            }
-            else
-            {
-                state.Id = "unknown";
-                state.Name = CleanGameText(creature.Name);
-            }
-
-            // Buffs
-            state.Buffs = BuildBuffsState(creature.Powers);
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to build enemy state: {ex.Message}");
-        }
-
-        return state;
-    }
-
-    /// <summary>
-    ///     Builds intent state from MoveState.
-    /// </summary>
-    private static IntentStateDto BuildIntentState(MoveState moveState, Creature creature, CombatState combatState)
-    {
-        var state = new IntentStateDto();
-
-        try
-        {
-            var intents = moveState.Intents;
-            if (intents.Count > 0)
-            {
-                // Use first intent for now
-                var intent = intents[0];
-                state.Type = intent.IntentType.ToString();
-
-                // Try to get the label
-                try
-                {
-                    var targets = combatState.PlayerCreatures;
-                    var label = intent.GetIntentLabel(targets, creature);
-                    state.Description = CleanGameText(label.GetFormattedText());
-                }
-                catch
-                {
-                    state.Description = "";
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to build intent state: {ex.Message}");
-        }
-
-        return state;
-    }
-
-    /// <summary>
-    ///     Builds buffs/powers state.
-    /// </summary>
-    private static List<BuffStateDto> BuildBuffsState(IEnumerable<PowerModel> powers)
-    {
-        var buffs = new List<BuffStateDto>();
-
-        try
-        {
-            foreach (var power in powers)
-            {
-                if (!power.IsVisible) continue;
-
-                var buff = new BuffStateDto
-                {
-                    Id = power.Id.Entry,
-                    Name = CleanGameText(power.Title.GetFormattedText()),
-                    Amount = power.DisplayAmount,
-                    Type = power.Type.ToString(),
-                    Description = CleanGameText(power.SmartDescription.GetFormattedText())
-                };
-
-                buffs.Add(buff);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to build buffs state: {ex.Message}");
-        }
-
-        return buffs;
     }
 }
