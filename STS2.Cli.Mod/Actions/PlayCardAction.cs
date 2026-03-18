@@ -9,16 +9,16 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Executes game actions using the game's native ActionQueue.
+///     Executes play card action using the game's native ActionQueue.
 /// </summary>
-public static class ActionExecutor
+public static class PlayCardAction
 {
-    private static readonly ModLogger Logger = new("ActionExecutor");
+    private static readonly ModLogger Logger = new("PlayCardAction");
 
     /// <summary>
     ///     Plays a card from the player's hand.
     /// </summary>
-    public static object PlayCard(int cardIndex, string? targetId = null)
+    public static object Execute(int cardIndex, string? targetId = null)
     {
         try
         {
@@ -82,7 +82,7 @@ public static class ActionExecutor
             }
 
             // Enqueue the play card action via game's ActionQueue
-            RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(new PlayCardAction(card, target));
+            RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(new MegaCrit.Sts2.Core.GameActions.PlayCardAction(card, target));
 
             var targetName = target?.Monster?.Title?.GetFormattedText() ?? "enemy";
             var targetMsg = target != null ? $" targeting {targetName}" : "";
@@ -93,48 +93,6 @@ public static class ActionExecutor
         catch (Exception ex)
         {
             Logger.Error($"Failed to play card: {ex.Message}");
-            return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
-        }
-    }
-
-    /// <summary>
-    ///     Ends the player's turn.
-    /// </summary>
-    public static object EndTurn()
-    {
-        try
-        {
-            // Validate combat state
-            if (!CombatManager.Instance.IsInProgress)
-            {
-                return new { ok = false, error = "NOT_IN_COMBAT", message = "Not currently in combat" };
-            }
-
-            if (!CombatManager.Instance.IsPlayPhase)
-            {
-                return new { ok = false, error = "NOT_PLAYER_TURN", message = "Not in play phase - cannot end turn during enemy turn" };
-            }
-
-            if (CombatManager.Instance.PlayerActionsDisabled)
-            {
-                return new { ok = false, error = "ACTIONS_DISABLED", message = "Player actions are currently disabled (turn may already be ending)" };
-            }
-
-            // Get player
-            var player = GetLocalPlayer();
-            if (player == null)
-            {
-                return new { ok = false, error = "NO_PLAYER", message = "Player not found" };
-            }
-
-            // TODO: Find correct EndTurn command/action class
-            // For now, this is a placeholder - need to research the correct API
-            Logger.Warning("EndTurn action not yet implemented - need to find correct Command class");
-            return new { ok = false, error = "NOT_IMPLEMENTED", message = "End turn action requires finding the correct game API (EndTurnCommand or similar)" };
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to end turn: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
         }
     }
