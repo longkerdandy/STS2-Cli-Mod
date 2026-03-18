@@ -1,4 +1,3 @@
-using Godot;
 using HarmonyLib;
 using MegaCrit.Sts2.Core.Modding;
 using STS2.Cli.Mod.Patches;
@@ -8,8 +7,8 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod;
 
 /// <summary>
-/// Entry point for the STS2 CLI Mod.
-/// Loaded by the game's native mod loader via [ModInitializer] attribute.
+///     Entry point for the STS2 CLI Mod.
+///     Loaded by the game's native mod loader via [ModInitializer] attribute.
 /// </summary>
 [ModInitializer("Initialize")]
 public static class CliModEntry
@@ -19,7 +18,7 @@ public static class CliModEntry
     private static Harmony? _harmony;
 
     /// <summary>
-    /// Initializes the mod and starts the pipe server.
+    ///     Initializes the mod and starts the pipe server.
     /// </summary>
     public static void Initialize()
     {

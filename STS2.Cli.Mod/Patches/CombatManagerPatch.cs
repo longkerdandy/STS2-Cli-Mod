@@ -1,4 +1,5 @@
 using HarmonyLib;
+using MegaCrit.Sts2.Core.Combat;
 using STS2.Cli.Mod.Actions;
 using STS2.Cli.Mod.Utils;
 
@@ -13,7 +14,7 @@ public static class CombatManagerPatch
     private static bool _patched;
 
     /// <summary>
-    ///     Applies the Harmony patch.
+    ///     Applies the Harmony patch to CombatManager.Update.
     /// </summary>
     public static void Apply(Harmony harmony)
     {
@@ -21,16 +22,8 @@ public static class CombatManagerPatch
 
         try
         {
-            // Find CombatManager type
-            var combatManagerType = FindType("CombatManager", "BattleManager", "Game.Combat.CombatManager");
-            if (combatManagerType == null)
-            {
-                Logger.Error("Could not find CombatManager type to patch");
-                return;
-            }
-
-            // Find Update method
-            var updateMethod = combatManagerType.GetMethod("Update",
+            // Get CombatManager.Update method directly
+            var updateMethod = typeof(CombatManager).GetMethod("Update",
                 System.Reflection.BindingFlags.Public |
                 System.Reflection.BindingFlags.Instance);
 
@@ -41,7 +34,7 @@ public static class CombatManagerPatch
             }
 
             // Patch the Update method
-            var postfixMethod = typeof(CombatManagerPatch).GetMethod("Postfix",
+            var postfixMethod = typeof(CombatManagerPatch).GetMethod(nameof(Postfix),
                 System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
 
             harmony.Patch(updateMethod, postfix: new HarmonyMethod(postfixMethod));
@@ -62,33 +55,5 @@ public static class CombatManagerPatch
     {
         // Execute any pending actions queued by CLI
         ActionExecutor.ExecutePendingActions();
-    }
-
-    /// <summary>
-    ///     Finds a type by name from all loaded assemblies.
-    /// </summary>
-    private static Type? FindType(params string[] possibleNames)
-    {
-        foreach (var name in possibleNames)
-        {
-            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
-            {
-                try
-                {
-                    var type = assembly.GetType(name);
-                    if (type != null) return type;
-
-                    type = assembly.GetTypes().FirstOrDefault(t =>
-                        t.Name == name || t.FullName?.EndsWith($".{name}") == true);
-                    if (type != null) return type;
-                }
-                catch
-                {
-                    // Some assemblies might not support GetTypes()
-                    continue;
-                }
-            }
-        }
-        return null;
     }
 }
