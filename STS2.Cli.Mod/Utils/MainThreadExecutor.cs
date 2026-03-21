@@ -10,7 +10,7 @@ namespace STS2.Cli.Mod.Utils;
 /// </summary>
 public static class MainThreadExecutor
 {
-    private static readonly Concurrent_queue<Action> _queue = new();
+    private static readonly ConcurrentQueue<Action> PendingActions = new();
     private static readonly ModLogger Logger = new("MainThreadExecutor");
     private static bool _initialized;
 
@@ -25,7 +25,7 @@ public static class MainThreadExecutor
         try
         {
             var tree = (SceneTree)Engine.GetMainLoop();
-            tree.Connect(SceneTree.SignalName.ProcessFrame, Callable.From(Drain_queue));
+            tree.Connect(SceneTree.SignalName.ProcessFrame, Callable.From(DrainQueue));
             _initialized = true;
             Logger.Info("Main thread executor initialized");
         }
@@ -44,13 +44,13 @@ public static class MainThreadExecutor
     ///     This is the only public entry point for marshalling work. Game state reads
     ///     (<c>state</c>) and game actions (<c>play_card</c>, <c>end_turn</c>) all go
     ///     through this method so they execute on the main thread where Godot and the
-    ///     game's <c>Action_queueSynchronizer</c> expect to be called.
+    ///     game's <c>ActionQueueSynchronizer</c> expect to be called.
     /// </remarks>
     public static T RunOnMainThread<T>(Func<T> func)
     {
         var tcs = new TaskCompletionSource<T>();
 
-        _queue.Enqueue(() =>
+        PendingActions.Enqueue(() =>
         {
             try
             {
@@ -69,9 +69,9 @@ public static class MainThreadExecutor
     ///     Called every frame by <c>SceneTree.ProcessFrame</c>.
     ///     Drains all queued delegates synchronously on the main thread.
     /// </summary>
-    private static void Drain_queue()
+    private static void DrainQueue()
     {
-        while (_queue.TryDequeue(out var action))
+        while (PendingActions.TryDequeue(out var action))
         {
             try
             {
