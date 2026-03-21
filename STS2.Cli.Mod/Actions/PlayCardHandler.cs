@@ -24,6 +24,9 @@ public static class PlayCardHandler
             if (!CombatManager.Instance.IsInProgress)
                 return new { ok = false, error = "NOT_IN_COMBAT", message = "Not currently in combat" };
 
+            if (CombatManager.Instance.IsOverOrEnding)
+                return new { ok = false, error = "COMBAT_ENDING", message = "Combat is over or ending" };
+
             if (!CombatManager.Instance.IsPlayPhase)
                 return new
                 {
@@ -62,10 +65,11 @@ public static class PlayCardHandler
                     ok = false, error = "CANNOT_PLAY_CARD", message = $"Card '{card.Title}' cannot be played: {reason}"
                 };
 
-            // Resolve the target if needed
+            // Resolve the target based on card's TargetType
             Creature? target = null;
             if (card.TargetType == TargetType.AnyEnemy)
             {
+                // AnyEnemy cards require an explicit target from the caller
                 if (targetCombatId == null)
                     return new
                     {
@@ -78,39 +82,26 @@ public static class PlayCardHandler
                     return new
                     {
                         ok = false, error = "TARGET_NOT_FOUND",
-                        message = $"No alive enemy found with combat_id {targetCombatId}"
+                        message = $"No hittable enemy found with combat_id {targetCombatId}"
                     };
             }
-
-            // Execute play card action via the game's action queue
-            // This is the same path used by the game's own UI
-            try
+            else if (targetCombatId != null)
             {
-                // Check if we're still in a valid state before enqueueing
-                if (!CombatManager.Instance.IsInProgress)
-                    return new { ok = false, error = "COMBAT_ENDED", message = "Combat ended before card could be played" };
-                
-                // Log state before playing
-                var handCountBefore = player.PlayerCombatState.Hand.Cards.Count;
-                var energyBefore = player.PlayerCombatState.Energy;
-                Logger.Info($"Before play: Hand={handCountBefore}, Energy={energyBefore}");
-                
-                // Create and enqueue the PlayCardAction
-                var action = new MegaCrit.Sts2.Core.GameActions.PlayCardAction(card, target);
-                RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);
-                
-                Logger.Info($"PlayCardAction enqueued: {card.Title}");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Failed to enqueue PlayCardAction: {ex.Message}");
-                Logger.Error($"Stack trace: {ex.StackTrace}");
-                throw;
+                // Non-targeted cards should not receive a target argument
+                return new
+                {
+                    ok = false, error = "TARGET_NOT_ALLOWED",
+                    message = $"Card '{card.Title}' has target type '{card.TargetType}' and does not accept a target"
+                };
             }
 
-            var targetName = target?.Monster?.Title.GetFormattedText() ?? "enemy";
-            var targetMsg = target != null ? $" targeting {targetName}" : "";
-            Logger.Info($"Requested to play card: '{card.Title}'{targetMsg}");
+            // Create and enqueue the PlayCardAction via the game's action queue
+            var action = new MegaCrit.Sts2.Core.GameActions.PlayCardAction(card, target);
+            RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);
+
+            var targetName = target?.Monster?.Title.GetFormattedText();
+            var targetMsg = targetName != null ? $" targeting {targetName}" : "";
+            Logger.Info($"PlayCardAction enqueued: '{card.Title}'{targetMsg}");
 
             return new
             {
@@ -127,7 +118,8 @@ public static class PlayCardHandler
 
     /// <summary>
     ///     Resolves a target creature by combat ID using the game's native lookup.
-    ///     Returns null if the creature is not found or is dead.
+    ///     Returns null if the creature is not found, not an enemy, or not hittable
+    ///     (dead or blocked by <c>Hook.ShouldAllowHitting</c>).
     /// </summary>
     private static Creature? ResolveTarget(uint combatId)
     {
@@ -145,20 +137,20 @@ public static class PlayCardHandler
                 return null;
             }
 
-            // Verify the creature is a living enemy
-            if (!creature.IsAlive)
-            {
-                Logger.Warning($"Creature with combat_id {combatId} is dead");
-                return null;
-            }
-
+            // Must be an enemy-side creature
             if (creature.Side != CombatSide.Enemy)
             {
                 Logger.Warning($"Creature with combat_id {combatId} is not an enemy (side={creature.Side})");
                 return null;
             }
 
-            Logger.Info($"Resolved target by combat_id: {combatId} -> {creature.Monster!.Title.GetFormattedText()}");
+            // IsHittable checks both IsAlive and Hook.ShouldAllowHitting
+            if (!creature.IsHittable)
+            {
+                Logger.Warning($"Creature with combat_id {combatId} is not hittable");
+                return null;
+            }
+
             return creature;
         }
         catch (Exception ex)

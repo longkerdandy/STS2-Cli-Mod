@@ -147,7 +147,6 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 
 - Pipe server runs on a background thread; game state must be accessed on the Godot main thread
 - Use `MainThreadExecutor` (ConcurrentQueue + ProcessFrame signal) to marshal calls
-- Use `DeferredExecutor` for deferred game actions
 
 ## Project References
 

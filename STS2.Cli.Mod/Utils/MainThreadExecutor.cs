@@ -4,17 +4,19 @@ using Godot;
 namespace STS2.Cli.Mod.Utils;
 
 /// <summary>
-///     Executes actions on the Godot main thread.
-///     Required because Godot engine operations must run on the main thread.
+///     Marshals work from the pipe-server background thread to the Godot main thread.
+///     Each frame, all queued delegates are drained and executed synchronously.
+///     The caller (<see cref="RunOnMainThread{T}"/>) blocks until its delegate completes.
 /// </summary>
 public static class MainThreadExecutor
 {
-    private static readonly ConcurrentQueue<Action> _mainThreadQueue = new();
+    private static readonly Concurrent_queue<Action> _queue = new();
     private static readonly ModLogger Logger = new("MainThreadExecutor");
     private static bool _initialized;
 
     /// <summary>
-    ///     Initializes the main thread executor by connecting to ProcessFrame signal.
+    ///     Connects to <see cref="SceneTree.SignalName.ProcessFrame"/> so queued work
+    ///     is drained every frame. Must be called once from the main thread at mod startup.
     /// </summary>
     public static void Initialize()
     {
@@ -23,7 +25,7 @@ public static class MainThreadExecutor
         try
         {
             var tree = (SceneTree)Engine.GetMainLoop();
-            tree.Connect(SceneTree.SignalName.ProcessFrame, Callable.From(ProcessMainThreadQueue));
+            tree.Connect(SceneTree.SignalName.ProcessFrame, Callable.From(Drain_queue));
             _initialized = true;
             Logger.Info("Main thread executor initialized");
         }
@@ -34,12 +36,42 @@ public static class MainThreadExecutor
     }
 
     /// <summary>
-    ///     Processes queued actions on the main thread (called every frame).
+    ///     Executes <paramref name="func"/> on the Godot main thread and returns the result.
+    ///     The calling thread (pipe-server) blocks until the next <c>ProcessFrame</c> drains
+    ///     the queue and the delegate completes.
     /// </summary>
-    private static void ProcessMainThreadQueue()
+    /// <remarks>
+    ///     This is the only public entry point for marshalling work. Game state reads
+    ///     (<c>state</c>) and game actions (<c>play_card</c>, <c>end_turn</c>) all go
+    ///     through this method so they execute on the main thread where Godot and the
+    ///     game's <c>Action_queueSynchronizer</c> expect to be called.
+    /// </remarks>
+    public static T RunOnMainThread<T>(Func<T> func)
     {
-        int processed = 0;
-        while (_mainThreadQueue.TryDequeue(out var action) && processed < 10)
+        var tcs = new TaskCompletionSource<T>();
+
+        _queue.Enqueue(() =>
+        {
+            try
+            {
+                tcs.SetResult(func());
+            }
+            catch (Exception ex)
+            {
+                tcs.SetException(ex);
+            }
+        });
+
+        return tcs.Task.GetAwaiter().GetResult();
+    }
+
+    /// <summary>
+    ///     Called every frame by <c>SceneTree.ProcessFrame</c>.
+    ///     Drains all queued delegates synchronously on the main thread.
+    /// </summary>
+    private static void Drain_queue()
+    {
+        while (_queue.TryDequeue(out var action))
         {
             try
             {
@@ -49,65 +81,6 @@ public static class MainThreadExecutor
             {
                 Logger.Error($"Main thread action error: {ex.Message}");
             }
-            processed++;
         }
-        
-        if (processed > 0)
-        {
-            Logger.Info($"Processed {processed} actions from main thread queue");
-        }
-    }
-
-    /// <summary>
-    ///     Executes a function on the main thread and returns the result.
-    ///     Always defers to next frame to ensure Godot scene tree safety.
-    /// </summary>
-    public static T RunOnMainThread<T>(Func<T> func)
-    {
-        var tcs = new TaskCompletionSource<T>();
-        
-        Logger.Info($"Enqueuing action for main thread execution (queue size: {_mainThreadQueue.Count + 1})");
-        
-        _mainThreadQueue.Enqueue(() =>
-        {
-            try
-            {
-                Logger.Info("Executing action on main thread");
-                var result = func();
-                Logger.Info("Action completed successfully");
-                tcs.SetResult(result);
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Action failed: {ex.Message}");
-                tcs.SetException(ex);
-            }
-        });
-        
-        return tcs.Task.GetAwaiter().GetResult();
-    }
-
-    /// <summary>
-    ///     Executes an action on the main thread.
-    ///     Always defers to next frame to ensure Godot scene tree safety.
-    /// </summary>
-    public static void RunOnMainThread(Action action)
-    {
-        var tcs = new TaskCompletionSource<object?>();
-        
-        _mainThreadQueue.Enqueue(() =>
-        {
-            try
-            {
-                action();
-                tcs.SetResult(null);
-            }
-            catch (Exception ex)
-            {
-                tcs.SetException(ex);
-            }
-        });
-        
-        tcs.Task.GetAwaiter().GetResult();
     }
 }
