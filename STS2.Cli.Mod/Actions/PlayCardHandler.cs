@@ -16,7 +16,7 @@ public static class PlayCardHandler
     /// <summary>
     ///     Plays a card from the player's hand.
     /// </summary>
-    public static object Execute(int cardIndex, string? targetId = null)
+    public static object Execute(int cardIndex, int? targetCombatId = null)
     {
         try
         {
@@ -66,19 +66,19 @@ public static class PlayCardHandler
             Creature? target = null;
             if (card.TargetType == TargetType.AnyEnemy)
             {
-                if (string.IsNullOrEmpty(targetId))
+                if (targetCombatId == null)
                     return new
                     {
                         ok = false, error = "TARGET_REQUIRED",
-                        message = "Card requires a target. Provide 'target' with an entity_id."
+                        message = "Card requires a target. Provide 'target' with an enemy combat_id."
                     };
 
-                target = ResolveTarget(targetId);
+                target = ResolveTarget((uint)targetCombatId.Value);
                 if (target == null)
                     return new
                     {
                         ok = false, error = "TARGET_NOT_FOUND",
-                        message = $"Target '{targetId}' not found among alive enemies"
+                        message = $"No alive enemy found with combat_id {targetCombatId}"
                     };
             }
 
@@ -115,7 +115,7 @@ public static class PlayCardHandler
             return new
             {
                 ok = true,
-                data = new { action = "PLAY_CARD", card_index = cardIndex, card_id = card.Id.Entry, target = targetId }
+                data = new { action = "PLAY_CARD", card_index = cardIndex, card_id = card.Id.Entry, target = targetCombatId }
             };
         }
         catch (Exception ex)
@@ -126,12 +126,10 @@ public static class PlayCardHandler
     }
 
     /// <summary>
-    ///     Resolves a target creature by entity ID.
-    ///     Supports:
-    ///     - Numeric index: "0", "1", "2"... (index in the alive enemies list)
-    ///     - Entity ID pattern: "jaw_worm_0", "cultist_0"...
+    ///     Resolves a target creature by combat ID using the game's native lookup.
+    ///     Returns null if the creature is not found or is dead.
     /// </summary>
-    private static Creature? ResolveTarget(string entityId)
+    private static Creature? ResolveTarget(uint combatId)
     {
         try
         {
@@ -139,44 +137,33 @@ public static class PlayCardHandler
             if (combatState == null)
                 return null;
 
-            // Get alive enemies list
-            var aliveEnemies = combatState.Enemies.Where(e => e.IsAlive).ToList();
-
-            // Try to parse as enemy index (0, 1, 2...)
-            if (int.TryParse(entityId, out var enemyIndex))
+            // Use the game's native lookup by CombatId
+            var creature = combatState.GetCreature(combatId);
+            if (creature == null)
             {
-                if (enemyIndex >= 0 && enemyIndex < aliveEnemies.Count)
-                {
-                    Logger.Info($"Resolved target by index: {enemyIndex} -> {aliveEnemies[enemyIndex].Monster?.Title.GetFormattedText() ?? "unknown"}");
-                    return aliveEnemies[enemyIndex];
-                }
-                Logger.Warning($"Enemy index {enemyIndex} out of range (only {aliveEnemies.Count} alive enemies)");
+                Logger.Warning($"No creature found with combat_id {combatId}");
                 return null;
             }
 
-            // Try to match by entity_id pattern (e.g., "jaw_worm_0")
-            var entityCounts = new Dictionary<string, int>();
-            foreach (var creature in aliveEnemies)
+            // Verify the creature is a living enemy
+            if (!creature.IsAlive)
             {
-                var baseId = creature.Monster?.Id.Entry ?? "unknown";
-                var count = entityCounts.GetValueOrDefault(baseId, 0);
-
-                entityCounts[baseId] = count + 1;
-                var generatedId = $"{baseId}_{count}";
-
-                if (generatedId == entityId)
-                {
-                    Logger.Info($"Resolved target by ID: {entityId} -> {creature.Monster?.Title.GetFormattedText() ?? "unknown"}");
-                    return creature;
-                }
+                Logger.Warning($"Creature with combat_id {combatId} is dead");
+                return null;
             }
 
-            Logger.Warning($"Could not resolve target '{entityId}'");
-            return null;
+            if (creature.Side != CombatSide.Enemy)
+            {
+                Logger.Warning($"Creature with combat_id {combatId} is not an enemy (side={creature.Side})");
+                return null;
+            }
+
+            Logger.Info($"Resolved target by combat_id: {combatId} -> {creature.Monster!.Title.GetFormattedText()}");
+            return creature;
         }
         catch (Exception ex)
         {
-            Logger.Warning($"Failed to resolve target '{entityId}': {ex.Message}");
+            Logger.Warning($"Failed to resolve target with combat_id {combatId}: {ex.Message}");
             return null;
         }
     }

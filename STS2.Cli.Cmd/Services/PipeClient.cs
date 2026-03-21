@@ -101,12 +101,12 @@ public class PipeClient : IDisposable
     /// </summary>
     /// <param name="cmd">The command to send (e.g., "ping", "state", "play_card").</param>
     /// <param name="args">Optional array of integer arguments for the command.</param>
-    /// <param name="target">Optional target entity ID for targeted commands.</param>
+    /// <param name="target">Optional target combat ID for targeted commands.</param>
     /// <returns>
     ///     A <see cref="Response" /> object containing the result from the mod,
     ///     or <c>null</c> if the pipe is not connected or communication failed.
     /// </returns>
-    public async Task<Response?> SendCommandAsync(string cmd, int[]? args = null, string? target = null)
+    public async Task<Response?> SendCommandAsync(string cmd, int[]? args = null, int? target = null)
     {
         if (_pipe is not { IsConnected: true }) return null;
 

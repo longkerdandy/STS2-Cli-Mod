@@ -13,13 +13,13 @@ public static class CommandRunner
     /// </summary>
     /// <param name="cmd">Command name to execute</param>
     /// <param name="args">Optional integer arguments</param>
-    /// <param name="target">Optional target entity ID</param>
+    /// <param name="target">Optional target combat ID</param>
     /// <param name="pretty">Whether to format JSON output with indentation</param>
     /// <param name="timeoutMs">Timeout in milliseconds</param>
     public static async Task<int> ExecuteAsync(
         string cmd,
         int[]? args = null,
-        string? target = null,
+        int? target = null,
         bool pretty = false,
         int timeoutMs = 5000)
     {

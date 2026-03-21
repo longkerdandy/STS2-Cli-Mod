@@ -218,15 +218,15 @@ public class PipeServer : IDisposable
     ///     Handles the 'play_card' command by validating arguments and invoking the play card handler.
     /// </summary>
     /// <param name="args">Command arguments, expects card index as first element</param>
-    /// <param name="target">Optional target entity ID for targeted cards</param>
+    /// <param name="target">Optional target combat ID for targeted cards</param>
     /// <returns>Response indicating success or failure of the play card action</returns>
-    private object HandlePlayCardRequest(int[]? args, string? target)
+    private object HandlePlayCardRequest(int[]? args, int? target)
     {
         if (args == null || args.Length == 0)
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Card index required" };
 
         var cardIndex = args[0];
-        Logger.Info($"Requested to play card at index {cardIndex}, target={target ?? "none"}");
+        Logger.Info($"Requested to play card at index {cardIndex}, target={target?.ToString() ?? "none"}");
 
         // Execute play card action
         return PlayCardHandler.Execute(cardIndex, target);

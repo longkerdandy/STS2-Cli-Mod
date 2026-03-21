@@ -20,8 +20,8 @@ public class Request
     public int[]? Args { get; set; }
 
     /// <summary>
-    /// Optional target entity ID for targeted commands.
+    /// Optional target combat ID for targeted commands (from enemy's combat_id in state response).
     /// </summary>
     [JsonPropertyName("target")]
-    public string? Target { get; set; }
+    public int? Target { get; set; }
 }

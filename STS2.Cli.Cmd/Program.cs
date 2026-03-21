@@ -16,7 +16,7 @@ internal static class Program
     /// <summary>
     ///     Application entry point.
     /// </summary>
-    /// <param name="args">Command line arguments, e.g.: ["ping"], ["play_card", "0", "--target", "jaw_worm"]</param>
+    /// <param name="args">Command line arguments, e.g.: ["ping"], ["play_card", "0", "--target", "2"]</param>
     /// <returns>Exit code: 0=success, 1=connection error, 2=invalid state, 3=invalid parameter, 4=timeout</returns>
     private static async Task<int> Main(string[] args)
     {
@@ -113,11 +113,11 @@ internal static class Program
     /// <remarks>
     ///     Arguments:
     ///     - index: Index in hand (0-based, from state command response)
-    ///     - --target: Target enemy ID (only for cards that require a target)
+    ///     - --target: Target enemy combat ID (from enemy's combat_id in state response)
     /// </remarks>
     /// <example>
     ///     $ STS2.Cli.Cmd play_card 0
-    ///     $ STS2.Cli.Cmd play_card 0 --target jaw_worm_0
+    ///     $ STS2.Cli.Cmd play_card 0 --target 2
     ///     $ STS2.Cli.Cmd --pretty play_card 0
     /// </example>
     private static Command CreatePlayCardCommand(Option<bool> prettyOption)
@@ -128,8 +128,8 @@ internal static class Program
         var indexArg = new Argument<int>("index", "Card index in hand (0-based)");
         command.AddArgument(indexArg);
 
-        // Define optional argument: target entity ID
-        var targetOption = new Option<string?>("--target", "Target enemy entity ID (for targeted cards)");
+        // Define optional argument: target combat ID
+        var targetOption = new Option<int?>("--target", "Target enemy combat ID (for targeted cards)");
         command.AddOption(targetOption);
 
         command.SetHandler(async context =>
@@ -177,7 +177,7 @@ internal static class Program
     /// </remarks>
     /// <example>
     ///     $ STS2.Cli.Cmd use_potion 0
-    ///     $ STS2.Cli.Cmd use_potion 0 --target jaw_worm_0
+    ///     $ STS2.Cli.Cmd use_potion 0 --target 2
     ///     $ STS2.Cli.Cmd --pretty use_potion 0
     /// </example>
     private static Command CreateUsePotionCommand(Option<bool> prettyOption)
@@ -188,8 +188,8 @@ internal static class Program
         var slotArg = new Argument<int>("slot", "Potion slot index (0-2)");
         command.AddArgument(slotArg);
 
-        // Define optional argument: target entity ID
-        var targetOption = new Option<string?>("--target", "Target enemy entity ID (for targeted potions)");
+        // Define optional argument: target combat ID
+        var targetOption = new Option<int?>("--target", "Target enemy combat ID (for targeted potions)");
         command.AddOption(targetOption);
 
         command.SetHandler(async context =>
