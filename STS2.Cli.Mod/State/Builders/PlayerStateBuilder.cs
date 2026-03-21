@@ -42,31 +42,38 @@ public static class PlayerStateBuilder
         // PlayerCombatState (combat-scoped)
         if (playerCombatState != null)
         {
-            // Pets
-            var pets = playerCombatState.Pets;
-            if (pets.Count > 0)
-                state.Pets = PetStateBuilder.Build(pets);
-
-            // Card pile counts
-            state.HandCount = playerCombatState.Hand.Cards.Count;
-            state.DrawCount = playerCombatState.DrawPile.Cards.Count;
-            state.DiscardCount = playerCombatState.DiscardPile.Cards.Count;
-            state.ExhaustCount = playerCombatState.ExhaustPile.Cards.Count;
-
-            // Energy (override run-scoped base with combat-scoped effective value)
-            state.Energy = playerCombatState.Energy;
-            state.MaxEnergy = playerCombatState.MaxEnergy;
-
-            // Stars (Regent exclusive)
-            if (player.Character.ShouldAlwaysShowStarCounter || playerCombatState.Stars > 0)
-                state.Stars = playerCombatState.Stars;
-
-            // Orbs (Defect exclusive)
-            var orbQueue = playerCombatState.OrbQueue;
-            if (orbQueue.Capacity > 0)
+            try
             {
-                state.Orbs = OrbStateBuilder.Build(orbQueue);
-                state.OrbSlots = orbQueue.Capacity;
+                // Pets
+                var pets = playerCombatState.Pets;
+                if (pets.Count > 0)
+                    state.Pets = PetStateBuilder.Build(pets);
+
+                // Card pile counts
+                state.HandCount = playerCombatState.Hand.Cards.Count;
+                state.DrawCount = playerCombatState.DrawPile.Cards.Count;
+                state.DiscardCount = playerCombatState.DiscardPile.Cards.Count;
+                state.ExhaustCount = playerCombatState.ExhaustPile.Cards.Count;
+
+                // Energy (override run-scoped base with combat-scoped effective value)
+                state.Energy = playerCombatState.Energy;
+                state.MaxEnergy = playerCombatState.MaxEnergy;
+
+                // Stars (Regent exclusive)
+                if (player.Character.ShouldAlwaysShowStarCounter || playerCombatState.Stars > 0)
+                    state.Stars = playerCombatState.Stars;
+
+                // Orbs (Defect exclusive)
+                var orbQueue = playerCombatState.OrbQueue;
+                if (orbQueue.Capacity > 0)
+                {
+                    state.Orbs = OrbStateBuilder.Build(orbQueue);
+                    state.OrbSlots = orbQueue.Capacity;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning($"Failed to read combat state fields: {ex.Message}");
             }
         }
 
