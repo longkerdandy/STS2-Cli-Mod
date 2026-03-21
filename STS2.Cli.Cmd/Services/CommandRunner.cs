@@ -69,7 +69,7 @@ public static class CommandRunner
         // Invalid state — combat phase or creature state prevents the action
         "NOT_IN_COMBAT" or "COMBAT_ENDING" or "NOT_PLAYER_TURN" or
         "ACTIONS_DISABLED" or "NO_PLAYER" or "PLAYER_DEAD" or
-        "CANNOT_PLAY_CARD" => ExitInvalidState,
+        "CANNOT_PLAY_CARD" or "ACTION_CANCELLED" => ExitInvalidState,
 
         // Invalid parameter — caller provided wrong arguments
         "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or

@@ -1,6 +1,8 @@
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Utils;
 
@@ -8,19 +10,29 @@ namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
 ///     Handles play card action using the game's native ActionQueue.
+///     After enqueuing the action, waits for completion and collects execution results
+///     (damage dealt, block gained, powers applied) from <c>CombatHistory</c>.
 /// </summary>
 public static class PlayCardHandler
 {
     private static readonly ModLogger Logger = new("PlayCardAction");
 
     /// <summary>
-    ///     Plays a card from the player's hand.
+    ///     Maximum time to wait for a <see cref="PlayCardAction" /> to finish executing.
+    ///     Covers animation time for multi-hit attacks and triggered effects.
     /// </summary>
-    public static object Execute(int cardIndex, int? targetCombatId = null)
+    private const int ActionTimeoutMs = 10000;
+
+    /// <summary>
+    ///     Plays a card from the player's hand and returns the execution results.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
+    /// </summary>
+    public static async Task<object> ExecuteAsync(int cardIndex, int? targetCombatId = null)
     {
         try
         {
-            // Validate combat state
+            // --- Validation (synchronous, single frame) ---
+
             if (!CombatManager.Instance.IsInProgress)
                 return new { ok = false, error = "NOT_IN_COMBAT", message = "Not currently in combat" };
 
@@ -39,7 +51,6 @@ public static class PlayCardHandler
                     ok = false, error = "ACTIONS_DISABLED", message = "Player actions are currently disabled"
                 };
 
-            // Get player
             var player = ActionUtils.GetLocalPlayer();
             if (player?.PlayerCombatState == null)
                 return new { ok = false, error = "NO_PLAYER", message = "Player not found or not in combat" };
@@ -47,7 +58,6 @@ public static class PlayCardHandler
             if (!player.Creature.IsAlive)
                 return new { ok = false, error = "PLAYER_DEAD", message = "Player is dead - cannot play cards" };
 
-            // Validate card index
             var hand = player.PlayerCombatState.Hand;
             if (cardIndex < 0 || cardIndex >= hand.Cards.Count)
                 return new
@@ -58,18 +68,16 @@ public static class PlayCardHandler
 
             var card = hand.Cards[cardIndex];
 
-            // Check if the card can be played
             if (!card.CanPlay(out var reason, out _))
                 return new
                 {
                     ok = false, error = "CANNOT_PLAY_CARD", message = $"Card '{card.Title}' cannot be played: {reason}"
                 };
 
-            // Resolve the target based on card's TargetType
+            // Resolve target
             Creature? target = null;
             if (card.TargetType == TargetType.AnyEnemy)
             {
-                // AnyEnemy cards require an explicit target from the caller
                 if (targetCombatId == null)
                     return new
                     {
@@ -87,7 +95,6 @@ public static class PlayCardHandler
             }
             else if (targetCombatId != null)
             {
-                // Non-targeted cards should not receive a target argument
                 return new
                 {
                     ok = false, error = "TARGET_NOT_ALLOWED",
@@ -95,18 +102,58 @@ public static class PlayCardHandler
                 };
             }
 
-            // Create and enqueue the PlayCardAction via the game's action queue
-            var action = new MegaCrit.Sts2.Core.GameActions.PlayCardAction(card, target);
+            // --- Enqueue action and wait for completion ---
+
+            // Snapshot history count before the action executes
+            var historyBefore = CombatManager.Instance.History.Entries.Count();
+
+            var action = new PlayCardAction(card, target);
+
+            // Bridge action lifecycle events to a TaskCompletionSource
+            var tcs = new TaskCompletionSource<GameActionState>();
+            action.AfterFinished += _ => tcs.TrySetResult(GameActionState.Finished);
+            action.BeforeCancelled += _ => tcs.TrySetResult(GameActionState.Canceled);
+
             RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);
 
             var targetName = target?.Monster?.Title.GetFormattedText();
             var targetMsg = targetName != null ? $" targeting {targetName}" : "";
             Logger.Info($"PlayCardAction enqueued: '{card.Title}'{targetMsg}");
 
+            // Wait for the action to finish or be cancelled (with timeout)
+            var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(ActionTimeoutMs));
+            if (completedTask != tcs.Task)
+            {
+                Logger.Warning("PlayCardAction timed out waiting for completion");
+                return new { ok = false, error = "TIMEOUT", message = "Card action did not complete in time" };
+            }
+
+            var finalState = tcs.Task.Result;
+            if (finalState == GameActionState.Canceled)
+            {
+                Logger.Info("PlayCardAction was cancelled by the game");
+                return new
+                {
+                    ok = false, error = "ACTION_CANCELLED",
+                    message = $"Card '{card.Title}' action was cancelled by the game"
+                };
+            }
+
+            // --- Collect results from CombatHistory ---
+
+            var results = ResultBuilder.BuildFromHistory(historyBefore);
+            Logger.Info($"PlayCardAction completed with {results.Count} result entries");
+
             return new
             {
                 ok = true,
-                data = new { action = "PLAY_CARD", card_index = cardIndex, card_id = card.Id.Entry, target = targetCombatId }
+                data = new
+                {
+                    card_index = cardIndex,
+                    card_id = card.Id.Entry,
+                    target = targetCombatId,
+                    results
+                }
             };
         }
         catch (Exception ex)
@@ -129,7 +176,6 @@ public static class PlayCardHandler
             if (combatState == null)
                 return null;
 
-            // Use the game's native lookup by CombatId
             var creature = combatState.GetCreature(combatId);
             if (creature == null)
             {
@@ -137,14 +183,12 @@ public static class PlayCardHandler
                 return null;
             }
 
-            // Must be an enemy-side creature
             if (creature.Side != CombatSide.Enemy)
             {
                 Logger.Warning($"Creature with combat_id {combatId} is not an enemy (side={creature.Side})");
                 return null;
             }
 
-            // IsHittable checks both IsAlive and Hook.ShouldAllowHitting
             if (!creature.IsHittable)
             {
                 Logger.Warning($"Creature with combat_id {combatId} is not hittable");
