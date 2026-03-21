@@ -33,6 +33,7 @@ public class PipeClient : IDisposable
         _writer = null;
         _pipe?.Dispose();
         _pipe = null;
+        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -55,17 +56,7 @@ public class PipeClient : IDisposable
 
             // Use CancellationToken for reliable timeout
             using var cts = new CancellationTokenSource(timeoutMs);
-            try
-            {
-                await _pipe.ConnectAsync(cts.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                // Timeout
-                await _pipe.DisposeAsync();
-                _pipe = null;
-                return false;
-            }
+            await _pipe.ConnectAsync(cts.Token);
 
             if (_pipe.IsConnected)
             {
@@ -75,21 +66,10 @@ public class PipeClient : IDisposable
                 return true;
             }
         }
-        catch (OperationCanceledException)
+        catch
         {
-            // Connection was canceled via CancellationToken
-            if (_pipe != null) await _pipe.DisposeAsync();
-            _pipe = null;
-        }
-        catch (TimeoutException)
-        {
-            // Connection timeout - game not running or mod not loaded
-            if (_pipe != null) await _pipe.DisposeAsync();
-            _pipe = null;
-        }
-        catch (Exception)
-        {
-            // Other connection errors (pipe not found, access denied, etc.)
+            // OperationCanceledException (timeout), TimeoutException, IOException, etc.
+            // All mean the same thing: connection failed — clean up and return false
             if (_pipe != null) await _pipe.DisposeAsync();
             _pipe = null;
         }
