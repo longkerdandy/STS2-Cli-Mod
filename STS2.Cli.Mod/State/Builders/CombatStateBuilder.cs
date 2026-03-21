@@ -19,21 +19,20 @@ public static class CombatStateBuilder
     {
         var hand = new List<CardStateDto>();
 
-        try
-        {
-            var playerCombatState = player.PlayerCombatState;
-            if (playerCombatState?.Hand == null) return hand;
+        var playerCombatState = player.PlayerCombatState;
+        if (playerCombatState?.Hand == null) return hand;
 
-            var cards = playerCombatState.Hand.Cards;
-            for (var i = 0; i < cards.Count; i++)
-            {
-                var card = cards[i];
-                hand.Add(CardStateBuilder.Build(card, i));
-            }
-        }
-        catch (Exception ex)
+        var cards = playerCombatState.Hand.Cards;
+        for (var i = 0; i < cards.Count; i++)
         {
-            Logger.Warning($"Failed to build hand state: {ex.Message}");
+            try
+            {
+                hand.Add(CardStateBuilder.Build(cards[i], i));
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning($"Failed to build card state for hand index {i}: {ex.Message}");
+            }
         }
 
         return hand;
@@ -47,17 +46,16 @@ public static class CombatStateBuilder
     {
         var enemies = new List<EnemyStateDto>();
 
-        try
+        foreach (var creature in combatState.Enemies)
         {
-            var creatures = combatState.Enemies;
-            foreach (var creature in creatures)
+            try
             {
                 enemies.Add(EnemyStateBuilder.Build(creature, combatState));
             }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to build enemies state: {ex.Message}");
+            catch (Exception ex)
+            {
+                Logger.Warning($"Failed to build enemy state for {creature.Monster?.Id}: {ex.Message}");
+            }
         }
 
         return enemies;

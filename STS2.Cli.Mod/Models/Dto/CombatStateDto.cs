@@ -27,10 +27,10 @@ public class CombatStateDto
     /// <summary>
     ///     Current hand cards.
     /// </summary>
-    public List<CardStateDto> Hand { get; set; } = new();
+    public List<CardStateDto> Hand { get; set; } = [];
 
     /// <summary>
     ///     Active enemies in combat.
     /// </summary>
-    public List<EnemyStateDto> Enemies { get; set; } = new();
+    public List<EnemyStateDto> Enemies { get; set; } = [];
 }

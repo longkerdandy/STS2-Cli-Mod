@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using STS2.Cli.Mod.Models.Dto;
 using STS2.Cli.Mod.Utils;
@@ -7,14 +8,14 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 namespace STS2.Cli.Mod.State.Builders;
 
 /// <summary>
-///     Builds CardStateDto from CardModel.
+///     Builds <see cref="CardStateDto" /> from <see cref="CardModel" />.
 /// </summary>
 public static class CardStateBuilder
 {
     private static readonly ModLogger Logger = new("CardStateBuilder");
 
     /// <summary>
-    ///     Builds a card state DTO from a CardModel.
+    ///     Builds a card state DTO from a <see cref="CardModel" /> at the given hand index.
     /// </summary>
     public static CardStateDto Build(CardModel card, int index)
     {
@@ -22,66 +23,105 @@ public static class CardStateBuilder
         {
             Index = index,
             Id = card.Id.Entry,
-            Name = card.Title,
+            Name = StripGameTags(card.Title),
+            Description = StripGameTags(SafeGetCardDescription(card)),
+            Type = card.Type.ToString(),
+            Rarity = card.Rarity.ToString(),
+            TargetType = card.TargetType.ToString(),
             IsUpgraded = card.IsUpgraded
         };
 
+        // Energy cost
         try
         {
-            // Cost display
             if (card.EnergyCost.CostsX)
             {
-                state.Cost = -1; // X cost represented as -1
-                state.CostDisplay = "X";
+                state.Cost = -1;
             }
             else
             {
-                var cost = card.EnergyCost.GetAmountToSpend();
-                state.Cost = cost;
-                state.CostDisplay = cost.ToString();
+                state.Cost = card.EnergyCost.GetAmountToSpend();
             }
-
-            // Can play check
-            card.CanPlay(out var unplayableReason, out _);
-            state.CanPlay = unplayableReason == UnplayableReason.None;
-            state.UnplayableReason = unplayableReason != UnplayableReason.None ? unplayableReason.ToString() : null;
-
-            // Description - use GetDescriptionForPile for resolved dynamic vars
-            state.Description = StripGameTags(SafeGetCardDescription(card));
-
-            // Type
-            state.Type = card.Type.ToString();
         }
         catch (Exception ex)
         {
-            // Log error but return partial state
-            Logger.Warning($"Failed to build card state for {card.Id}: {ex.Message}");
+            Logger.Warning($"Failed to read energy cost for {card.Id}: {ex.Message}");
+        }
+
+        // Playability
+        try
+        {
+            card.CanPlay(out var unplayableReason, out _);
+            state.CanPlay = unplayableReason == UnplayableReason.None;
+            state.UnplayableReason = unplayableReason != UnplayableReason.None
+                ? unplayableReason.ToString()
+                : null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to check playability for {card.Id}: {ex.Message}");
+        }
+
+        // Keywords
+        try
+        {
+            foreach (var keyword in card.Keywords)
+            {
+                if (keyword != CardKeyword.None)
+                    state.Keywords.Add(keyword.ToString());
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to read keywords for {card.Id}: {ex.Message}");
+        }
+
+        // Damage (preview value after all modifiers)
+        try
+        {
+            if (card.DynamicVars.TryGetValue("Damage", out var damageVar))
+                state.Damage = (int)damageVar.PreviewValue;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to read damage for {card.Id}: {ex.Message}");
+        }
+
+        // Block (preview value after all modifiers)
+        try
+        {
+            if (card.DynamicVars.TryGetValue("Block", out var blockVar))
+                state.Block = (int)blockVar.PreviewValue;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to read block for {card.Id}: {ex.Message}");
         }
 
         return state;
     }
 
     /// <summary>
-    ///     Safely gets the resolved card description using GetDescriptionForPile.
-    ///     This method resolves dynamic variables like {Block:diff()} to actual values.
+    ///     Safely gets the resolved card description using <see cref="CardModel.GetDescriptionForPile" />.
+    ///     This method resolves dynamic variables like damage and block to actual values.
     /// </summary>
-    private static string? SafeGetCardDescription(CardModel card)
+    private static string SafeGetCardDescription(CardModel card)
     {
         try
         {
-            // GetDescriptionForPile resolves dynamic variables based on context
+            // GetDescriptionForPile resolves dynamic variables based on pile context
             return card.GetDescriptionForPile(PileType.Hand);
         }
         catch
         {
-            // Fallback to the basic description
+            // Fallback to the basic description LocString
             try
             {
                 return card.Description.GetFormattedText();
             }
             catch
             {
-                return null;
+                return string.Empty;
             }
         }
     }
