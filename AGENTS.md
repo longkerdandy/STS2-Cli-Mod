@@ -8,7 +8,7 @@ A CLI control mod for Slay the Spire 2. Two independent .NET 9 / C# 12 projects 
 Agent -> sts2 CLI (STS2.Cli.Cmd) -> Named Pipe -> C# Mod (STS2.Cli.Mod, in-process) -> Game
 ```
 
-- **STS2.Cli.Mod/**: In-process game mod. References `sts2.dll` and `GodotSharp.dll` from the game directory. No NuGet packages. Runs inside Godot 4.5.1 engine.
+- **STS2.Cli.Mod/**: In-process game mod. References `sts2.dll` and `GodotSharp.dll` from the game directory. One NuGet package (`System.IO.Pipes.AccessControl` for Windows pipe ACL). Runs inside Godot 4.5.1 engine.
 - **STS2.Cli.Cmd/**: Standalone CLI tool. Depends on `System.CommandLine`. Outputs JSON to stdout/stderr.
 - The two projects share no code. `Request`/`Response` models are intentionally duplicated.
 
@@ -37,8 +37,9 @@ The Mod project auto-deploys DLL + JSON to `$(STS2GameDir)/mods/` after build vi
 There are no test projects. Testing is done manually by running the game with the mod loaded. Verify the mod works by:
 
 1. `sts2 ping` - confirms pipe connection
-2. `sts2 state` - confirms state extraction
-3. `sts2 play_card <index>` / `sts2 end_turn` - confirms action execution
+2. `sts2 state` - confirms state extraction (returns full combat state as JSON)
+3. `sts2 play_card <index> [--target <combat_id>]` - confirms card play with execution results (damage, block, powers)
+4. `sts2 end_turn` - confirms end turn action
 
 ## Code Style Guidelines
 
@@ -93,8 +94,8 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 ### Class Design Patterns
 
 - **Static utility classes** for stateless logic: `TextUtils`, `JsonOptions`, `ActionUtils`
-- **Static handler classes** with single `Execute()` method for actions: `PlayCardHandler`, `EndTurnHandler`
-- **Static builder classes** with `Build()` method for state extraction: `CardStateBuilder`, `PlayerStateBuilder`
+- **Static handler classes** for actions: `PlayCardHandler` (`ExecuteAsync()`), `EndTurnHandler` (`Execute()`)
+- **Static builder classes** with `Build()` / `BuildFromHistory()` for data extraction: `CardStateBuilder`, `PlayerStateBuilder`, `CombatHistoryBuilder`
 - **DTO classes** with public auto-properties `{ get; set; }`, no behavior, nullable fields where optional
 - Use `required` keyword for mandatory properties: `public required string Cmd { get; set; }`
 
@@ -135,6 +136,7 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 - Pass `CancellationToken` through async chains
 - Fire-and-forget only for server startup: `_ = Task.Run(async () => { ... });`
 - `MainThreadExecutor.RunOnMainThread<T>()` blocks pipe thread to synchronize with Godot main thread
+- `MainThreadExecutor.RunOnMainThreadAsync<T>()` kicks off an async chain on the main thread, returns `Task<T>` the pipe thread can await (used for multi-frame actions like `play_card`)
 - No `ConfigureAwait(false)` (not needed in Godot context)
 
 ### JSON Serialization
@@ -147,6 +149,8 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 
 - Pipe server runs on a background thread; game state must be accessed on the Godot main thread
 - Use `MainThreadExecutor` (ConcurrentQueue + ProcessFrame signal) to marshal calls
+- `RunOnMainThread<T>()` for synchronous single-frame work (state reads, end_turn)
+- `RunOnMainThreadAsync<T>()` for async multi-frame work (play_card waits for action completion)
 
 ## Project References
 
@@ -165,7 +169,14 @@ Access game state through singletons: `CombatManager.Instance`, `RunManager.Inst
 A sibling project at `~/STS2-Reverse-Engineering` contains:
 
 - **`decompiled/sts2/`**: Full ILSpy decompilation of `sts2.dll`, organized by namespace (e.g. `MegaCrit.Sts2.Core.Combat`, `MegaCrit.Sts2.Core.Cards`). Use this to look up game class internals, method signatures, and data structures.
-- **`doc/`**: Analysis documents summarizing game internals (e.g. `monster-state-guide.md`).
+- **`doc/`**: Analysis documents summarizing game internals:
+  - `card-guide.md` - Card system, card models, and card mechanics
+  - `combat-guide.md` - Combat flow, action queue, and combat history
+  - `map-guide.md` - Map generation and navigation
+  - `monster-guide.md` - Monster definitions, moves, and intents
+  - `player-guide.md` - Player state, energy, and hand management
+  - `potion-guide.md` - Potion system and effects
+  - `relic-guide.md` - Relic system and triggers
 
 When you need to understand a game API, search the decompiled source there rather than guessing.
 
