@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace STS2.Cli.Mod.Models.Dto;
 
 /// <summary>
-///     Intent state DTO representing a single intent within an enemy's upcoming move.
+///     Intent state DTO representing single intent within an enemy's upcoming move.
 ///     A move can contain multiple intents (e.g., attack + buff simultaneously).
 /// </summary>
 [SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
@@ -17,7 +17,7 @@ public class IntentStateDto
     public required string Type { get; set; }
 
     /// <summary>
-    ///     Per-hit damage for attack intents (after all modifiers like Strength, Vulnerable).
+    ///     Per-hit damage for attack intents (after modifiers like Strength, Vulnerable).
     ///     Null for non-attack intents.
     /// </summary>
     public int? Damage { get; set; }

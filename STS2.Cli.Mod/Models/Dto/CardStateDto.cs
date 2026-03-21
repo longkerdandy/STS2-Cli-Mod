@@ -8,9 +8,8 @@ namespace STS2.Cli.Mod.Models.Dto;
 ///     Index (DTO) → Identity → Classification → Cost → Keywords/Tags/DynamicVars →
 ///     Enchantment/Affliction → Upgrade → Playability.
 /// </summary>
-[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-[SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+[SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 public class CardStateDto
 {
     // -- DTO context --
@@ -90,7 +89,7 @@ public class CardStateDto
 
     /// <summary>
     ///     Preview block value after all modifiers (dexterity, powers, relics, enchantments).
-    ///     Null if the card does not grant block.
+    ///     Null if the card does not grant any block.
     /// </summary>
     public int? Block { get; set; }
 
@@ -123,7 +122,7 @@ public class CardStateDto
     public bool CanPlay { get; set; }
 
     /// <summary>
-    ///     Reason why card cannot be played, if applicable (e.g., "EnergyCostTooHigh").
+    ///     Reason why the card cannot be played, if applicable (e.g., "EnergyCostTooHigh").
     ///     Null when the card is playable.
     /// </summary>
     public string? UnplayableReason { get; set; }

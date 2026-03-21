@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Invocation;
 using STS2.Cli.Cmd.Services;
 
 namespace STS2.Cli.Cmd;

@@ -23,7 +23,7 @@ public static class CliModEntry
         Logger.Info("Version: 0.1.0");
         Logger.Info("========================================");
 
-        // Initialize main thread executor (required for game actions)
+        // Initialize the main thread executor (required for game actions)
         MainThreadExecutor.Initialize();
 
         // Start the pipe server background loop

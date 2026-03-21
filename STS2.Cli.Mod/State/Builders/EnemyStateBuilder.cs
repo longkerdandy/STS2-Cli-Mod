@@ -16,7 +16,7 @@ public static class EnemyStateBuilder
     public static EnemyStateDto Build(Creature creature, CombatState combatState)
     {
         // creature.Monster is never null for enemy-side creatures (constructed via monster constructor)
-        // creature.CombatId is declared uint? in game, but always assigned before creature enters combat
+        // creature.CombatId is declared uint? in game, but always assigned before the creature enters combat
         var monster = creature.Monster!;
 
         var state = new EnemyStateDto
