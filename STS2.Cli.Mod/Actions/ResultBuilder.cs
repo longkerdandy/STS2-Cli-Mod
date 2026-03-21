@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Combat.History;
 using MegaCrit.Sts2.Core.Combat.History.Entries;
+using MegaCrit.Sts2.Core.Entities.Creatures;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -92,7 +93,7 @@ public static class ResultBuilder
     /// <summary>
     ///     Gets the model ID string for a creature (character ID for players, monster ID for enemies).
     /// </summary>
-    private static string GetCreatureId(MegaCrit.Sts2.Core.Entities.Creatures.Creature creature)
+    private static string GetCreatureId(Creature creature)
     {
         if (creature.IsPlayer)
             return creature.Player?.Character.Id.Entry ?? "UNKNOWN";

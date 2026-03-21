@@ -95,14 +95,11 @@ public static class PipeServer
     /// <param name="ct">Cancellation token.</param>
     private static async Task HandleClientAsync(NamedPipeServerStream pipe, CancellationToken ct)
     {
-        StreamReader? reader = null;
-        StreamWriter? writer = null;
-
         try
         {
             // leaveOpen: true — pipe lifecycle is managed by the caller (RunServerLoopAsync)
-            reader = new StreamReader(pipe, Encoding.UTF8, leaveOpen: true);
-            writer = new StreamWriter(pipe, Encoding.UTF8, leaveOpen: true);
+            var reader = new StreamReader(pipe, Encoding.UTF8, leaveOpen: true);
+            var writer = new StreamWriter(pipe, Encoding.UTF8, leaveOpen: true);
             writer.AutoFlush = true;
 
             // Short connection mode: handle single request per connection
@@ -172,7 +169,7 @@ public static class PipeServer
                 "play_card" => await HandlePlayCardRequestAsync(request.Args, request.Target),
 
                 // Synchronous commands — single-frame game state access on the main thread
-                _ => MainThreadExecutor.RunOnMainThread<object>(() => cmd switch
+                _ => MainThreadExecutor.RunOnMainThread(() => cmd switch
                 {
                     "state" => HandleStateRequest(),
                     "end_turn" => HandleEndTurnRequest(),

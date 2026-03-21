@@ -108,7 +108,6 @@ public static class MainThreadExecutor
     private static void DrainQueue()
     {
         while (PendingActions.TryDequeue(out var action))
-        {
             try
             {
                 action();
@@ -117,6 +116,5 @@ public static class MainThreadExecutor
             {
                 Logger.Error($"Main thread action error: {ex.Message}");
             }
-        }
     }
 }
