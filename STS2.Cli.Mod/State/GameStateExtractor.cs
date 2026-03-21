@@ -78,8 +78,11 @@ public static class GameStateExtractor
 
             var result = new CombatStateDto
             {
+                Encounter = combatState.Encounter?.Id.Entry,
+                TurnNumber = combatState.RoundNumber,
                 IsPlayerTurn = combatManager.IsPlayPhase,
-                TurnNumber = combatState.RoundNumber
+                IsPlayerActionsDisabled = combatManager.PlayerActionsDisabled,
+                IsCombatEnding = combatManager.IsOverOrEnding
             };
 
             // Extract player state
