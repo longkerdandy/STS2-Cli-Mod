@@ -10,14 +10,14 @@ namespace STS2.Cli.Mod.Models.Dto;
 public class PlayerStateDto
 {
     /// <summary>
-    ///     Character class ID (e.g., "Ironclad", "Silent", "Defect").
+    ///     Character class ID (e.g., "IRONCLAD", "SILENT", "DEFECT").
     /// </summary>
-    public string? CharacterId { get; set; }
+    public required string CharacterId { get; set; }
 
     /// <summary>
-    ///     Character display name.
+    ///     Localized character display name.
     /// </summary>
-    public string? CharacterName { get; set; }
+    public required string CharacterName { get; set; }
 
     /// <summary>
     ///     Current gold amount.
@@ -67,7 +67,7 @@ public class PlayerStateDto
     /// <summary>
     ///     Number of cards in the draw pile.
     /// </summary>
-    public int DeckCount { get; set; }
+    public int DrawCount { get; set; }
 
     /// <summary>
     ///     Number of cards in the discard pile.
@@ -78,7 +78,12 @@ public class PlayerStateDto
     ///     Number of cards in the exhaust pile.
     /// </summary>
     public int ExhaustCount { get; set; }
-    
+
+    /// <summary>
+    ///     Total number of cards in the master deck (run-scoped, persists across combats).
+    /// </summary>
+    public int DeckCount { get; set; }
+
     /// <summary>
     ///     The Regent's stars resource (null for other characters).
     /// </summary>
@@ -88,4 +93,19 @@ public class PlayerStateDto
     ///     Active powers on the player.
     /// </summary>
     public List<PowerStateDto> Powers { get; set; } = [];
+
+    /// <summary>
+    ///     Channeled orbs for the Defect (null for other characters).
+    /// </summary>
+    public List<OrbStateDto>? Orbs { get; set; }
+
+    /// <summary>
+    ///     Total orb slot capacity for the Defect (null for other characters).
+    /// </summary>
+    public int? OrbSlots { get; set; }
+
+    /// <summary>
+    ///     Pet creatures in combat, e.g. Necrobinder's Osty (null if no pets).
+    /// </summary>
+    public List<PetStateDto>? Pets { get; set; }
 }

@@ -17,52 +17,64 @@ public static class PlayerStateBuilder
     /// </summary>
     public static PlayerStateDto Build(Player player)
     {
-        var state = new PlayerStateDto();
+        var creature = player.Creature;
+        var playerCombatState = player.PlayerCombatState;
 
-        try
+        var state = new PlayerStateDto
         {
             // Character information
-            state.CharacterId = player.Character.Id.Entry;
-            state.CharacterName = StripGameTags(player.Character.Title.GetFormattedText());
-            state.Gold = player.Gold;
+            CharacterId = player.Character.Id.Entry,
+            CharacterName = StripGameTags(player.Character.Title.GetFormattedText()),
+            Gold = player.Gold,
 
-            // Potions
-            state.Potions = PotionStateBuilder.Build(player.PotionSlots);
-
-            // Relics
-            state.Relics = RelicStateBuilder.Build(player.Relics);
-
-            var creature = player.Creature;
-            var playerCombatState = player.PlayerCombatState;
+            // Potions and Relics
+            Potions = PotionStateBuilder.Build(player.PotionSlots),
+            Relics = RelicStateBuilder.Build(player.Relics),
 
             // Basic stats from Creature
-            state.Hp = creature.CurrentHp;
-            state.MaxHp = creature.MaxHp;
-            state.Block = creature.Block;
+            Hp = creature.CurrentHp,
+            MaxHp = creature.MaxHp,
+            Block = creature.Block,
 
-            // Combat stats from PlayerCombatState
-            if (playerCombatState != null)
-            {
-                state.Energy = playerCombatState.Energy;
-                state.MaxEnergy = playerCombatState.MaxEnergy;
+            // Base max energy (run-scoped, available outside combat)
+            MaxEnergy = player.MaxEnergy,
 
-                // Pile counts
-                state.DeckCount = playerCombatState.DrawPile.Cards.Count;
-                state.DiscardCount = playerCombatState.DiscardPile.Cards.Count;
-                state.ExhaustCount = playerCombatState.ExhaustPile.Cards.Count;
-                state.HandCount = playerCombatState.Hand.Cards.Count;
-
-                // The Regent's stars resource
-                if (player.Character.ShouldAlwaysShowStarCounter || playerCombatState.Stars > 0)
-                    state.Stars = playerCombatState.Stars;
-            }
+            // Master deck size (run-scoped, persists across combats)
+            DeckCount = player.Deck.Cards.Count,
 
             // Powers from Creature
-            state.Powers = PowerStateBuilder.Build(creature.Powers);
-        }
-        catch (Exception ex)
+            Powers = PowerStateBuilder.Build(creature.Powers)
+        };
+
+        // Combat stats from PlayerCombatState
+        if (playerCombatState != null)
         {
-            Logger.Warning($"Failed to build player state: {ex.Message}");
+            state.Energy = playerCombatState.Energy;
+            // In combat, use the effective max energy (includes hook modifications)
+            state.MaxEnergy = playerCombatState.MaxEnergy;
+
+            // Combat pile counts
+            state.DrawCount = playerCombatState.DrawPile.Cards.Count;
+            state.DiscardCount = playerCombatState.DiscardPile.Cards.Count;
+            state.ExhaustCount = playerCombatState.ExhaustPile.Cards.Count;
+            state.HandCount = playerCombatState.Hand.Cards.Count;
+
+            // The Regent's stars resource
+            if (player.Character.ShouldAlwaysShowStarCounter || playerCombatState.Stars > 0)
+                state.Stars = playerCombatState.Stars;
+
+            // Orbs (Defect exclusive)
+            var orbQueue = playerCombatState.OrbQueue;
+            if (orbQueue.Capacity > 0)
+            {
+                state.OrbSlots = orbQueue.Capacity;
+                state.Orbs = OrbStateBuilder.Build(orbQueue);
+            }
+
+            // Pets (Necrobinder's Osty, Byrdpip, etc.)
+            var pets = playerCombatState.Pets;
+            if (pets.Count > 0)
+                state.Pets = PetStateBuilder.Build(pets);
         }
 
         return state;
