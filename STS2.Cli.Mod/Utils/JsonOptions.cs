@@ -25,12 +25,11 @@ public static class JsonOptions
             PropertyNameCaseInsensitive = true,
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            WriteIndented = false
-        };
-
-        options.TypeInfoResolver = new DefaultJsonTypeInfoResolver
-        {
-            Modifiers = { IgnoreEmptyCollections }
+            WriteIndented = false,
+            TypeInfoResolver = new DefaultJsonTypeInfoResolver
+            {
+                Modifiers = { IgnoreEmptyCollections }
+            }
         };
 
         return options;

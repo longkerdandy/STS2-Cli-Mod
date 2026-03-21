@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Localization.DynamicVars;
 using MegaCrit.Sts2.Core.Models;
 using STS2.Cli.Mod.Models.Dto;
 using STS2.Cli.Mod.Utils;
@@ -9,6 +8,7 @@ namespace STS2.Cli.Mod.State.Builders;
 
 /// <summary>
 ///     Builds <see cref="CardStateDto" /> from <see cref="CardModel" />.
+///     Assignment order matches <see cref="CardStateDto" /> field layout.
 /// </summary>
 public static class CardStateBuilder
 {
@@ -19,6 +19,7 @@ public static class CardStateBuilder
     /// </summary>
     public static CardStateDto Build(CardModel card, int index)
     {
+        // Index + Identity + Classification + Upgrade (all from safe non-nullable properties)
         var state = new CardStateDto
         {
             Index = index,
@@ -31,35 +32,33 @@ public static class CardStateBuilder
             IsUpgraded = card.IsUpgraded
         };
 
-        // Energy cost
+        // Cost — Energy
         try
         {
             if (card.EnergyCost.CostsX)
-            {
                 state.Cost = -1;
-            }
             else
-            {
                 state.Cost = card.EnergyCost.GetAmountToSpend();
-            }
         }
         catch (Exception ex)
         {
             Logger.Warning($"Failed to read energy cost for {card.Id}: {ex.Message}");
         }
 
-        // Playability
+        // Cost — Star (null = no star cost, -1 = X-star)
         try
         {
-            card.CanPlay(out var unplayableReason, out _);
-            state.CanPlay = unplayableReason == UnplayableReason.None;
-            state.UnplayableReason = unplayableReason != UnplayableReason.None
-                ? unplayableReason.ToString()
-                : null;
+            if (card.CanonicalStarCost >= 0)
+            {
+                if (card.HasStarCostX)
+                    state.StarCost = -1;
+                else
+                    state.StarCost = card.GetStarCostWithModifiers();
+            }
         }
         catch (Exception ex)
         {
-            Logger.Warning($"Failed to check playability for {card.Id}: {ex.Message}");
+            Logger.Warning($"Failed to read star cost for {card.Id}: {ex.Message}");
         }
 
         // Keywords
@@ -76,7 +75,21 @@ public static class CardStateBuilder
             Logger.Warning($"Failed to read keywords for {card.Id}: {ex.Message}");
         }
 
-        // Damage (preview value after all modifiers)
+        // Tags
+        try
+        {
+            foreach (var tag in card.Tags)
+            {
+                if (tag != CardTag.None)
+                    state.Tags.Add(tag.ToString());
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to read tags for {card.Id}: {ex.Message}");
+        }
+
+        // DynamicVars — Damage (preview value after all modifiers)
         try
         {
             if (card.DynamicVars.TryGetValue("Damage", out var damageVar))
@@ -87,7 +100,7 @@ public static class CardStateBuilder
             Logger.Warning($"Failed to read damage for {card.Id}: {ex.Message}");
         }
 
-        // Block (preview value after all modifiers)
+        // DynamicVars — Block (preview value after all modifiers)
         try
         {
             if (card.DynamicVars.TryGetValue("Block", out var blockVar))
@@ -96,6 +109,42 @@ public static class CardStateBuilder
         catch (Exception ex)
         {
             Logger.Warning($"Failed to read block for {card.Id}: {ex.Message}");
+        }
+
+        // Enchantment
+        try
+        {
+            if (card.Enchantment is { } enchantment)
+                state.Enchantment = enchantment.Id.Entry;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to read enchantment for {card.Id}: {ex.Message}");
+        }
+
+        // Affliction
+        try
+        {
+            if (card.Affliction is { } affliction)
+                state.Affliction = affliction.Id.Entry;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to read affliction for {card.Id}: {ex.Message}");
+        }
+
+        // Playability
+        try
+        {
+            card.CanPlay(out var unplayableReason, out _);
+            state.CanPlay = unplayableReason == UnplayableReason.None;
+            state.UnplayableReason = unplayableReason != UnplayableReason.None
+                ? unplayableReason.ToString()
+                : null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to check playability for {card.Id}: {ex.Message}");
         }
 
         return state;
