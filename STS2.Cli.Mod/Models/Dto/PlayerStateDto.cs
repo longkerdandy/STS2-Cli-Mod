@@ -4,11 +4,14 @@ namespace STS2.Cli.Mod.Models.Dto;
 
 /// <summary>
 ///     Player state DTO containing character stats and resources.
+///     Field order follows game source: Player → Creature → PlayerCombatState.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 [SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 public class PlayerStateDto
 {
+    // ------ Player (run-scoped) ------
+
     /// <summary>
     ///     Character class ID (e.g., "IRONCLAD", "SILENT", "DEFECT").
     /// </summary>
@@ -20,9 +23,9 @@ public class PlayerStateDto
     public required string CharacterName { get; set; }
 
     /// <summary>
-    ///     Current gold amount.
+    ///     Acquired relics.
     /// </summary>
-    public int Gold { get; set; }
+    public List<RelicStateDto> Relics { get; set; } = [];
 
     /// <summary>
     ///     Active potions in inventory.
@@ -30,10 +33,27 @@ public class PlayerStateDto
     public List<PotionStateDto> Potions { get; set; } = [];
 
     /// <summary>
-    ///     Acquired relics.
+    ///     Current gold amount.
     /// </summary>
-    public List<RelicStateDto> Relics { get; set; } = [];
-    
+    public int Gold { get; set; }
+
+    /// <summary>
+    ///     Total number of cards in the master deck (run-scoped, persists across combats).
+    /// </summary>
+    public int DeckCount { get; set; }
+
+    /// <summary>
+    ///     Maximum energy (run-scoped base, overridden by combat-scoped effective value when in combat).
+    /// </summary>
+    public int MaxEnergy { get; set; }
+
+    // ------ Creature ------
+
+    /// <summary>
+    ///     Current block (temporary HP).
+    /// </summary>
+    public int Block { get; set; }
+
     /// <summary>
     ///     Current HP.
     /// </summary>
@@ -45,19 +65,16 @@ public class PlayerStateDto
     public int MaxHp { get; set; }
 
     /// <summary>
-    ///     Current energy.
+    ///     Active powers on the player.
     /// </summary>
-    public int Energy { get; set; }
+    public List<PowerStateDto> Powers { get; set; } = [];
+
+    // ------ PlayerCombatState (combat-scoped, zero/null outside combat) ------
 
     /// <summary>
-    ///     Maximum energy (typically 3).
+    ///     Pet creatures in combat, e.g. Necrobinder's Osty (null if no pets).
     /// </summary>
-    public int MaxEnergy { get; set; }
-
-    /// <summary>
-    ///     Current block (temporary HP).
-    /// </summary>
-    public int Block { get; set; }
+    public List<PetStateDto>? Pets { get; set; }
 
     /// <summary>
     ///     Number of cards in hand.
@@ -80,19 +97,14 @@ public class PlayerStateDto
     public int ExhaustCount { get; set; }
 
     /// <summary>
-    ///     Total number of cards in the master deck (run-scoped, persists across combats).
+    ///     Current energy.
     /// </summary>
-    public int DeckCount { get; set; }
+    public int Energy { get; set; }
 
     /// <summary>
     ///     The Regent's stars resource (null for other characters).
     /// </summary>
     public int? Stars { get; set; }
-
-    /// <summary>
-    ///     Active powers on the player.
-    /// </summary>
-    public List<PowerStateDto> Powers { get; set; } = [];
 
     /// <summary>
     ///     Channeled orbs for the Defect (null for other characters).
@@ -103,9 +115,4 @@ public class PlayerStateDto
     ///     Total orb slot capacity for the Defect (null for other characters).
     /// </summary>
     public int? OrbSlots { get; set; }
-
-    /// <summary>
-    ///     Pet creatures in combat, e.g. Necrobinder's Osty (null if no pets).
-    /// </summary>
-    public List<PetStateDto>? Pets { get; set; }
 }

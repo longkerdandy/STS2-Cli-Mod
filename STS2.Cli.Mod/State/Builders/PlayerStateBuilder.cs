@@ -6,7 +6,7 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 namespace STS2.Cli.Mod.State.Builders;
 
 /// <summary>
-///     Builds PlayerStateDto from Player and Creature.
+///     Builds <see cref="PlayerStateDto" /> from <see cref="Player" /> and its sub-objects.
 /// </summary>
 public static class PlayerStateBuilder
 {
@@ -14,6 +14,7 @@ public static class PlayerStateBuilder
 
     /// <summary>
     ///     Builds a player state DTO.
+    ///     Field assignment order follows game source: Player → Creature → PlayerCombatState.
     /// </summary>
     public static PlayerStateDto Build(Player player)
     {
@@ -22,44 +23,41 @@ public static class PlayerStateBuilder
 
         var state = new PlayerStateDto
         {
-            // Character information
+            // Player (run-scoped)
             CharacterId = player.Character.Id.Entry,
             CharacterName = StripGameTags(player.Character.Title.GetFormattedText()),
-            Gold = player.Gold,
-
-            // Potions and Relics
-            Potions = PotionStateBuilder.Build(player.PotionSlots),
             Relics = RelicStateBuilder.Build(player.Relics),
-
-            // Basic stats from Creature
-            Hp = creature.CurrentHp,
-            MaxHp = creature.MaxHp,
-            Block = creature.Block,
-
-            // Base max energy (run-scoped, available outside combat)
+            Potions = PotionStateBuilder.Build(player.PotionSlots),
+            Gold = player.Gold,
+            DeckCount = player.Deck.Cards.Count,
             MaxEnergy = player.MaxEnergy,
 
-            // Master deck size (run-scoped, persists across combats)
-            DeckCount = player.Deck.Cards.Count,
-
-            // Powers from Creature
+            // Creature
+            Block = creature.Block,
+            Hp = creature.CurrentHp,
+            MaxHp = creature.MaxHp,
             Powers = PowerStateBuilder.Build(creature.Powers)
         };
 
-        // Combat stats from PlayerCombatState
+        // PlayerCombatState (combat-scoped)
         if (playerCombatState != null)
         {
-            state.Energy = playerCombatState.Energy;
-            // In combat, use the effective max energy (includes hook modifications)
-            state.MaxEnergy = playerCombatState.MaxEnergy;
+            // Pets
+            var pets = playerCombatState.Pets;
+            if (pets.Count > 0)
+                state.Pets = PetStateBuilder.Build(pets);
 
-            // Combat pile counts
+            // Card pile counts
+            state.HandCount = playerCombatState.Hand.Cards.Count;
             state.DrawCount = playerCombatState.DrawPile.Cards.Count;
             state.DiscardCount = playerCombatState.DiscardPile.Cards.Count;
             state.ExhaustCount = playerCombatState.ExhaustPile.Cards.Count;
-            state.HandCount = playerCombatState.Hand.Cards.Count;
 
-            // The Regent's stars resource
+            // Energy (override run-scoped base with combat-scoped effective value)
+            state.Energy = playerCombatState.Energy;
+            state.MaxEnergy = playerCombatState.MaxEnergy;
+
+            // Stars (Regent exclusive)
             if (player.Character.ShouldAlwaysShowStarCounter || playerCombatState.Stars > 0)
                 state.Stars = playerCombatState.Stars;
 
@@ -67,14 +65,9 @@ public static class PlayerStateBuilder
             var orbQueue = playerCombatState.OrbQueue;
             if (orbQueue.Capacity > 0)
             {
-                state.OrbSlots = orbQueue.Capacity;
                 state.Orbs = OrbStateBuilder.Build(orbQueue);
+                state.OrbSlots = orbQueue.Capacity;
             }
-
-            // Pets (Necrobinder's Osty, Byrdpip, etc.)
-            var pets = playerCombatState.Pets;
-            if (pets.Count > 0)
-                state.Pets = PetStateBuilder.Build(pets);
         }
 
         return state;
