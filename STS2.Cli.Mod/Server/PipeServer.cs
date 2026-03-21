@@ -171,7 +171,7 @@ public static class PipeServer
                     "state" => HandleStateRequest(),
                     "play_card" => HandlePlayCardRequest(request.Args, request.Target),
                     "end_turn" => HandleEndTurnRequest(),
-                    _ => (object)new
+                    _ => new
                     {
                         ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}"
                     }
