@@ -8,8 +8,6 @@
     <RootNamespace>STS2.Cli.Mod</RootNamespace>
     <!-- Allow unsafe code for potential pointer operations -->
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
-    <!-- Define WINDOWS constant for platform-specific code -->
-    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(DefineConstants);WINDOWS</DefineConstants>
   </PropertyGroup>
 
   <!-- 
@@ -61,6 +59,9 @@
     <Content Include="STS2.Cli.Mod.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
   </ItemGroup>
 
   <!-- Deploy to game directory after build -->

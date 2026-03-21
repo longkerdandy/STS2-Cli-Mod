@@ -1,14 +1,13 @@
 using System.IO.Pipes;
+using System.Runtime.InteropServices;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using STS2.Cli.Mod.Actions;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
-#if WINDOWS
-using System.Security.AccessControl;
-using System.Security.Principal;
-#endif
 
 namespace STS2.Cli.Mod.Server;
 
@@ -65,35 +64,7 @@ public static class PipeServer
             {
                 Logger.Info("Creating Named Pipe instance...");
 
-#if WINDOWS
-                // Windows: Set up security to allow current user access
-#pragma warning disable CA1416 // Validate platform compatibility
-                var pipeSecurity = new PipeSecurity();
-                pipeSecurity.AddAccessRule(new PipeAccessRule(
-                    new SecurityIdentifier(WellKnownSidType.WorldSid, null),
-                    PipeAccessRights.ReadWrite,
-                    AccessControlType.Allow));
-
-                pipe = NamedPipeServerStreamAcl.Create(
-                    "sts2-cli-mod",
-                    PipeDirection.InOut,
-                    1,
-                    PipeTransmissionMode.Byte,
-                    PipeOptions.Asynchronous,
-                    4096,
-                    4096,
-                    pipeSecurity);
-#pragma warning restore CA1416
-#else
-                // Linux/macOS: Standard constructor uses Unix Domain Sockets
-                // No ACL needed - CLI and game run under the same user
-                pipe = new NamedPipeServerStream(
-                    "sts2-cli-mod",
-                    PipeDirection.InOut,
-                    1,
-                    PipeTransmissionMode.Byte,
-                    PipeOptions.Asynchronous);
-#endif
+                pipe = CreatePipeServer();
 
                 Logger.Info("Waiting for CLI connection...");
                 await pipe.WaitForConnectionAsync(ct);
@@ -124,13 +95,16 @@ public static class PipeServer
     /// <param name="ct">Cancellation token.</param>
     private static async Task HandleClientAsync(NamedPipeServerStream pipe, CancellationToken ct)
     {
-        // leaveOpen: true — pipe lifecycle is managed by the caller (RunServerLoopAsync)
-        using var reader = new StreamReader(pipe, Encoding.UTF8, leaveOpen: true);
-        await using var writer = new StreamWriter(pipe, Encoding.UTF8, leaveOpen: true);
-        writer.AutoFlush = true;
+        StreamReader? reader = null;
+        StreamWriter? writer = null;
 
         try
         {
+            // leaveOpen: true — pipe lifecycle is managed by the caller (RunServerLoopAsync)
+            reader = new StreamReader(pipe, Encoding.UTF8, leaveOpen: true);
+            writer = new StreamWriter(pipe, Encoding.UTF8, leaveOpen: true);
+            writer.AutoFlush = true;
+
             // Short connection mode: handle single request per connection
             var requestJson = await reader.ReadLineAsync(ct);
             if (requestJson == null)
@@ -161,7 +135,7 @@ public static class PipeServer
             }
 
             // Process the request and write the response
-            var response = ProcessRequest(request);
+            var response = await ProcessRequestAsync(request);
             var responseJson = JsonSerializer.Serialize(response, JsonOptions.Default);
             await writer.WriteLineAsync(responseJson);
         }
@@ -177,29 +151,32 @@ public static class PipeServer
 
     /// <summary>
     ///     Processes a parsed request and routes it to the appropriate handler.
-    ///     Commands that access game state are executed on the main thread via <see cref="MainThreadExecutor" />.
+    ///     Synchronous commands (state, end_turn) use <see cref="MainThreadExecutor.RunOnMainThread{T}" />.
+    ///     Asynchronous commands (play_card) use <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" />
+    ///     to allow awaiting multi-frame game actions.
     /// </summary>
     /// <param name="request">The parsed request object.</param>
     /// <returns>Response object to be serialized as JSON.</returns>
-    private static object ProcessRequest(Request request)
+    private static async Task<object> ProcessRequestAsync(Request request)
     {
         try
         {
-            return request.Cmd.ToLower() switch
+            var cmd = request.Cmd.ToLower();
+
+            return cmd switch
             {
                 // ping does not access game state — handle directly on the pipe thread
                 "ping" => new { ok = true, data = new { connected = true } },
 
-                // All other commands require game state access on the main thread
-                _ => MainThreadExecutor.RunOnMainThread(() => request.Cmd.ToLower() switch
+                // play_card is async — spans multiple frames waiting for action completion
+                "play_card" => await HandlePlayCardRequestAsync(request.Args, request.Target),
+
+                // Synchronous commands — single-frame game state access on the main thread
+                _ => MainThreadExecutor.RunOnMainThread<object>(() => cmd switch
                 {
                     "state" => HandleStateRequest(),
-                    "play_card" => HandlePlayCardRequest(request.Args, request.Target),
                     "end_turn" => HandleEndTurnRequest(),
-                    _ => new
-                    {
-                        ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}"
-                    }
+                    _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
                 })
             };
         }
@@ -224,12 +201,14 @@ public static class PipeServer
     }
 
     /// <summary>
-    ///     Handles the 'play_card' command by validating arguments and invoking the play card handler.
+    ///     Handles the 'play_card' command asynchronously.
+    ///     Validates arguments on the pipe thread, then delegates to <see cref="PlayCardHandler.ExecuteAsync" />
+    ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to await action completion.
     /// </summary>
     /// <param name="args">Command arguments, expects card index as the first element.</param>
     /// <param name="target">Optional target combat ID for targeted cards.</param>
-    /// <returns>Response indicating success or failure of the play card action.</returns>
-    private static object HandlePlayCardRequest(int[]? args, int? target)
+    /// <returns>Response indicating success or failure, with execution results on success.</returns>
+    private static async Task<object> HandlePlayCardRequestAsync(int[]? args, int? target)
     {
         if (args == null || args.Length == 0)
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Card index required" };
@@ -237,7 +216,7 @@ public static class PipeServer
         var cardIndex = args[0];
         Logger.Info($"Requested to play card at index {cardIndex}, target={target?.ToString() ?? "none"}");
 
-        return PlayCardHandler.Execute(cardIndex, target);
+        return await MainThreadExecutor.RunOnMainThreadAsync(() => PlayCardHandler.ExecuteAsync(cardIndex, target));
     }
 
     /// <summary>
@@ -249,5 +228,43 @@ public static class PipeServer
         Logger.Info("Requested to end turn");
 
         return EndTurnHandler.Execute();
+    }
+
+    /// <summary>
+    ///     Creates a <see cref="NamedPipeServerStream" /> with platform-appropriate settings.
+    ///     On Windows, sets a permissive ACL so the CLI process (running under the same or different user)
+    ///     can connect. On Linux/macOS, uses the standard constructor (Unix Domain Sockets, no ACL needed).
+    /// </summary>
+    private static NamedPipeServerStream CreatePipeServer()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+#pragma warning disable CA1416 // Validate platform compatibility
+            var pipeSecurity = new PipeSecurity();
+            pipeSecurity.AddAccessRule(new PipeAccessRule(
+                new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                PipeAccessRights.ReadWrite,
+                AccessControlType.Allow));
+
+            return NamedPipeServerStreamAcl.Create(
+                "sts2-cli-mod",
+                PipeDirection.InOut,
+                1,
+                PipeTransmissionMode.Byte,
+                PipeOptions.Asynchronous,
+                4096,
+                4096,
+                pipeSecurity);
+#pragma warning restore CA1416
+        }
+
+        // Linux/macOS: Standard constructor uses Unix Domain Sockets
+        // No ACL needed — CLI and game run under the same user
+        return new NamedPipeServerStream(
+            "sts2-cli-mod",
+            PipeDirection.InOut,
+            1,
+            PipeTransmissionMode.Byte,
+            PipeOptions.Asynchronous);
     }
 }
