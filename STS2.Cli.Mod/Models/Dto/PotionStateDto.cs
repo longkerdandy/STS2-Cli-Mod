@@ -3,38 +3,45 @@ using System.Diagnostics.CodeAnalysis;
 namespace STS2.Cli.Mod.Models.Dto;
 
 /// <summary>
-///     Potion state DTO representing a potion in the player's inventory.
+///     Potion state DTO representing a potion in the player's belt.
+///     Null slots (empty) are excluded from the list; use Slot to identify position.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class PotionStateDto
 {
     /// <summary>
-    ///     Potion slot index (0-2).
+    ///     Slot index in the player's potion belt (0-based).
+    ///     Gaps indicate empty slots.
     /// </summary>
     public int Slot { get; set; }
 
     /// <summary>
-    ///     Potion ID (e.g., "FirePotion").
+    ///     Potion model ID (e.g., "FIRE_POTION", "ENTROPIC_BREW").
     /// </summary>
-    public string? Id { get; set; }
+    public required string Id { get; set; }
 
     /// <summary>
-    ///     Display name.
+    ///     Localized display name.
     /// </summary>
-    public string? Name { get; set; }
+    public required string Name { get; set; }
 
     /// <summary>
-    ///     Effect description with dynamic values resolved.
+    ///     Effect description with dynamic values resolved (e.g., "Deal 20 damage.").
     /// </summary>
-    public string? Description { get; set; }
+    public required string Description { get; set; }
 
     /// <summary>
-    ///     Whether potion can be used in the current context.
+    ///     Rarity tier: Common, Uncommon, Rare, Event, Token.
     /// </summary>
-    public bool CanUseInCombat { get; set; }
+    public required string Rarity { get; set; }
 
     /// <summary>
-    ///     Target type: Self, AnyEnemy, etc.
+    ///     When the potion can be used: CombatOnly, AnyTime, Automatic, None.
     /// </summary>
-    public string? TargetType { get; set; }
+    public required string Usage { get; set; }
+
+    /// <summary>
+    ///     Targeting mode: Self, AnyEnemy, AllEnemies, AnyPlayer, etc.
+    /// </summary>
+    public required string TargetType { get; set; }
 }

@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Entities.Potions;
 using STS2.Cli.Mod.Models.Dto;
 using STS2.Cli.Mod.Utils;
 using static STS2.Cli.Mod.Utils.TextUtils;
@@ -28,21 +27,7 @@ public static class PlayerStateBuilder
             state.Gold = player.Gold;
 
             // Potions
-            var slotIndex = 0;
-            foreach (var potion in player.PotionSlots)
-            {
-                if (potion != null)
-                    state.Potions.Add(new PotionStateDto
-                    {
-                        Slot = slotIndex,
-                        Id = potion.Id.Entry,
-                        Name = StripGameTags(potion.Title.GetFormattedText()),
-                        Description = StripGameTags(potion.DynamicDescription.GetFormattedText()),
-                        CanUseInCombat = potion.Usage is PotionUsage.CombatOnly or PotionUsage.AnyTime,
-                        TargetType = potion.TargetType.ToString()
-                    });
-                slotIndex++;
-            }
+            state.Potions = PotionStateBuilder.Build(player.PotionSlots);
 
             // Relics
             foreach (var relic in player.Relics)
