@@ -2,6 +2,7 @@ using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 using STS2.Cli.Cmd.Models.Message;
+using STS2.Cli.Cmd.Utils;
 
 namespace STS2.Cli.Cmd.Services;
 
@@ -119,11 +120,11 @@ public class PipeClient : IDisposable
                 Target = target
             };
 
-            var requestJson = JsonSerializer.Serialize(request);
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
             await _writer!.WriteLineAsync(requestJson);
 
             var responseJson = await _reader!.ReadLineAsync();
-            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson);
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
         }
         catch (Exception)
         {

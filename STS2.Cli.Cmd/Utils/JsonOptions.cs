@@ -9,7 +9,7 @@ namespace STS2.Cli.Cmd.Utils;
 public static class JsonOptions
 {
     /// <summary>
-    ///     Default JSON serializer options with Unicode support (compact format).
+    ///     Default JSON serializer options with camelCase naming and Unicode support (compact format).
     /// </summary>
     public static JsonSerializerOptions Default { get; } = new()
     {
@@ -21,10 +21,8 @@ public static class JsonOptions
     /// <summary>
     ///     Pretty-print JSON serializer options with indentation.
     /// </summary>
-    public static JsonSerializerOptions Pretty { get; } = new()
+    public static JsonSerializerOptions Pretty { get; } = new(Default)
     {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         WriteIndented = true
     };
 }

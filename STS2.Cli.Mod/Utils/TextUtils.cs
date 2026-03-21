@@ -5,13 +5,19 @@ namespace STS2.Cli.Mod.Utils;
 /// <summary>
 ///     Text utility methods for cleaning and formatting game text.
 /// </summary>
-public static class TextUtils
+public static partial class TextUtils
 {
     // Standard BBCode pattern: matches everything between [ and ] (non-greedy)
-    private static readonly Regex BbCodeRegex = new(@"\[.*?\]", RegexOptions.Compiled);
-    
+    [GeneratedRegex(@"\[.*?\]")]
+    private static partial Regex BbCodeRegex();
+
     // Rich text pattern: matches everything between < and >
-    private static readonly Regex RichTextRegex = new("<[^>]+>", RegexOptions.Compiled);
+    [GeneratedRegex("<[^>]+>")]
+    private static partial Regex RichTextRegex();
+
+    // Whitespace normalization pattern: one or more whitespace chars
+    [GeneratedRegex(@"\s+")]
+    private static partial Regex WhitespaceRegex();
 
     /// <summary>
     ///     Removes BBCode tags from text (e.g., [gold], [/gold], [color=red], etc.)
@@ -21,7 +27,7 @@ public static class TextUtils
         if (string.IsNullOrEmpty(text))
             return string.Empty;
 
-        return BbCodeRegex.Replace(text, "").Trim();
+        return BbCodeRegex().Replace(text, "").Trim();
     }
 
     /// <summary>
@@ -32,7 +38,7 @@ public static class TextUtils
         if (string.IsNullOrEmpty(text))
             return string.Empty;
 
-        return RichTextRegex.Replace(text, "").Trim();
+        return RichTextRegex().Replace(text, "").Trim();
     }
 
     /// <summary>
@@ -45,10 +51,10 @@ public static class TextUtils
 
         var cleaned = StripBbCode(text);
         cleaned = StripRichText(cleaned);
-        
+
         // Normalize whitespace
-        cleaned = Regex.Replace(cleaned, @"\s+", " ");
-        
+        cleaned = WhitespaceRegex().Replace(cleaned, " ");
+
         return cleaned.Trim();
     }
 }

@@ -12,7 +12,7 @@ namespace STS2.Cli.Mod.Utils;
 public static class JsonOptions
 {
     /// <summary>
-    ///     Default JSON serializer options with Unicode support.
+    ///     Default JSON serializer options with camelCase naming and Unicode support.
     ///     Ignores null values and empty collections for cleaner output.
     /// </summary>
     public static JsonSerializerOptions Default { get; } = CreateOptions();
@@ -23,15 +23,11 @@ public static class JsonOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             PropertyNameCaseInsensitive = true,
-            // Allow Unicode characters without escaping (fixes Chinese text)
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-            // Do not write null values
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-            // Do not write indented (compact format)
             WriteIndented = false
         };
 
-        // Add modifier to ignore empty collections
         options.TypeInfoResolver = new DefaultJsonTypeInfoResolver
         {
             Modifiers = { IgnoreEmptyCollections }
@@ -41,35 +37,17 @@ public static class JsonOptions
     }
 
     /// <summary>
-    ///     Modifier to ignore empty collections during serialization.
+    ///     Modifier that suppresses serialization of null or empty collections.
+    ///     Applies to any property whose type implements <see cref="ICollection" />.
     /// </summary>
     private static void IgnoreEmptyCollections(JsonTypeInfo typeInfo)
     {
         foreach (var property in typeInfo.Properties)
         {
-            // Check if property is a collection type
-            if (property.PropertyType.IsGenericType)
+            if (typeof(ICollection).IsAssignableFrom(property.PropertyType))
             {
-                var genericTypeDef = property.PropertyType.GetGenericTypeDefinition();
-                if (genericTypeDef == typeof(List<>) ||
-                    genericTypeDef == typeof(IList<>) ||
-                    genericTypeDef == typeof(IEnumerable<>) ||
-                    genericTypeDef == typeof(ICollection<>) ||
-                    genericTypeDef == typeof(Dictionary<,>))
-                {
-                    // Set custom should serialize predicate
-                    property.ShouldSerialize = (_, value) =>
-                    {
-                        if (value == null) return false;
-                        if (value is ICollection collection) return collection.Count > 0;
-                        if (value is IEnumerable enumerable)
-                        {
-                            var enumerator = enumerable.GetEnumerator();
-                            return enumerator.MoveNext();
-                        }
-                        return true;
-                    };
-                }
+                property.ShouldSerialize = (_, value) =>
+                    value is ICollection { Count: > 0 };
             }
         }
     }
