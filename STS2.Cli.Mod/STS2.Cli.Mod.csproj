@@ -8,13 +8,38 @@
     <RootNamespace>STS2.Cli.Mod</RootNamespace>
     <!-- Allow unsafe code for potential pointer operations -->
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <!-- Define WINDOWS constant for platform-specific code -->
+    <DefineConstants Condition="$([MSBuild]::IsOSPlatform('Windows'))">$(DefineConstants);WINDOWS</DefineConstants>
   </PropertyGroup>
 
-  <!-- Game directory reference -->
+  <!-- 
+    Game directory detection - supports Windows, WSL, and IDE scenarios
+    Priority: 1. STS2_GAME_DIR env var > 2. Auto-detect based on platform
+  -->
   <PropertyGroup>
-    <STS2GameDir Condition="'$(STS2GameDir)' == ''">/mnt/c/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2</STS2GameDir>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
+    
+    <!-- Use environment variable if set -->
+    <STS2GameDir Condition="'$(STS2GameDir)' == ''">$(STS2_GAME_DIR)</STS2GameDir>
+    
+    <!-- Windows native (PowerShell, CMD, Visual Studio, Rider) -->
+    <STS2GameDir Condition="'$(STS2GameDir)' == '' AND '$(OS)' == 'Windows_NT'">C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2</STS2GameDir>
+    
+    <!-- WSL - detect if running in WSL by checking /mnt/c existence -->
+    <STS2GameDir Condition="'$(STS2GameDir)' == '' AND Exists('/mnt/c/')">/mnt/c/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2</STS2GameDir>
+    
+    <!-- macOS - detect by checking macOS-specific directory -->
+    <STS2GameDir Condition="'$(STS2GameDir)' == '' AND Exists('/System/Library/') AND Exists('$(HOME)/Library/Application Support/Steam/')">$(HOME)/Library/Application Support/Steam/steamapps/common/Slay the Spire 2</STS2GameDir>
+    
+    <!-- Linux native (Steam default) -->
+    <STS2GameDir Condition="'$(STS2GameDir)' == ''">$(HOME)/.local/share/Steam/steamapps/common/Slay the Spire 2</STS2GameDir>
   </PropertyGroup>
+
+  <!-- Validate game directory exists -->
+  <Target Name="ValidateGameDir" BeforeTargets="BeforeBuild">
+    <Error Text="Game directory not found: $(STS2GameDir). Please set STS2_GAME_DIR environment variable or ensure Steam is installed in the default location." Condition="!Exists('$(STS2GameDir)/data_sts2_windows_x86_64/sts2.dll')" />
+    <Message Text="Using game directory: $(STS2GameDir)" Importance="high" />
+  </Target>
 
   <!-- Direct references to game assemblies -->
   <ItemGroup>
@@ -39,7 +64,7 @@
   </ItemGroup>
 
   <!-- Deploy to game directory after build -->
-  <Target Name="DeployMod" AfterTargets="Build">
+  <Target Name="DeployMod" AfterTargets="Build" Condition="Exists('$(STS2GameDir)/mods/')">
     <Message Text="Deploying mod to $(STS2GameDir)/mods/" Importance="high" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(STS2GameDir)/mods/" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(ProjectDir)STS2.Cli.Mod.json" DestinationFolder="$(STS2GameDir)/mods/" SkipUnchangedFiles="true" />

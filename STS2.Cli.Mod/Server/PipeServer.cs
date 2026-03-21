@@ -5,12 +5,16 @@ using STS2.Cli.Mod.Actions;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
+#if WINDOWS
+using System.Security.AccessControl;
+using System.Security.Principal;
+#endif
 
 namespace STS2.Cli.Mod.Server;
 
 /// <summary>
 ///     Named Pipe server for communication with the CLI tool.
-///     Runs a single-connection loop: create pipe → wait for client → handle one request → disconnect → repeat.
+///     Runs a single-connection loop: create pipe → wait for the client → handle one request → disconnect → repeat.
 /// </summary>
 public static class PipeServer
 {
@@ -61,14 +65,35 @@ public static class PipeServer
             {
                 Logger.Info("Creating Named Pipe instance...");
 
-                // Standard constructor — works cross-platform (.NET uses Unix Domain Sockets on Linux).
-                // No PipeSecurity/ACL needed: CLI and game run under the same user.
+#if WINDOWS
+                // Windows: Set up security to allow current user access
+#pragma warning disable CA1416 // Validate platform compatibility
+                var pipeSecurity = new PipeSecurity();
+                pipeSecurity.AddAccessRule(new PipeAccessRule(
+                    new SecurityIdentifier(WellKnownSidType.WorldSid, null),
+                    PipeAccessRights.ReadWrite,
+                    AccessControlType.Allow));
+
+                pipe = NamedPipeServerStreamAcl.Create(
+                    "sts2-cli-mod",
+                    PipeDirection.InOut,
+                    1,
+                    PipeTransmissionMode.Byte,
+                    PipeOptions.Asynchronous,
+                    4096,
+                    4096,
+                    pipeSecurity);
+#pragma warning restore CA1416
+#else
+                // Linux/macOS: Standard constructor uses Unix Domain Sockets
+                // No ACL needed - CLI and game run under the same user
                 pipe = new NamedPipeServerStream(
                     "sts2-cli-mod",
                     PipeDirection.InOut,
                     1,
                     PipeTransmissionMode.Byte,
                     PipeOptions.Asynchronous);
+#endif
 
                 Logger.Info("Waiting for CLI connection...");
                 await pipe.WaitForConnectionAsync(ct);
@@ -135,7 +160,7 @@ public static class PipeServer
                 return;
             }
 
-            // Process the request and write response
+            // Process the request and write the response
             var response = ProcessRequest(request);
             var responseJson = JsonSerializer.Serialize(response, JsonOptions.Default);
             await writer.WriteLineAsync(responseJson);
@@ -162,7 +187,7 @@ public static class PipeServer
         {
             return request.Cmd.ToLower() switch
             {
-                // ping does not access game state — handle directly on pipe thread
+                // ping does not access game state — handle directly on the pipe thread
                 "ping" => new { ok = true, data = new { connected = true } },
 
                 // All other commands require game state access on the main thread
@@ -185,7 +210,7 @@ public static class PipeServer
     }
 
     /// <summary>
-    ///     Handles the 'state' command by extracting current game state.
+    ///     Handles the 'state' command by extracting the current game state.
     /// </summary>
     /// <returns>Response containing the game state DTO.</returns>
     private static object HandleStateRequest()
@@ -201,7 +226,7 @@ public static class PipeServer
     /// <summary>
     ///     Handles the 'play_card' command by validating arguments and invoking the play card handler.
     /// </summary>
-    /// <param name="args">Command arguments, expects card index as first element.</param>
+    /// <param name="args">Command arguments, expects card index as the first element.</param>
     /// <param name="target">Optional target combat ID for targeted cards.</param>
     /// <returns>Response indicating success or failure of the play card action.</returns>
     private static object HandlePlayCardRequest(int[]? args, int? target)
