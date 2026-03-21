@@ -30,14 +30,7 @@ public static class PlayerStateBuilder
             state.Potions = PotionStateBuilder.Build(player.PotionSlots);
 
             // Relics
-            foreach (var relic in player.Relics)
-                state.Relics.Add(new RelicStateDto
-                {
-                    Id = relic.Id.Entry,
-                    Name = StripGameTags(relic.Title.GetFormattedText()),
-                    Description = StripGameTags(relic.DynamicDescription.GetFormattedText()),
-                    Counter = relic.ShowCounter ? relic.DisplayAmount : null
-                });
+            state.Relics = RelicStateBuilder.Build(player.Relics);
 
             var creature = player.Creature;
             var playerCombatState = player.PlayerCombatState;

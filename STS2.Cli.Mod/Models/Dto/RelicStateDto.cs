@@ -9,22 +9,32 @@ namespace STS2.Cli.Mod.Models.Dto;
 public class RelicStateDto
 {
     /// <summary>
-    ///     Relic ID (e.g., "BurningBlood").
+    ///     Relic model ID (e.g., "BURNING_BLOOD", "SOZU").
     /// </summary>
-    public string? Id { get; set; }
+    public required string Id { get; set; }
 
     /// <summary>
-    ///     Display name.
+    ///     Localized display name.
     /// </summary>
-    public string? Name { get; set; }
+    public required string Name { get; set; }
 
     /// <summary>
     ///     Effect description with dynamic values resolved.
     /// </summary>
-    public string? Description { get; set; }
+    public required string Description { get; set; }
 
     /// <summary>
-    ///     Counter value for relics that track counts (null if not applicable).
+    ///     Rarity tier: Starter, Common, Uncommon, Rare, Shop, Event, Ancient.
+    /// </summary>
+    public required string Rarity { get; set; }
+
+    /// <summary>
+    ///     Current status: Normal, Active, or Disabled (e.g., melted wax relics).
+    /// </summary>
+    public required string Status { get; set; }
+
+    /// <summary>
+    ///     Counter value for relics that track counts (null if relic has no counter).
     /// </summary>
     public int? Counter { get; set; }
 }
