@@ -1,4 +1,3 @@
-using Godot;
 using MegaCrit.Sts2.Core.Modding;
 using STS2.Cli.Mod.Server;
 using STS2.Cli.Mod.Utils;
@@ -13,7 +12,6 @@ namespace STS2.Cli.Mod;
 public static class CliModEntry
 {
     private static readonly ModLogger Logger = new("ModEntry");
-    private static PipeServer? _pipeServer;
 
     /// <summary>
     ///     Initializes the mod and starts the pipe server.
@@ -28,27 +26,15 @@ public static class CliModEntry
         // Initialize main thread executor (required for game actions)
         MainThreadExecutor.Initialize();
 
-        // Initialize and start the pipe server (fire and forget)
+        // Start the pipe server background loop
         try
         {
-            _pipeServer = new PipeServer();
-            _ = Task.Run(async () =>
-            {
-                try
-                {
-                    await _pipeServer.StartAsync();
-                    Logger.Info("Named Pipe server started on 'sts2-cli-mod'");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error($"Failed to start pipe server: {ex.Message}");
-                }
-            });
+            PipeServer.Start();
+            Logger.Info("Named Pipe server started on 'sts2-cli-mod'");
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to initialize pipe server: {ex.Message}");
-            Logger.Error($"Stack trace: {ex.StackTrace}");
+            Logger.Error($"Failed to start pipe server: {ex.Message}");
         }
     }
 }

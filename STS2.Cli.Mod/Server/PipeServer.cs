@@ -3,70 +3,62 @@ using System.Security.AccessControl;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
-using PlayCardHandler = STS2.Cli.Mod.Actions.PlayCardHandler;
-using EndTurnHandler = STS2.Cli.Mod.Actions.EndTurnHandler;
+using STS2.Cli.Mod.Actions;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
-using MainThreadExecutor = STS2.Cli.Mod.Utils.MainThreadExecutor;
 
 namespace STS2.Cli.Mod.Server;
 
 /// <summary>
 ///     Named Pipe server for communication with the CLI tool.
-///     Uses System.IO.Pipes for cross-platform support.
+///     Runs a single-connection loop: create pipe → wait for client → handle one request → disconnect → repeat.
 /// </summary>
-public class PipeServer : IDisposable
+public static class PipeServer
 {
     private static readonly ModLogger Logger = new("PipeServer");
-    private CancellationTokenSource? _cts;
-    private Task? _listenerTask;
-    private NamedPipeServerStream? _pipeServer;
+    private static CancellationTokenSource? _cts;
+    private static Task? _serverTask;
 
     /// <summary>
-    ///     Releases all resources used by the pipe server.
+    ///     Starts the pipe server loop in the background.
+    ///     Safe to call multiple times; subsequent calls are no-ops.
     /// </summary>
-    public void Dispose()
+    public static void Start()
     {
-        StopAsync().GetAwaiter().GetResult();
-        _cts?.Dispose();
-    }
-
-    /// <summary>
-    ///     Starts the pipe server in the background.
-    /// </summary>
-    public Task StartAsync()
-    {
-        if (_listenerTask != null)
+        if (_serverTask != null)
         {
             Logger.Warning("Named Pipe Server already started");
-            return Task.CompletedTask;
+            return;
         }
 
         _cts = new CancellationTokenSource();
-        _listenerTask = RunServerLoopAsync(_cts.Token);
-
-        return Task.CompletedTask;
+        _serverTask = Task.Run(() => RunServerLoopAsync(_cts.Token));
     }
 
     /// <summary>
-    ///     Stops the pipe server.
+    ///     Stops the pipe server and waits up to 2 seconds for graceful shutdown.
     /// </summary>
-    private async Task StopAsync()
+    public static async Task StopAsync()
     {
         if (_cts != null) await _cts.CancelAsync();
-        if (_pipeServer != null) await _pipeServer.DisposeAsync();
-        if (_listenerTask != null) await Task.WhenAny(_listenerTask, Task.Delay(TimeSpan.FromSeconds(2)));
+        if (_serverTask != null) await Task.WhenAny(_serverTask, Task.Delay(TimeSpan.FromSeconds(2)));
+
+        _cts?.Dispose();
+        _cts = null;
+        _serverTask = null;
     }
 
     /// <summary>
     ///     Main server loop that creates pipe instances and waits for client connections.
     ///     Automatically recreates the pipe after each client disconnects.
     /// </summary>
-    /// <param name="ct">Cancellation token to stop the server loop</param>
-    private async Task RunServerLoopAsync(CancellationToken ct)
+    /// <param name="ct">Cancellation token to stop the server loop.</param>
+    private static async Task RunServerLoopAsync(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
+        {
+            NamedPipeServerStream? pipe = null;
             try
             {
                 Logger.Info("Creating Named Pipe instance...");
@@ -78,7 +70,7 @@ public class PipeServer : IDisposable
                     PipeAccessRights.ReadWrite,
                     AccessControlType.Allow));
 
-                _pipeServer = NamedPipeServerStreamAcl.Create(
+                pipe = NamedPipeServerStreamAcl.Create(
                     "sts2-cli-mod",
                     PipeDirection.InOut,
                     1,
@@ -89,9 +81,9 @@ public class PipeServer : IDisposable
                     pipeSecurity);
 
                 Logger.Info("Waiting for CLI connection...");
-                await _pipeServer.WaitForConnectionAsync(ct);
+                await pipe.WaitForConnectionAsync(ct);
                 Logger.Info("CLI connected!");
-                await HandleClientAsync(_pipeServer, ct);
+                await HandleClientAsync(pipe, ct);
             }
             catch (OperationCanceledException)
             {
@@ -104,23 +96,22 @@ public class PipeServer : IDisposable
             }
             finally
             {
-                if (_pipeServer != null) await _pipeServer.DisposeAsync();
-                _pipeServer = null;
+                if (pipe != null) await pipe.DisposeAsync();
             }
+        }
     }
 
     /// <summary>
     ///     Handles a single client connection.
-    ///     Reads one request, processes it, writes the response, then closes the connection.
+    ///     Reads one request, processes it, writes the response, then returns (caller disposes pipe).
     /// </summary>
-    /// <param name="pipe">The connected named pipe stream</param>
-    /// <param name="ct">Cancellation token</param>
-    private async Task HandleClientAsync(NamedPipeServerStream pipe, CancellationToken ct)
+    /// <param name="pipe">The connected named pipe stream.</param>
+    /// <param name="ct">Cancellation token.</param>
+    private static async Task HandleClientAsync(NamedPipeServerStream pipe, CancellationToken ct)
     {
-        // leaveOpen: true - pipe lifecycle is managed by the caller (RunServerLoopAsync)
+        // leaveOpen: true — pipe lifecycle is managed by the caller (RunServerLoopAsync)
         using var reader = new StreamReader(pipe, Encoding.UTF8, leaveOpen: true);
-        // ReSharper disable once UseAwaitUsing
-        using var writer = new StreamWriter(pipe, Encoding.UTF8, leaveOpen: true);
+        await using var writer = new StreamWriter(pipe, Encoding.UTF8, leaveOpen: true);
         writer.AutoFlush = true;
 
         try
@@ -140,22 +131,23 @@ public class PipeServer : IDisposable
             }
             catch (Exception)
             {
-                await writer.WriteLineAsync(JsonSerializer.Serialize(new
-                    { ok = false, error = "INVALID_REQUEST", message = "Failed to parse request" }, JsonOptions.Default));
+                await writer.WriteLineAsync(JsonSerializer.Serialize(
+                    new { ok = false, error = "INVALID_REQUEST", message = "Failed to parse request" },
+                    JsonOptions.Default));
                 return;
             }
 
             if (request == null)
             {
-                await writer.WriteLineAsync(JsonSerializer.Serialize(new
-                    { ok = false, error = "INVALID_REQUEST", message = "Failed to parse request" }, JsonOptions.Default));
+                await writer.WriteLineAsync(JsonSerializer.Serialize(
+                    new { ok = false, error = "INVALID_REQUEST", message = "Failed to parse request" },
+                    JsonOptions.Default));
                 return;
             }
 
-            // Process the request
+            // Process the request and write response
             var response = ProcessRequest(request);
             var responseJson = JsonSerializer.Serialize(response, JsonOptions.Default);
-
             await writer.WriteLineAsync(responseJson);
         }
         catch (IOException)
@@ -170,27 +162,31 @@ public class PipeServer : IDisposable
 
     /// <summary>
     ///     Processes a parsed request and routes it to the appropriate handler.
-    ///     All game actions are executed on the main thread to ensure thread safety.
+    ///     Commands that access game state are executed on the main thread via <see cref="MainThreadExecutor" />.
     /// </summary>
-    /// <param name="request">The parsed request object</param>
-    /// <returns>Response object to be serialized as JSON</returns>
-    private object ProcessRequest(Request request)
+    /// <param name="request">The parsed request object.</param>
+    /// <returns>Response object to be serialized as JSON.</returns>
+    private static object ProcessRequest(Request request)
     {
         try
         {
-            // Execute the command handler on the main thread
-            // This ensures all game state access and modifications are thread-safe
-            return MainThreadExecutor.RunOnMainThread(() =>
+            return request.Cmd.ToLower() switch
             {
-                return request.Cmd.ToLower() switch
+                // ping does not access game state — handle directly on pipe thread
+                "ping" => new { ok = true, data = new { connected = true } },
+
+                // All other commands require game state access on the main thread
+                _ => MainThreadExecutor.RunOnMainThread(() => request.Cmd.ToLower() switch
                 {
-                    "ping" => new { ok = true, data = new { connected = true } },
                     "state" => HandleStateRequest(),
                     "play_card" => HandlePlayCardRequest(request.Args, request.Target),
                     "end_turn" => HandleEndTurnRequest(),
-                    _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
-                };
-            });
+                    _ => (object)new
+                    {
+                        ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}"
+                    }
+                })
+            };
         }
         catch (Exception ex)
         {
@@ -201,26 +197,24 @@ public class PipeServer : IDisposable
     /// <summary>
     ///     Handles the 'state' command by extracting current game state.
     /// </summary>
-    /// <returns>Response containing the game state DTO</returns>
-    private object HandleStateRequest()
+    /// <returns>Response containing the game state DTO.</returns>
+    private static object HandleStateRequest()
     {
         var state = GameStateExtractor.GetState();
-        
+
         if (state.Error != null)
-        {
             return new { ok = false, error = "STATE_EXTRACTION_ERROR", message = state.Error };
-        }
-        
+
         return new { ok = true, data = state };
     }
 
     /// <summary>
     ///     Handles the 'play_card' command by validating arguments and invoking the play card handler.
     /// </summary>
-    /// <param name="args">Command arguments, expects card index as first element</param>
-    /// <param name="target">Optional target combat ID for targeted cards</param>
-    /// <returns>Response indicating success or failure of the play card action</returns>
-    private object HandlePlayCardRequest(int[]? args, int? target)
+    /// <param name="args">Command arguments, expects card index as first element.</param>
+    /// <param name="target">Optional target combat ID for targeted cards.</param>
+    /// <returns>Response indicating success or failure of the play card action.</returns>
+    private static object HandlePlayCardRequest(int[]? args, int? target)
     {
         if (args == null || args.Length == 0)
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Card index required" };
@@ -228,19 +222,17 @@ public class PipeServer : IDisposable
         var cardIndex = args[0];
         Logger.Info($"Requested to play card at index {cardIndex}, target={target?.ToString() ?? "none"}");
 
-        // Execute play card action
         return PlayCardHandler.Execute(cardIndex, target);
     }
 
     /// <summary>
     ///     Handles the 'end_turn' command by invoking the end turn handler.
     /// </summary>
-    /// <returns>Response indicating success or failure of the end turn action</returns>
-    private object HandleEndTurnRequest()
+    /// <returns>Response indicating success or failure of the end turn action.</returns>
+    private static object HandleEndTurnRequest()
     {
         Logger.Info("Requested to end turn");
 
-        // Execute end turn action
         return EndTurnHandler.Execute();
     }
 }
