@@ -10,9 +10,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     Converts <see cref="CombatHistoryEntry" /> objects into JSON-friendly anonymous objects
 ///     for inclusion in action responses. Focuses on core combat effects: damage, block, and powers.
 /// </summary>
-public static class ResultBuilder
+public static class CombatHistoryBuilder
 {
-    private static readonly ModLogger Logger = new("ResultBuilder");
+    private static readonly ModLogger Logger = new("CombatHistoryBuilder");
 
     /// <summary>
     ///     Collects new <see cref="CombatHistoryEntry" /> items added after <paramref name="historyCountBefore" />
