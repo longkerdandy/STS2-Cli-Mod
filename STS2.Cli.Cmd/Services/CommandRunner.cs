@@ -8,6 +8,13 @@ namespace STS2.Cli.Cmd.Services;
 /// </summary>
 public static class CommandRunner
 {
+    // Exit codes following CLI specification (AGENTS.md)
+    private const int ExitSuccess = 0;
+    private const int ExitConnectionError = 1;
+    private const int ExitInvalidState = 2;
+    private const int ExitInvalidParam = 3;
+    private const int ExitTimeout = 4;
+
     /// <summary>
     ///     Executes a command and handles the full lifecycle.
     /// </summary>
@@ -32,7 +39,7 @@ public static class CommandRunner
         if (!await client.ConnectAsync(timeoutMs))
         {
             WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
-            return ExitCodes.ConnectionError;
+            return ExitConnectionError;
         }
 
         // Send command
@@ -40,27 +47,41 @@ public static class CommandRunner
         if (response == null)
         {
             WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
-            return ExitCodes.ConnectionError;
+            return ExitConnectionError;
         }
 
         // Output result
         if (response.Ok)
         {
             WriteSuccess(response.Data, jsonOptions);
-            return ExitCodes.Success;
+            return ExitSuccess;
         }
 
         WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
-
-        // Map error to exit code
-        return response.Error?.ToUpper() switch
-        {
-            "INVALID_STATE" => ExitCodes.InvalidState,
-            "INVALID_PARAM" or "MISSING_ARGUMENT" => ExitCodes.InvalidParameter,
-            "TIMEOUT" => ExitCodes.Timeout,
-            _ => ExitCodes.ConnectionError
-        };
+        return MapErrorToExitCode(response.Error);
     }
+
+    /// <summary>
+    ///     Maps a Mod error code to a CLI exit code.
+    /// </summary>
+    private static int MapErrorToExitCode(string? error) => error switch
+    {
+        // Invalid state — combat phase or creature state prevents the action
+        "NOT_IN_COMBAT" or "COMBAT_ENDING" or "NOT_PLAYER_TURN" or
+        "ACTIONS_DISABLED" or "NO_PLAYER" or "PLAYER_DEAD" or
+        "CANNOT_PLAY_CARD" => ExitInvalidState,
+
+        // Invalid parameter — caller provided wrong arguments
+        "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or
+        "INVALID_CARD_INDEX" or "TARGET_REQUIRED" or "TARGET_NOT_FOUND" or
+        "TARGET_NOT_ALLOWED" => ExitInvalidParam,
+
+        // Timeout
+        "TIMEOUT" => ExitTimeout,
+
+        // Internal errors, state extraction failures, and unknown errors
+        _ => ExitConnectionError
+    };
 
     private static void WriteSuccess(object? data, JsonSerializerOptions options)
     {
@@ -72,17 +93,5 @@ public static class CommandRunner
     {
         var response = new { ok = false, error, message };
         Console.Error.WriteLine(JsonSerializer.Serialize(response, options));
-    }
-
-    /// <summary>
-    ///     Exit codes following CLI specification.
-    /// </summary>
-    private static class ExitCodes
-    {
-        public const int Success = 0;
-        public const int ConnectionError = 1;
-        public const int InvalidState = 2;
-        public const int InvalidParameter = 3;
-        public const int Timeout = 4;
     }
 }

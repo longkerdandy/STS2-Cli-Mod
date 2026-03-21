@@ -1,15 +1,13 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using STS2.Cli.Cmd.Services;
 
 namespace STS2.Cli.Cmd;
 
 /// <summary>
 ///     Entry point for the STS2 CLI application.
-///     Design notes:
-///     - Uses the System.CommandLine library for CLI infrastructure
-///     - Follows the subcommand pattern (similar to git status, docker ps)
-///     - RootCommand acts as a router, dispatching to subcommand handlers
-///     - Each command is defined independently for maintainability and extensibility
+///     Uses the System.CommandLine library with the subcommand pattern (similar to git, docker).
+///     Each subcommand corresponds to a game action, naming consistent with the pipe protocol.
 /// </summary>
 internal static class Program
 {
@@ -20,187 +18,77 @@ internal static class Program
     /// <returns>Exit code: 0=success, 1=connection error, 2=invalid state, 3=invalid parameter, 4=timeout</returns>
     private static async Task<int> Main(string[] args)
     {
-        // Create root command (represents the program itself)
-        // When a user runs the program without subcommands, displays this description and available commands
         var rootCommand = new RootCommand("STS2 CLI - Control Slay the Spire 2 via command line");
 
-        // Add a global --pretty option for formatted JSON output
+        // Global --pretty option for formatted JSON output
         var prettyOption = new Option<bool>(
             ["--pretty", "-p"],
             description: "Format JSON output with indentation for readability",
             getDefaultValue: () => false);
         rootCommand.AddGlobalOption(prettyOption);
 
-        // Register all subcommands
-        // Each subcommand corresponds to a game action, naming consistent with the protocol
-        rootCommand.AddCommand(CreatePingCommand(prettyOption)); // sts2 ping
-        rootCommand.AddCommand(CreateStateCommand(prettyOption)); // sts2 state
-        rootCommand.AddCommand(CreatePlayCardCommand(prettyOption)); // sts2 play_card <index> [--target]
-        rootCommand.AddCommand(CreateEndTurnCommand(prettyOption)); // sts2 end_turn
-        rootCommand.AddCommand(CreateUsePotionCommand(prettyOption)); // sts2 use_potion <slot> [--target]
+        // Shared --target option factory for targeted commands
+        Option<int?> CreateTargetOption(string description) =>
+            new("--target", description);
 
-        // Parse and execute the command
-        // InvokeAsync will:
-        // 1. Parse args array
-        // 2. Match the appropriate subcommand
-        // 3. Execute that command's handler
-        // 4. Return the exit code
+        // sts2 ping — test connection to the mod
+        rootCommand.AddCommand(CreateSimpleCommand("ping", "Test connection to the mod", prettyOption));
+
+        // sts2 state — retrieve current game state
+        rootCommand.AddCommand(CreateSimpleCommand("state", "Get current game state", prettyOption));
+
+        // sts2 end_turn — end the current turn
+        rootCommand.AddCommand(CreateSimpleCommand("end_turn", "End the current turn", prettyOption));
+
+        // sts2 play_card <index> [--target] — play a card from hand
+        rootCommand.AddCommand(CreateTargetedCommand(
+            "play_card", "Play a card from hand",
+            new Argument<int>("index", "Card index in hand (0-based)"),
+            CreateTargetOption("Target enemy combat ID (for targeted cards)"),
+            prettyOption));
+
+        // sts2 use_potion <slot> [--target] — use a potion
+        rootCommand.AddCommand(CreateTargetedCommand(
+            "use_potion", "Use a potion",
+            new Argument<int>("slot", "Potion slot index (0-2)"),
+            CreateTargetOption("Target enemy combat ID (for targeted potions)"),
+            prettyOption));
+
         return await rootCommand.InvokeAsync(args);
     }
 
     /// <summary>
-    ///     Creates the ping command: tests connection to the mod.
+    ///     Creates a simple command with no arguments (e.g., ping, state, end_turn).
     /// </summary>
-    /// <example>
-    ///     $ STS2.Cli.Cmd ping
-    ///     {"ok":true,"data":{"connected":true}}
-    ///     $ STS2.Cli.Cmd --pretty ping
-    ///     {
-    ///     "ok": true,
-    ///     "data": {
-    ///     "connected": true
-    ///     }
-    ///     }
-    /// </example>
-    private static Command CreatePingCommand(Option<bool> prettyOption)
+    private static Command CreateSimpleCommand(string name, string description, Option<bool> prettyOption)
     {
-        var command = new Command("ping", "Test connection to the mod");
-
-        // Set command handler
-        // context contains parsed arguments and options
+        var command = new Command(name, description);
         command.SetHandler(async context =>
         {
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            var exitCode = await CommandRunner.ExecuteAsync("ping", pretty: pretty);
-            context.ExitCode = exitCode;
+            context.ExitCode = await CommandRunner.ExecuteAsync(name, pretty: pretty);
         });
-
         return command;
     }
 
     /// <summary>
-    ///     Creates the state command: retrieves current game state.
+    ///     Creates a command with a positional argument and optional --target (e.g., play_card, use_potion).
     /// </summary>
-    /// <example>
-    ///     $ STS2.Cli.Cmd state
-    ///     {"ok":true,"data":{"screen":"COMBAT","player": {...}}}
-    ///     $ STS2.Cli.Cmd --pretty state
-    ///     {
-    ///     "ok": true,
-    ///     "data": {
-    ///     "screen": "COMBAT",
-    ///     "player": { ... }
-    ///     }
-    ///     }
-    /// </example>
-    private static Command CreateStateCommand(Option<bool> prettyOption)
+    private static Command CreateTargetedCommand(
+        string name, string description,
+        Argument<int> indexArg, Option<int?> targetOption,
+        Option<bool> prettyOption)
     {
-        var command = new Command("state", "Get current game state");
-
-        command.SetHandler(async context =>
-        {
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            var exitCode = await CommandRunner.ExecuteAsync("state", pretty: pretty);
-            context.ExitCode = exitCode;
-        });
-
-        return command;
-    }
-
-    /// <summary>
-    ///     Creates the play_card command: plays a card from hand.
-    /// </summary>
-    /// <remarks>
-    ///     Arguments:
-    ///     - index: Index in hand (0-based, from state command response)
-    ///     - --target: Target enemy combat ID (from enemy's combat_id in state response)
-    /// </remarks>
-    /// <example>
-    ///     $ STS2.Cli.Cmd play_card 0
-    ///     $ STS2.Cli.Cmd play_card 0 --target 2
-    ///     $ STS2.Cli.Cmd --pretty play_card 0
-    /// </example>
-    private static Command CreatePlayCardCommand(Option<bool> prettyOption)
-    {
-        var command = new Command("play_card", "Play a card from hand");
-
-        // Define positional argument: card index
-        var indexArg = new Argument<int>("index", "Card index in hand (0-based)");
+        var command = new Command(name, description);
         command.AddArgument(indexArg);
-
-        // Define optional argument: target combat ID
-        var targetOption = new Option<int?>("--target", "Target enemy combat ID (for targeted cards)");
         command.AddOption(targetOption);
-
         command.SetHandler(async context =>
         {
-            // Get argument values from parse result
             var index = context.ParseResult.GetValueForArgument(indexArg);
             var target = context.ParseResult.GetValueForOption(targetOption);
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
-
-            // Send command to mod, command name matches CLI command name
-            var exitCode = await CommandRunner.ExecuteAsync("play_card", [index], target, pretty);
-            context.ExitCode = exitCode;
+            context.ExitCode = await CommandRunner.ExecuteAsync(name, [index], target, pretty);
         });
-
-        return command;
-    }
-
-    /// <summary>
-    ///     Creates the end_turn command: ends the current turn.
-    /// </summary>
-    /// <example>
-    ///     $ STS2.Cli.Cmd end_turn
-    ///     {"ok":true,"data":{"action":"end_turn"}}
-    ///     $ STS2.Cli.Cmd --pretty end_turn
-    /// </example>
-    private static Command CreateEndTurnCommand(Option<bool> prettyOption)
-    {
-        var command = new Command("end_turn", "End the current turn");
-
-        command.SetHandler(async context =>
-        {
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            var exitCode = await CommandRunner.ExecuteAsync("end_turn", pretty: pretty);
-            context.ExitCode = exitCode;
-        });
-
-        return command;
-    }
-
-    /// <summary>
-    ///     Creates the use_potion command: uses a potion.
-    /// </summary>
-    /// <remarks>
-    ///     Potion slots are typically 0-2, depending on the player's potion slots.
-    /// </remarks>
-    /// <example>
-    ///     $ STS2.Cli.Cmd use_potion 0
-    ///     $ STS2.Cli.Cmd use_potion 0 --target 2
-    ///     $ STS2.Cli.Cmd --pretty use_potion 0
-    /// </example>
-    private static Command CreateUsePotionCommand(Option<bool> prettyOption)
-    {
-        var command = new Command("use_potion", "Use a potion");
-
-        // Define positional argument: potion slot
-        var slotArg = new Argument<int>("slot", "Potion slot index (0-2)");
-        command.AddArgument(slotArg);
-
-        // Define optional argument: target combat ID
-        var targetOption = new Option<int?>("--target", "Target enemy combat ID (for targeted potions)");
-        command.AddOption(targetOption);
-
-        command.SetHandler(async context =>
-        {
-            var slot = context.ParseResult.GetValueForArgument(slotArg);
-            var target = context.ParseResult.GetValueForOption(targetOption);
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            var exitCode = await CommandRunner.ExecuteAsync("use_potion", [slot], target, pretty);
-            context.ExitCode = exitCode;
-        });
-
         return command;
     }
 }
