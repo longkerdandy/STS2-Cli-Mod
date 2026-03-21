@@ -41,6 +41,7 @@ public static class CombatStateBuilder
 
     /// <summary>
     ///     Builds the enemies state from combat state.
+    ///     Includes all enemies (alive and dead) with IsAlive flag for each.
     /// </summary>
     public static List<EnemyStateDto> BuildEnemies(CombatState combatState)
     {
@@ -49,12 +50,9 @@ public static class CombatStateBuilder
         try
         {
             var creatures = combatState.Enemies;
-            for (var i = 0; i < creatures.Count; i++)
+            foreach (var creature in creatures)
             {
-                var creature = creatures[i];
-                if (!creature.IsAlive) continue;
-
-                enemies.Add(EnemyStateBuilder.Build(creature, i, combatState));
+                enemies.Add(EnemyStateBuilder.Build(creature, combatState));
             }
         }
         catch (Exception ex)

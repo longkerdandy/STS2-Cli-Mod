@@ -3,18 +3,33 @@ using System.Diagnostics.CodeAnalysis;
 namespace STS2.Cli.Mod.Models.Dto;
 
 /// <summary>
-///     Intent state DTO representing an enemy's upcoming action.
+///     Intent state DTO representing a single intent within an enemy's upcoming move.
+///     A move can contain multiple intents (e.g., attack + buff simultaneously).
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class IntentStateDto
 {
     /// <summary>
-    ///     Intent type (Attack, Defend, Buff, Debuff, etc.).
+    ///     Intent type (Attack, DeathBlow, Buff, Debuff, DebuffStrong, Defend,
+    ///     Heal, Summon, Escape, StatusCard, CardDebuff, Sleep, Stun, Hidden, Unknown).
     /// </summary>
-    public string? Type { get; set; }
+    public required string Type { get; set; }
 
     /// <summary>
-    ///     Human-readable description of the intent.
+    ///     Per-hit damage for attack intents (after all modifiers like Strength, Vulnerable).
+    ///     Null for non-attack intents.
     /// </summary>
-    public string? Description { get; set; }
+    public int? Damage { get; set; }
+
+    /// <summary>
+    ///     Number of hits for attack intents (1 for single, N for multi-attack).
+    ///     Null for non-attack intents.
+    /// </summary>
+    public int? Hits { get; set; }
+
+    /// <summary>
+    ///     Human-readable description of the intent (localized).
+    /// </summary>
+    public required string Description { get; set; }
 }

@@ -12,7 +12,7 @@
 
   <!-- Game directory reference -->
   <PropertyGroup>
-    <STS2GameDir Condition="'$(STS2GameDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2</STS2GameDir>
+    <STS2GameDir Condition="'$(STS2GameDir)' == ''">/mnt/c/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2</STS2GameDir>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
   </PropertyGroup>
 
@@ -20,12 +20,12 @@
   <ItemGroup>
     <!-- Main game assembly - direct reference enables strong typing -->
     <Reference Include="sts2">
-      <HintPath>$(STS2GameDir)\data_sts2_windows_x86_64\sts2.dll</HintPath>
+      <HintPath>$(STS2GameDir)/data_sts2_windows_x86_64/sts2.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <!-- Godot C# API -->
     <Reference Include="GodotSharp">
-      <HintPath>$(STS2GameDir)\data_sts2_windows_x86_64\GodotSharp.dll</HintPath>
+      <HintPath>$(STS2GameDir)/data_sts2_windows_x86_64/GodotSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
@@ -40,9 +40,9 @@
 
   <!-- Deploy to game directory after build -->
   <Target Name="DeployMod" AfterTargets="Build">
-    <Message Text="Deploying mod to $(STS2GameDir)\mods\" Importance="high" />
-    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(STS2GameDir)\mods\" SkipUnchangedFiles="true" />
-    <Copy SourceFiles="$(ProjectDir)STS2.Cli.Mod.json" DestinationFolder="$(STS2GameDir)\mods\" SkipUnchangedFiles="true" />
+    <Message Text="Deploying mod to $(STS2GameDir)/mods/" Importance="high" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(STS2GameDir)/mods/" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="$(ProjectDir)STS2.Cli.Mod.json" DestinationFolder="$(STS2GameDir)/mods/" SkipUnchangedFiles="true" />
     <Message Text="Mod deployed successfully!" Importance="high" />
   </Target>
 

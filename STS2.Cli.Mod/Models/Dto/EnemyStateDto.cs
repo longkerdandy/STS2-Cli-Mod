@@ -10,19 +10,20 @@ namespace STS2.Cli.Mod.Models.Dto;
 public class EnemyStateDto
 {
     /// <summary>
-    ///     Enemy index in combat (0-based).
+    ///     Unique combat ID assigned by the game engine.
+    ///     Stable across the entire combat, unlike Index which shifts when enemies die.
     /// </summary>
-    public int Index { get; set; }
+    public required uint CombatId { get; set; }
 
     /// <summary>
-    ///     Enemy ID (e.g., "Cultist", "JawWorm").
+    ///     Enemy model ID (e.g., "JAW_WORM", "CULTIST").
     /// </summary>
-    public string? Id { get; set; }
+    public required string Id { get; set; }
 
     /// <summary>
-    ///     Enemy display name.
+    ///     Enemy display name (localized).
     /// </summary>
-    public string? Name { get; set; }
+    public required string Name { get; set; }
 
     /// <summary>
     ///     Current HP.
@@ -35,22 +36,34 @@ public class EnemyStateDto
     public int MaxHp { get; set; }
 
     /// <summary>
-    ///     Current block (temporary HP).
+    ///     Current block value.
     /// </summary>
     public int Block { get; set; }
 
     /// <summary>
-    ///     True if this is a minion/pet.
+    ///     Whether this enemy is alive.
+    /// </summary>
+    public bool IsAlive { get; set; }
+
+    /// <summary>
+    ///     Whether this is a secondary enemy (minion/summon).
+    ///     Combat does not end when secondary enemies die; only primary enemies matter.
     /// </summary>
     public bool IsMinion { get; set; }
 
     /// <summary>
-    ///     Enemy's current intent (next action).
+    ///     Current move ID from the monster's state machine (e.g., "BITE", "SCREECH", "STUNNED").
     /// </summary>
-    public IntentStateDto? Intent { get; set; }
+    public required string MoveId { get; set; }
 
     /// <summary>
-    ///     Active buffs/powers on the enemy.
+    ///     Enemy's current intents (next action). A move can have multiple intents
+    ///     (e.g., attack + buff simultaneously).
     /// </summary>
-    public List<BuffStateDto> Buffs { get; set; } = new();
+    public List<IntentStateDto> Intents { get; set; } = [];
+
+    /// <summary>
+    ///     Active powers on the enemy.
+    /// </summary>
+    public List<PowerStateDto> Powers { get; set; } = [];
 }

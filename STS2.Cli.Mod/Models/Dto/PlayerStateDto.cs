@@ -85,7 +85,7 @@ public class PlayerStateDto
     public int? Stars { get; set; }
 
     /// <summary>
-    ///     Active buffs/powers on the player.
+    ///     Active powers on the player.
     /// </summary>
-    public List<BuffStateDto> Buffs { get; set; } = [];
+    public List<PowerStateDto> Powers { get; set; } = [];
 }

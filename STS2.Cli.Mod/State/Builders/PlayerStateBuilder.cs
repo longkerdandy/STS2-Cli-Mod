@@ -1,6 +1,5 @@
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Entities.Potions;
-using MegaCrit.Sts2.Core.Models;
 using STS2.Cli.Mod.Models.Dto;
 using STS2.Cli.Mod.Utils;
 using static STS2.Cli.Mod.Utils.TextUtils;
@@ -80,8 +79,8 @@ public static class PlayerStateBuilder
                     state.Stars = playerCombatState.Stars;
             }
 
-            // Buffs/Powers from Creature
-            state.Buffs = BuildBuffs(creature.Powers);
+            // Powers from Creature
+            state.Powers = PowerStateBuilder.Build(creature.Powers);
         }
         catch (Exception ex)
         {
@@ -89,38 +88,5 @@ public static class PlayerStateBuilder
         }
 
         return state;
-    }
-
-    /// <summary>
-    ///     Builds buffs/powers state for a creature.
-    /// </summary>
-    private static List<BuffStateDto> BuildBuffs(IEnumerable<PowerModel> powers)
-    {
-        var buffs = new List<BuffStateDto>();
-
-        try
-        {
-            foreach (var power in powers)
-            {
-                if (!power.IsVisible) continue;
-
-                var buff = new BuffStateDto
-                {
-                    Id = power.Id.Entry,
-                    Name = StripGameTags(power.Title.GetFormattedText()),
-                    Amount = power.DisplayAmount,
-                    Type = power.Type.ToString(),
-                    Description = StripGameTags(power.SmartDescription.GetFormattedText())
-                };
-
-                buffs.Add(buff);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to build buffs state: {ex.Message}");
-        }
-
-        return buffs;
     }
 }
