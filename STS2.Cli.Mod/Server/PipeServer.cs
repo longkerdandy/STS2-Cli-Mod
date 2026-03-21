@@ -1,6 +1,4 @@
 using System.IO.Pipes;
-using System.Security.AccessControl;
-using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using STS2.Cli.Mod.Actions;
@@ -63,22 +61,14 @@ public static class PipeServer
             {
                 Logger.Info("Creating Named Pipe instance...");
 
-                // Set up security to allow all users access
-                var pipeSecurity = new PipeSecurity();
-                pipeSecurity.AddAccessRule(new PipeAccessRule(
-                    new SecurityIdentifier(WellKnownSidType.WorldSid, null),
-                    PipeAccessRights.ReadWrite,
-                    AccessControlType.Allow));
-
-                pipe = NamedPipeServerStreamAcl.Create(
+                // Standard constructor — works cross-platform (.NET uses Unix Domain Sockets on Linux).
+                // No PipeSecurity/ACL needed: CLI and game run under the same user.
+                pipe = new NamedPipeServerStream(
                     "sts2-cli-mod",
                     PipeDirection.InOut,
                     1,
                     PipeTransmissionMode.Byte,
-                    PipeOptions.Asynchronous,
-                    4096,
-                    4096,
-                    pipeSecurity);
+                    PipeOptions.Asynchronous);
 
                 Logger.Info("Waiting for CLI connection...");
                 await pipe.WaitForConnectionAsync(ct);
