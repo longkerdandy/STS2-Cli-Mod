@@ -39,7 +39,7 @@ There are no test projects. Testing is done manually by running the game with th
 1. `sts2 ping` - confirms pipe connection
 2. `sts2 state` - confirms state extraction (returns full combat state as JSON)
 3. `sts2 play_card <index> [--target <combat_id>]` - confirms card play with execution results (damage, block, powers)
-4. `sts2 end_turn` - confirms end turn action
+4. `sts2 end_turn` - confirms end turn action with execution results (enemy turn damage, block, powers)
 
 ## Code Style Guidelines
 

@@ -168,11 +168,13 @@ public static class PipeServer
                 // play_card is async — spans multiple frames waiting for action completion
                 "play_card" => await HandlePlayCardRequestAsync(request.Args, request.Target),
 
+                // end_turn is async — waits for enemy turn to complete before returning results
+                "end_turn" => await HandleEndTurnRequestAsync(),
+
                 // Synchronous commands — single-frame game state access on the main thread
                 _ => MainThreadExecutor.RunOnMainThread(() => cmd switch
                 {
                     "state" => HandleStateRequest(),
-                    "end_turn" => HandleEndTurnRequest(),
                     _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
                 })
             };
@@ -217,14 +219,17 @@ public static class PipeServer
     }
 
     /// <summary>
-    ///     Handles the 'end_turn' command by invoking the end turn handler.
+    ///     Handles the 'end_turn' command asynchronously.
+    ///     Delegates to <see cref="EndTurnHandler.ExecuteAsync" /> via
+    ///     <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to await
+    ///     enemy turn completion and collect execution results.
     /// </summary>
-    /// <returns>Response indicating success or failure of the end turn action.</returns>
-    private static object HandleEndTurnRequest()
+    /// <returns>Response indicating success or failure, with execution results on success.</returns>
+    private static async Task<object> HandleEndTurnRequestAsync()
     {
         Logger.Info("Requested to end turn");
 
-        return EndTurnHandler.Execute();
+        return await MainThreadExecutor.RunOnMainThreadAsync(() => EndTurnHandler.ExecuteAsync());
     }
 
     /// <summary>
