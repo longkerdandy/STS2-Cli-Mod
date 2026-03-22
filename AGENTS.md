@@ -14,33 +14,49 @@ Agent -> sts2 CLI (STS2.Cli.Cmd) -> Named Pipe -> C# Mod (STS2.Cli.Mod, in-proce
 
 ## Build Commands
 
+**IMPORTANT**: The game runs on Windows. Always build the CLI for `win-x64` and use the Windows exe for testing.
+
 ```bash
-# Build entire solution (requires game DLLs for the Mod project)
-dotnet build -c Release
+# Clean all build output
+rm -rf STS2.Cli.Mod/bin STS2.Cli.Mod/obj STS2.Cli.Cmd/bin STS2.Cli.Cmd/obj
 
-# Build CLI only (no game dependency)
-dotnet build STS2.Cli.Cmd/STS2.Cli.Cmd.csproj -c Release
+# Build Mod (auto-deploys DLL + JSON to game mods/ folder via DeployMod MSBuild target)
+# Game must NOT be running, otherwise the DLL is locked and deploy fails.
+dotnet build STS2.Cli.Mod/STS2.Cli.Mod.csproj -c Release
 
-# Build Mod only (requires STS2GameDir pointing to game install)
-dotnet build STS2.Cli.Mod/ -c Release \
-  -p:STS2GameDir="C:/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2"
+# Build CLI for Windows x64 (MUST specify -r win-x64)
+dotnet build STS2.Cli.Cmd/STS2.Cli.Cmd.csproj -c Release -r win-x64
 
 # Publish CLI as single-file exe
 dotnet publish STS2.Cli.Cmd/STS2.Cli.Cmd.csproj -c Release -r win-x64 \
   --self-contained -p:PublishSingleFile=true -p:PublishAot=true
 ```
 
-The Mod project auto-deploys DLL + JSON to `$(STS2GameDir)/mods/` after build via the `DeployMod` MSBuild target.
-
 ## Testing
 
-There are no test projects. Testing is done manually by running the game with the mod loaded. Verify the mod works by:
+There are no test projects. Testing is done manually by running the game with the mod loaded.
 
-1. `sts2 ping` - confirms pipe connection
-2. `sts2 state` - confirms state extraction (returns full combat state as JSON)
-3. `sts2 play_card <index> [--target <combat_id>]` - confirms card play with execution results (damage, block, powers)
-4. `sts2 end_turn` - confirms end turn action with execution results (enemy turn damage, block, powers)
-5. `sts2 use_potion <slot> [--target <combat_id>]` - confirms potion use with execution results (damage, block, powers)
+**IMPORTANT**: When running from WSL, always use the Windows release exe, NOT the Linux binary:
+
+```bash
+# Correct - use the Windows exe built with -r win-x64
+STS2.Cli.Cmd/bin/Release/net9.0/win-x64/sts2.exe ping
+
+# Wrong - Linux binary cannot connect to the Windows named pipe
+dotnet run --project STS2.Cli.Cmd/STS2.Cli.Cmd.csproj -- ping
+```
+
+Verify the mod works by:
+
+1. `sts2.exe ping` - confirms pipe connection
+2. `sts2.exe state` - confirms state extraction (returns full game state as JSON)
+3. `sts2.exe play_card <index> [--target <combat_id>]` - confirms card play with execution results (damage, block, powers)
+4. `sts2.exe end_turn` - confirms end turn action with execution results (enemy turn damage, block, powers)
+5. `sts2.exe use_potion <slot> [--target <combat_id>]` - confirms potion use with execution results (damage, block, powers)
+6. `sts2.exe claim_reward <index>` - confirms reward claim (gold, potion, relic)
+7. `sts2.exe choose_card <reward_index> <card_index>` - confirms card choice from card reward
+8. `sts2.exe skip_card <reward_index>` - confirms skipping a card reward
+9. `sts2.exe proceed` - confirms leaving reward screen and proceeding to map
 
 ## Code Style Guidelines
 

@@ -53,6 +53,28 @@ internal static class Program
             CreateTargetOption("Target enemy combat ID (for targeted potions)"),
             prettyOption));
 
+        // sts2 claim_reward <index> — claim a non-card reward (gold, potion, relic)
+        rootCommand.AddCommand(CreateIndexedCommand(
+            "claim_reward", "Claim a reward (gold, potion, relic)",
+            new Argument<int>("index", "Reward index in the reward list (0-based)"),
+            prettyOption));
+
+        // sts2 choose_card <reward_index> <card_index> — pick a card from a card reward
+        rootCommand.AddCommand(CreateTwoArgCommand(
+            "choose_card", "Pick a card from a card reward",
+            new Argument<int>("reward_index", "Reward index in the reward list (0-based)"),
+            new Argument<int>("card_index", "Card index within the card reward choices (0-based)"),
+            prettyOption));
+
+        // sts2 skip_card <reward_index> — skip a card reward (take nothing)
+        rootCommand.AddCommand(CreateIndexedCommand(
+            "skip_card", "Skip a card reward",
+            new Argument<int>("reward_index", "Reward index in the reward list (0-based)"),
+            prettyOption));
+
+        // sts2 proceed — leave the reward screen and proceed to the map
+        rootCommand.AddCommand(CreateSimpleCommand("proceed", "Leave reward screen and proceed to map", prettyOption));
+
         return await rootCommand.InvokeAsync(args);
     }
 
@@ -87,6 +109,46 @@ internal static class Program
             var target = context.ParseResult.GetValueForOption(targetOption);
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
             context.ExitCode = await CommandRunner.ExecuteAsync(name, [index], target, pretty);
+        });
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates a command with a single positional argument and no target (e.g., claim_reward, skip_card).
+    /// </summary>
+    private static Command CreateIndexedCommand(
+        string name, string description,
+        Argument<int> indexArg,
+        Option<bool> prettyOption)
+    {
+        var command = new Command(name, description);
+        command.AddArgument(indexArg);
+        command.SetHandler(async context =>
+        {
+            var index = context.ParseResult.GetValueForArgument(indexArg);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            context.ExitCode = await CommandRunner.ExecuteAsync(name, [index], pretty: pretty);
+        });
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates a command with two positional arguments (e.g., choose_card reward_index card_index).
+    /// </summary>
+    private static Command CreateTwoArgCommand(
+        string name, string description,
+        Argument<int> firstArg, Argument<int> secondArg,
+        Option<bool> prettyOption)
+    {
+        var command = new Command(name, description);
+        command.AddArgument(firstArg);
+        command.AddArgument(secondArg);
+        command.SetHandler(async context =>
+        {
+            var first = context.ParseResult.GetValueForArgument(firstArg);
+            var second = context.ParseResult.GetValueForArgument(secondArg);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            context.ExitCode = await CommandRunner.ExecuteAsync(name, [first, second], pretty: pretty);
         });
         return command;
     }

@@ -66,17 +66,20 @@ public static class CommandRunner
     /// </summary>
     private static int MapErrorToExitCode(string? error) => error switch
     {
-        // Invalid state — combat phase or creature state prevents the action
+        // Invalid state — combat phase, creature state, or screen state prevents the action
         "NOT_IN_COMBAT" or "COMBAT_ENDING" or "NOT_PLAYER_TURN" or
         "ACTIONS_DISABLED" or "NO_PLAYER" or "PLAYER_DEAD" or
         "CANNOT_PLAY_CARD" or "ACTION_CANCELLED" or
-        "POTION_ALREADY_QUEUED" or "POTION_NOT_USABLE" => ExitInvalidState,
+        "POTION_ALREADY_QUEUED" or "POTION_NOT_USABLE" or
+        "NOT_ON_REWARD_SCREEN" or "POTION_BELT_FULL" or
+        "NOT_SUPPORTED" or "CLAIM_FAILED" => ExitInvalidState,
 
         // Invalid parameter — caller provided wrong arguments
         "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or
         "INVALID_CARD_INDEX" or "TARGET_REQUIRED" or "TARGET_NOT_FOUND" or
         "TARGET_NOT_ALLOWED" or "INVALID_POTION_SLOT" or
-        "EMPTY_POTION_SLOT" => ExitInvalidParam,
+        "EMPTY_POTION_SLOT" or "INVALID_REWARD_INDEX" or
+        "NOT_CARD_REWARD" or "USE_CHOOSE_CARD" => ExitInvalidParam,
 
         // Timeout
         "TIMEOUT" => ExitTimeout,

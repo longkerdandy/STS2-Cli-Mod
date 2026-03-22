@@ -1,5 +1,9 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Nodes.Screens;
+using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using MegaCrit.Sts2.Core.Nodes.Screens.Map;
+using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Models.Dto;
 using STS2.Cli.Mod.State.Builders;
@@ -30,6 +34,9 @@ public static class GameStateExtractor
             // Extract combat state if in combat
             if (state.Screen == "COMBAT") state.Combat = ExtractCombatState();
 
+            // Extract reward state if on reward screen
+            if (state.Screen == "REWARD") state.Rewards = ExtractRewardState();
+
             return state;
         }
         catch (Exception ex)
@@ -41,6 +48,8 @@ public static class GameStateExtractor
 
     /// <summary>
     ///     Detects which screen the player is currently on.
+    ///     Priority order: MENU → COMBAT → MAP (takes precedence over stale overlays)
+    ///     → CARD_REWARD → REWARD → UNKNOWN.
     /// </summary>
     private static string DetectScreen()
     {
@@ -50,7 +59,35 @@ public static class GameStateExtractor
         // Check CombatManager for active combat
         if (CombatManager.Instance.IsInProgress) return "COMBAT";
 
-        // TODO: Detect other screens (MAP, SHOP, EVENT, etc.)
+        // Check NMapScreen.IsOpen BEFORE overlay stack.
+        // After proceeding from rewards, the map opens but NRewardsScreen may linger
+        // in the overlay stack. NMapScreen.IsOpen is the authoritative signal that
+        // the player has moved past the current room to the map.
+        if (NMapScreen.Instance is { IsOpen: true }) return "MAP";
+
+        // Check NOverlayStack for reward-related screens
+        // CARD_REWARD must be checked before REWARD because NCardRewardSelectionScreen
+        // is pushed on top of NRewardsScreen in the overlay stack
+        var overlayStack = NOverlayStack.Instance;
+        if (overlayStack == null)
+        {
+            Logger.Warning("NOverlayStack.Instance is null (NRun.Instance?.GlobalUi.Overlays)");
+            return "UNKNOWN";
+        }
+
+        var overlay = overlayStack.Peek();
+        if (overlay == null)
+        {
+            Logger.Info("NOverlayStack.Peek() returned null (no overlays on stack)");
+            return "UNKNOWN";
+        }
+
+        Logger.Info($"NOverlayStack.Peek() returned: {overlay.GetType().FullName}");
+
+        if (overlay is NCardRewardSelectionScreen) return "CARD_REWARD";
+        if (overlay is NRewardsScreen) return "REWARD";
+
+        // TODO: Detect other screens (SHOP, EVENT, etc.)
         return "UNKNOWN";
     }
 
@@ -122,5 +159,22 @@ public static class GameStateExtractor
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Extracts the reward state from the <see cref="NRewardsScreen" />.
+    ///     Finds the rewards screen in the overlay stack and reads reward buttons.
+    /// </summary>
+    private static RewardStateDto? ExtractRewardState()
+    {
+        try
+        {
+            return RewardStateBuilder.Build();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract reward state: {ex.Message}");
+            return null;
+        }
     }
 }

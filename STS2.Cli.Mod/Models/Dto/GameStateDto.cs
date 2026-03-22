@@ -28,4 +28,9 @@ public class GameStateDto
     ///     Combat state if in combat, null otherwise.
     /// </summary>
     public CombatStateDto? Combat { get; set; }
+
+    /// <summary>
+    ///     Reward state if on reward screen, null otherwise.
+    /// </summary>
+    public RewardStateDto? Rewards { get; set; }
 }

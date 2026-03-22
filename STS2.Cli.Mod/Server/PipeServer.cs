@@ -174,6 +174,18 @@ public static class PipeServer
                 // use_potion is async — spans multiple frames waiting for action completion
                 "use_potion" => await HandleUsePotionRequestAsync(request.Args, request.Target),
 
+                // claim_reward is async — OnSelectWrapper() is async
+                "claim_reward" => await HandleClaimRewardRequestAsync(request.Args),
+
+                // choose_card is async — CardPileCmd.Add() is async
+                "choose_card" => await HandleChooseCardRequestAsync(request.Args),
+
+                // skip_card validates on pipe thread, then runs synchronously on main thread
+                "skip_card" => HandleSkipCardRequest(request.Args),
+
+                // proceed runs synchronously on main thread — ForceClick is fire-and-forget
+                "proceed" => HandleProceedRequest(),
+
                 // Synchronous commands — single-frame game state access on the main thread
                 _ => MainThreadExecutor.RunOnMainThread(() => cmd switch
                 {
@@ -252,6 +264,79 @@ public static class PipeServer
         Logger.Info("Requested to end turn");
 
         return await MainThreadExecutor.RunOnMainThreadAsync(EndTurnHandler.ExecuteAsync);
+    }
+
+    /// <summary>
+    ///     Handles the 'claim_reward' command asynchronously.
+    ///     Validates arguments on the pipe thread, then delegates to <see cref="ClaimRewardHandler.ExecuteAsync" />
+    ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to claim the reward.
+    /// </summary>
+    /// <param name="args">Command arguments, expects reward index as the first element.</param>
+    /// <returns>Response indicating success or failure.</returns>
+    private static async Task<object> HandleClaimRewardRequestAsync(int[]? args)
+    {
+        if (args == null || args.Length == 0)
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward index required" };
+
+        var rewardIndex = args[0];
+        Logger.Info($"Requested to claim reward at index {rewardIndex}");
+
+        return await MainThreadExecutor.RunOnMainThreadAsync(() => ClaimRewardHandler.ExecuteAsync(rewardIndex));
+    }
+
+    /// <summary>
+    ///     Handles the 'choose_card' command asynchronously.
+    ///     Validates arguments on the pipe thread, then delegates to <see cref="ChooseCardHandler.ExecuteAsync" />
+    ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to pick a card from a card reward.
+    /// </summary>
+    /// <param name="args">Command arguments, expects [reward_index, card_index].</param>
+    /// <returns>Response indicating success or failure.</returns>
+    private static async Task<object> HandleChooseCardRequestAsync(int[]? args)
+    {
+        if (args == null || args.Length < 2)
+            return new
+            {
+                ok = false, error = "MISSING_ARGUMENT",
+                message = "Reward index and card index required (e.g., choose_card <reward_index> <card_index>)"
+            };
+
+        var rewardIndex = args[0];
+        var cardIndex = args[1];
+        Logger.Info($"Requested to choose card at reward index {rewardIndex}, card index {cardIndex}");
+
+        return await MainThreadExecutor.RunOnMainThreadAsync(
+            () => ChooseCardHandler.ExecuteAsync(rewardIndex, cardIndex));
+    }
+
+    /// <summary>
+    ///     Handles the 'skip_card' command synchronously.
+    ///     Validates arguments on the pipe thread, then delegates to <see cref="ChooseCardHandler.ExecuteSkip" />
+    ///     via <see cref="MainThreadExecutor.RunOnMainThread{T}" /> for single-frame execution.
+    /// </summary>
+    /// <param name="args">Command arguments, expects reward index as the first element.</param>
+    /// <returns>Response indicating success or failure.</returns>
+    private static object HandleSkipCardRequest(int[]? args)
+    {
+        if (args == null || args.Length == 0)
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward index required" };
+
+        var rewardIndex = args[0];
+        Logger.Info($"Requested to skip card reward at index {rewardIndex}");
+
+        return MainThreadExecutor.RunOnMainThread(() => ChooseCardHandler.ExecuteSkip(rewardIndex));
+    }
+
+    /// <summary>
+    ///     Handles the 'proceed' command synchronously.
+    ///     Delegates to <see cref="ProceedHandler.Execute" /> via
+    ///     <see cref="MainThreadExecutor.RunOnMainThread{T}" /> to click the proceed button.
+    /// </summary>
+    /// <returns>Response indicating success or failure.</returns>
+    private static object HandleProceedRequest()
+    {
+        Logger.Info("Requested to proceed from reward screen");
+
+        return MainThreadExecutor.RunOnMainThread(ProceedHandler.Execute);
     }
 
     /// <summary>
