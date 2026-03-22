@@ -62,6 +62,60 @@ public static class CommandRunner
     }
 
     /// <summary>
+    ///     Executes a command with ID-based parameters and handles the full lifecycle.
+    /// </summary>
+    /// <param name="cmd">Command name to execute (e.g., "play_card", "use_potion")</param>
+    /// <param name="id">Card or potion ID</param>
+    /// <param name="nth">N-th occurrence when multiple copies exist (0-based)</param>
+    /// <param name="target">Optional target combat ID</param>
+    /// <param name="pretty">Whether to format JSON output with indentation</param>
+    /// <param name="timeoutMs">Timeout in milliseconds</param>
+    public static async Task<int> ExecuteAsync(
+        string cmd,
+        string id,
+        int nth = 0,
+        int? target = null,
+        bool pretty = false,
+        int timeoutMs = 5000)
+    {
+        using var client = new PipeClient();
+
+        // Select JSON options based on the pretty flag
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+
+        // Try to connect
+        if (!await client.ConnectAsync(timeoutMs))
+        {
+            WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        // Send command with ID-based parameters
+        var response = cmd switch
+        {
+            "play_card" => await client.SendCommandAsync(cmd, itemId: id, nth: nth, target: target, isCard: true),
+            "use_potion" => await client.SendCommandAsync(cmd, itemId: id, nth: nth, target: target, isCard: false),
+            _ => await client.SendCommandAsync(cmd, string.Empty, 0)
+        };
+
+        if (response == null)
+        {
+            WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        // Output result
+        if (response.Ok)
+        {
+            WriteSuccess(response.Data, jsonOptions);
+            return ExitSuccess;
+        }
+
+        WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
+        return MapErrorToExitCode(response.Error);
+    }
+
+    /// <summary>
     ///     Maps a Mod error code to a CLI exit code.
     /// </summary>
     private static int MapErrorToExitCode(string? error) => error switch
@@ -79,7 +133,8 @@ public static class CommandRunner
         "INVALID_CARD_INDEX" or "TARGET_REQUIRED" or "TARGET_NOT_FOUND" or
         "TARGET_NOT_ALLOWED" or "INVALID_POTION_SLOT" or
         "EMPTY_POTION_SLOT" or "INVALID_REWARD_INDEX" or
-        "NOT_CARD_REWARD" or "USE_CHOOSE_CARD" => ExitInvalidParam,
+        "NOT_CARD_REWARD" or "USE_CHOOSE_CARD" or
+        "CARD_NOT_FOUND" or "POTION_NOT_FOUND" or "AMBIGUOUS_ID" => ExitInvalidParam,
 
         // Timeout
         "TIMEOUT" => ExitTimeout,

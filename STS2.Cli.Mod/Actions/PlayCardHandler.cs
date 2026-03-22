@@ -2,7 +2,9 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
+using MegaCrit.Sts2.Core.Models;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -14,7 +16,7 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class PlayCardHandler
 {
-    private static readonly ModLogger Logger = new("PlayCardAction");
+    private static readonly ModLogger Logger = new("PlayCardHandler");
 
     /// <summary>
     ///     Maximum time to wait for a <see cref="PlayCardAction" /> to finish executing.
@@ -23,10 +25,13 @@ public static class PlayCardHandler
     private const int ActionTimeoutMs = 10000;
 
     /// <summary>
-    ///     Plays a card from the player's hand and returns the execution results.
+    ///     Plays a card from the player's hand by ID and returns the execution results.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static async Task<object> ExecuteAsync(int cardIndex, int? targetCombatId = null)
+    /// <param name="cardId">Card ID to play (e.g., "STRIKE_IRONCLAD").</param>
+    /// <param name="nth">N-th occurrence when multiple copies exist (0-based).</param>
+    /// <param name="targetCombatId">Optional target combat ID for targeted cards.</param>
+    public static async Task<object> ExecuteAsync(string cardId, int nth = 0, int? targetCombatId = null)
     {
         try
         {
@@ -43,14 +48,11 @@ public static class PlayCardHandler
                 return new { ok = false, error = "PLAYER_DEAD", message = "Player is dead - cannot play cards" };
 
             var hand = player.PlayerCombatState.Hand;
-            if (cardIndex < 0 || cardIndex >= hand.Cards.Count)
-                return new
-                {
-                    ok = false, error = "INVALID_CARD_INDEX",
-                    message = $"Card index {cardIndex} out of range (hand has {hand.Cards.Count} cards)"
-                };
 
-            var card = hand.Cards[cardIndex];
+            // Find card by ID
+            var (card, cardIndex, findError) = FindCardById(hand, cardId, nth);
+            if (findError != null)
+                return findError;
 
             if (!card.CanPlay(out var reason, out _))
                 return new
@@ -138,4 +140,54 @@ public static class PlayCardHandler
         }
     }
 
+    /// <summary>
+    ///     Finds a card in the hand by ID and nth occurrence.
+    /// </summary>
+    /// <param name="hand">The player's hand (CardPile).</param>
+    /// <param name="cardId">Card ID to find.</param>
+    /// <param name="nth">N-th occurrence (0-based).</param>
+    /// <returns>Tuple of (card, cardIndex, error). If error is not null, card and cardIndex are invalid.</returns>
+    private static (CardModel Card, int Index, object? Error) FindCardById(CardPile hand, string cardId, int nth)
+    {
+        // Find all matching cards
+        var matchingCards = new List<(CardModel Card, int Index)>();
+        for (var i = 0; i < hand.Cards.Count; i++)
+        {
+            if (hand.Cards[i].Id.Entry.Equals(cardId, StringComparison.OrdinalIgnoreCase))
+            {
+                matchingCards.Add((hand.Cards[i], i));
+            }
+        }
+
+        if (matchingCards.Count == 0)
+        {
+            // Build list of available card IDs for error message
+            var availableIds = hand.Cards.Select(c => c.Id.Entry).Distinct().ToList();
+            var availableStr = string.Join(", ", availableIds);
+            Logger.Warning($"Card '{cardId}' not found in hand. Available: {availableStr}");
+
+            return (null!, 0, new
+            {
+                ok = false,
+                error = "CARD_NOT_FOUND",
+                message = $"Card '{cardId}' not found in hand. Available cards: {availableStr}"
+            });
+        }
+
+        if (nth < 0 || nth >= matchingCards.Count)
+        {
+            Logger.Warning($"Card '{cardId}' has {matchingCards.Count} copies, but nth={nth} was requested");
+            return (null!, 0, new
+            {
+                ok = false,
+                error = "INVALID_CARD_INDEX",
+                message = $"Card '{cardId}' has {matchingCards.Count} copies in hand. Use nth from 0 to {matchingCards.Count - 1}."
+            });
+        }
+
+        var selected = matchingCards[nth];
+        Logger.Info($"Found card '{cardId}' at hand index {selected.Index} (nth={nth}, total matches={matchingCards.Count})");
+
+        return (selected.Card, selected.Index, null);
+    }
 }

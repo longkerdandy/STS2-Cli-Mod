@@ -17,6 +17,9 @@ internal static class Program
     /// <returns>Exit code: 0=success, 1=connection error, 2=invalid state, 3=invalid parameter, 4=timeout</returns>
     private static async Task<int> Main(string[] args)
     {
+        // Force UTF-8 encoding for proper Chinese character display in WSL
+        Console.OutputEncoding = System.Text.Encoding.UTF8;
+        
         var rootCommand = new RootCommand("STS2 CLI - Control Slay the Spire 2 via command line");
 
         // Global --pretty option for formatted JSON output
@@ -39,17 +42,19 @@ internal static class Program
         // sts2 end_turn — end the current turn
         rootCommand.AddCommand(CreateSimpleCommand("end_turn", "End the current turn", prettyOption));
 
-        // sts2 play_card <index> [--target] — play a card from hand
-        rootCommand.AddCommand(CreateTargetedCommand(
+        // sts2 play_card <card_id> [--nth] [--target] — play a card from hand
+        rootCommand.AddCommand(CreateIdBasedCommand(
             "play_card", "Play a card from hand",
-            new Argument<int>("index", "Card index in hand (0-based)"),
+            new Argument<string>("card_id", "Card ID (e.g., STRIKE_IRONCLAD, DEFEND_SILENT)"),
+            new Option<int>("--nth", () => 0, "N-th occurrence when multiple copies exist (0-based)"),
             CreateTargetOption("Target enemy combat ID (for targeted cards)"),
             prettyOption));
 
-        // sts2 use_potion <slot> [--target] — use a potion
-        rootCommand.AddCommand(CreateTargetedCommand(
+        // sts2 use_potion <potion_id> [--nth] [--target] — use a potion
+        rootCommand.AddCommand(CreateIdBasedCommand(
             "use_potion", "Use a potion",
-            new Argument<int>("slot", "Potion slot index (0-2)"),
+            new Argument<string>("potion_id", "Potion ID (e.g., FIRE_POTION, ENTROPIC_BREW)"),
+            new Option<int>("--nth", () => 0, "N-th occurrence when multiple copies exist (0-based)"),
             CreateTargetOption("Target enemy combat ID (for targeted potions)"),
             prettyOption));
 
@@ -76,6 +81,31 @@ internal static class Program
         rootCommand.AddCommand(CreateSimpleCommand("proceed", "Leave reward screen and proceed to map", prettyOption));
 
         return await rootCommand.InvokeAsync(args);
+    }
+
+    /// <summary>
+    ///     Creates a command with ID-based arguments (e.g., play_card, use_potion).
+    /// </summary>
+    private static Command CreateIdBasedCommand(
+        string name, string description,
+        Argument<string> idArg,
+        Option<int> nthOption,
+        Option<int?> targetOption,
+        Option<bool> prettyOption)
+    {
+        var command = new Command(name, description);
+        command.AddArgument(idArg);
+        command.AddOption(nthOption);
+        command.AddOption(targetOption);
+        command.SetHandler(async context =>
+        {
+            var id = context.ParseResult.GetValueForArgument(idArg);
+            var nth = context.ParseResult.GetValueForOption(nthOption);
+            var target = context.ParseResult.GetValueForOption(targetOption);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            context.ExitCode = await CommandRunner.ExecuteAsync(name, id, nth, target, pretty);
+        });
+        return command;
     }
 
     /// <summary>

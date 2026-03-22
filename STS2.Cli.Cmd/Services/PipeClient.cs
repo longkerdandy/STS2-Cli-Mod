@@ -111,4 +111,48 @@ public class PipeClient : IDisposable
             return null;
         }
     }
+
+    /// <summary>
+    ///     Sends a command with ID-based parameters to the mod and returns the response.
+    /// </summary>
+    /// <param name="cmd">The command to send (e.g., "play_card", "use_potion").</param>
+    /// <param name="itemId">Card ID or Potion ID (required).</param>
+    /// <param name="nth">N-th occurrence when multiple copies exist (0-based).</param>
+    /// <param name="target">Optional target combat ID for targeted commands.</param>
+    /// <param name="isCard">True if this is a card command (play_card), false for potion.</param>
+    /// <returns>
+    ///     A <see cref="Response" /> object containing the result from the mod,
+    ///     or <c>null</c> if the pipe is not connected or communication failed.
+    /// </returns>
+    public async Task<Response?> SendCommandAsync(
+        string cmd,
+        string itemId,
+        int nth,
+        int? target = null,
+        bool isCard = true)
+    {
+        if (_pipe is not { IsConnected: true }) return null;
+
+        try
+        {
+            var request = new Request
+            {
+                Cmd = cmd,
+                CardId = isCard ? itemId : null,
+                PotionId = isCard ? null : itemId,
+                Nth = nth,
+                Target = target
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
+            await _writer!.WriteLineAsync(requestJson);
+
+            var responseJson = await _reader!.ReadLineAsync();
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 }

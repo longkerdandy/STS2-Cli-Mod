@@ -166,13 +166,13 @@ public static class PipeServer
                 "ping" => new { ok = true, data = new { connected = true } },
 
                 // play_card is async — spans multiple frames waiting for action completion
-                "play_card" => await HandlePlayCardRequestAsync(request.Args, request.Target),
+                "play_card" => await HandlePlayCardRequestAsync(request.CardId, request.Nth, request.Target),
 
                 // end_turn is async — waits for the enemy turn to complete before returning results
                 "end_turn" => await HandleEndTurnRequestAsync(),
 
                 // use_potion is async — spans multiple frames waiting for action completion
-                "use_potion" => await HandleUsePotionRequestAsync(request.Args, request.Target),
+                "use_potion" => await HandleUsePotionRequestAsync(request.PotionId, request.Nth, request.Target),
 
                 // claim_reward is async — OnSelectWrapper() is async
                 "claim_reward" => await HandleClaimRewardRequestAsync(request.Args),
@@ -219,18 +219,19 @@ public static class PipeServer
     ///     Validates arguments on the pipe thread, then delegates to <see cref="PlayCardHandler.ExecuteAsync" />
     ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to await action completion.
     /// </summary>
-    /// <param name="args">Command arguments, expects card index as the first element.</param>
+    /// <param name="cardId">Card ID to play (e.g., "STRIKE_IRONCLAD").</param>
+    /// <param name="nth">Optional N-th occurrence when multiple copies exist (0-based).</param>
     /// <param name="target">Optional target combat ID for targeted cards.</param>
     /// <returns>Response indicating success or failure, with execution results on success.</returns>
-    private static async Task<object> HandlePlayCardRequestAsync(int[]? args, int? target)
+    private static async Task<object> HandlePlayCardRequestAsync(string? cardId, int? nth, int? target)
     {
-        if (args == null || args.Length == 0)
-            return new { ok = false, error = "MISSING_ARGUMENT", message = "Card index required" };
+        if (string.IsNullOrEmpty(cardId))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Card ID required (e.g., STRIKE_IRONCLAD)" };
 
-        var cardIndex = args[0];
-        Logger.Info($"Requested to play card at index {cardIndex}, target={target?.ToString() ?? "none"}");
+        var nthValue = nth ?? 0;
+        Logger.Info($"Requested to play card {cardId}, nth={nthValue}, target={target?.ToString() ?? "none"}");
 
-        return await MainThreadExecutor.RunOnMainThreadAsync(() => PlayCardHandler.ExecuteAsync(cardIndex, target));
+        return await MainThreadExecutor.RunOnMainThreadAsync(() => PlayCardHandler.ExecuteAsync(cardId, nthValue, target));
     }
 
     /// <summary>
@@ -238,18 +239,19 @@ public static class PipeServer
     ///     Validates arguments on the pipe thread, then delegates to <see cref="UsePotionHandler.ExecuteAsync" />
     ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to await action completion.
     /// </summary>
-    /// <param name="args">Command arguments, expects potion slot index as the first element.</param>
+    /// <param name="potionId">Potion ID to use (e.g., "FIRE_POTION").</param>
+    /// <param name="nth">Optional N-th occurrence when multiple copies exist (0-based).</param>
     /// <param name="target">Optional target combat ID for targeted potions.</param>
     /// <returns>Response indicating success or failure, with execution results on success.</returns>
-    private static async Task<object> HandleUsePotionRequestAsync(int[]? args, int? target)
+    private static async Task<object> HandleUsePotionRequestAsync(string? potionId, int? nth, int? target)
     {
-        if (args == null || args.Length == 0)
-            return new { ok = false, error = "MISSING_ARGUMENT", message = "Potion slot index required" };
+        if (string.IsNullOrEmpty(potionId))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Potion ID required (e.g., FIRE_POTION)" };
 
-        var slot = args[0];
-        Logger.Info($"Requested to use potion at slot {slot}, target={target?.ToString() ?? "none"}");
+        var nthValue = nth ?? 0;
+        Logger.Info($"Requested to use potion {potionId}, nth={nthValue}, target={target?.ToString() ?? "none"}");
 
-        return await MainThreadExecutor.RunOnMainThreadAsync(() => UsePotionHandler.ExecuteAsync(slot, target));
+        return await MainThreadExecutor.RunOnMainThreadAsync(() => UsePotionHandler.ExecuteAsync(potionId, nthValue, target));
     }
 
     /// <summary>

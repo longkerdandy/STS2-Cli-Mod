@@ -24,4 +24,25 @@ public class Request
     /// </summary>
     [JsonPropertyName("target")]
     public int? Target { get; set; }
+
+    /// <summary>
+    /// Card ID for play_card command (e.g., "STRIKE_IRONCLAD").
+    /// Use with nth to disambiguate when multiple copies exist.
+    /// </summary>
+    [JsonPropertyName("card_id")]
+    public string? CardId { get; set; }
+
+    /// <summary>
+    /// Potion ID for use_potion command (e.g., "FIRE_POTION").
+    /// Use with nth to disambiguate when multiple copies exist.
+    /// </summary>
+    [JsonPropertyName("potion_id")]
+    public string? PotionId { get; set; }
+
+    /// <summary>
+    /// N-th occurrence (0-based) when multiple cards/potions with same ID exist.
+    /// Optional, defaults to 0 if not specified.
+    /// </summary>
+    [JsonPropertyName("nth")]
+    public int? Nth { get; set; }
 }

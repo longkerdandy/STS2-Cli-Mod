@@ -2,7 +2,9 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
+using MegaCrit.Sts2.Core.Models;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -15,7 +17,7 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class UsePotionHandler
 {
-    private static readonly ModLogger Logger = new("UsePotionAction");
+    private static readonly ModLogger Logger = new("UsePotionHandler");
 
     /// <summary>
     ///     Maximum time to wait for a <see cref="UsePotionAction" /> to finish executing.
@@ -24,12 +26,13 @@ public static class UsePotionHandler
     private const int ActionTimeoutMs = 10000;
 
     /// <summary>
-    ///     Uses a potion from the player's potion belt and returns the execution results.
+    ///     Uses a potion from the player's potion belt by ID and returns the execution results.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    /// <param name="slot">The 0-based potion slot index.</param>
+    /// <param name="potionId">Potion ID to use (e.g., "FIRE_POTION").</param>
+    /// <param name="nth">N-th occurrence when multiple copies exist (0-based).</param>
     /// <param name="targetCombatId">Optional target combat ID for targeted potions.</param>
-    public static async Task<object> ExecuteAsync(int slot, int? targetCombatId = null)
+    public static async Task<object> ExecuteAsync(string potionId, int nth = 0, int? targetCombatId = null)
     {
         try
         {
@@ -45,21 +48,10 @@ public static class UsePotionHandler
             if (!player.Creature.IsAlive)
                 return new { ok = false, error = "PLAYER_DEAD", message = "Player is dead - cannot use potions" };
 
-            // Validate slot index
-            if (slot < 0 || slot >= player.MaxPotionCount)
-                return new
-                {
-                    ok = false, error = "INVALID_POTION_SLOT",
-                    message = $"Potion slot {slot} out of range (max {player.MaxPotionCount} slots)"
-                };
-
-            var potion = player.GetPotionAtSlotIndex(slot);
-            if (potion == null)
-                return new
-                {
-                    ok = false, error = "EMPTY_POTION_SLOT",
-                    message = $"Potion slot {slot} is empty"
-                };
+            // Find potion by ID
+            var (potion, slot, findError) = FindPotionById(player, potionId, nth);
+            if (findError != null)
+                return findError;
 
             if (potion.IsQueued)
                 return new
@@ -173,5 +165,63 @@ public static class UsePotionHandler
             Logger.Error($"Failed to use potion: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
         }
+    }
+
+    /// <summary>
+    ///     Finds a potion in the player's potion belt by ID and nth occurrence.
+    /// </summary>
+    /// <param name="player">The player.</param>
+    /// <param name="potionId">Potion ID to find.</param>
+    /// <param name="nth">N-th occurrence (0-based).</param>
+    /// <returns>Tuple of (potion, slot, error). If error is not null, potion and slot are invalid.</returns>
+    private static (PotionModel Potion, int Slot, object? Error) FindPotionById(Player player, string potionId, int nth)
+    {
+        // Collect all non-null potions with their slots
+        var matchingPotions = new List<(PotionModel Potion, int Slot)>();
+        for (var slot = 0; slot < player.MaxPotionCount; slot++)
+        {
+            var potion = player.GetPotionAtSlotIndex(slot);
+            if (potion != null && potion.Id.Entry.Equals(potionId, StringComparison.OrdinalIgnoreCase))
+            {
+                matchingPotions.Add((potion, slot));
+            }
+        }
+
+        if (matchingPotions.Count == 0)
+        {
+            // Build list of available potion IDs for error message
+            var availablePotions = new List<string>();
+            for (var slot = 0; slot < player.MaxPotionCount; slot++)
+            {
+                var potion = player.GetPotionAtSlotIndex(slot);
+                if (potion != null)
+                    availablePotions.Add(potion.Id.Entry);
+            }
+            var availableStr = availablePotions.Count > 0 ? string.Join(", ", availablePotions) : "(none)";
+            Logger.Warning($"Potion '{potionId}' not found. Available: {availableStr}");
+
+            return (null!, 0, new
+            {
+                ok = false,
+                error = "POTION_NOT_FOUND",
+                message = $"Potion '{potionId}' not found. Available potions: {availableStr}"
+            });
+        }
+
+        if (nth < 0 || nth >= matchingPotions.Count)
+        {
+            Logger.Warning($"Potion '{potionId}' has {matchingPotions.Count} copies, but nth={nth} was requested");
+            return (null!, 0, new
+            {
+                ok = false,
+                error = "INVALID_POTION_SLOT",
+                message = $"Potion '{potionId}' has {matchingPotions.Count} copies. Use nth from 0 to {matchingPotions.Count - 1}."
+            });
+        }
+
+        var selected = matchingPotions[nth];
+        Logger.Info($"Found potion '{potionId}' at slot {selected.Slot} (nth={nth}, total matches={matchingPotions.Count})");
+
+        return (selected.Potion, selected.Slot, null);
     }
 }
