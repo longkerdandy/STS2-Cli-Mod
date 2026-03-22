@@ -418,7 +418,9 @@ sts2.exe choose_event 1  # (option at index 1 is locked)
 ```
 
 **Deliverables**:
-- [ ] `AGENTS.md` updated with `choose_event` command
+- [x] `AGENTS.md` updated with `choose_event` command
+
+**Status**: ✅ COMPLETED - AGENTS.md updated with new testing command
 
 ---
 

@@ -53,10 +53,11 @@ Verify the mod works by:
 3. `sts2.exe play_card <index> [--target <combat_id>]` - confirms card play with execution results (damage, block, powers)
 4. `sts2.exe end_turn` - confirms end turn action with execution results (enemy turn damage, block, powers)
 5. `sts2.exe use_potion <slot> [--target <combat_id>]` - confirms potion use with execution results (damage, block, powers)
-6. `sts2.exe claim_reward <index>` - confirms reward claim (gold, potion, relic)
-7. `sts2.exe choose_card <reward_index> <card_index>` - confirms card choice from card reward
-8. `sts2.exe skip_card <reward_index>` - confirms skipping a card reward
+6. `sts2.exe claim_reward --type <type> [--id <id>] [--nth <n>]` - confirms reward claim (gold, potion, relic)
+7. `sts2.exe choose_card --type card --card_id <card_id> [--nth <n>]` - confirms card choice from card reward
+8. `sts2.exe skip_card --type card [--nth <n>]` - confirms skipping a card reward
 9. `sts2.exe proceed` - confirms leaving reward screen and proceeding to map
+10. `sts2.exe choose_event <index>` - confirms event option selection with updated event state
 
 ## Code Style Guidelines
 
