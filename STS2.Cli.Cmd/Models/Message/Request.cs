@@ -14,33 +14,29 @@ public class Request
     public required string Cmd { get; set; }
 
     /// <summary>
-    /// Optional array of integer arguments for the command.
+    /// Optional array of integer arguments for the command (e.g., reward_index for claim_reward).
     /// </summary>
     [JsonPropertyName("args")]
     public int[]? Args { get; set; }
 
     /// <summary>
-    /// Optional target combat ID for targeted commands (from enemy's combat_id in state response).
+    /// Optional target ID for targeted commands.
+    /// For targeted cards/potions: enemy combat_id.
     /// </summary>
     [JsonPropertyName("target")]
     public int? Target { get; set; }
 
     /// <summary>
-    /// Card ID for play_card command (e.g., "STRIKE_IRONCLAD").
+    /// Item ID for commands that reference game objects by ID.
+    /// - play_card: Card ID (e.g., "STRIKE_IRONCLAD")
+    /// - use_potion: Potion ID (e.g., "FIRE_POTION")
     /// Use with nth to disambiguate when multiple copies exist.
     /// </summary>
-    [JsonPropertyName("card_id")]
-    public string? CardId { get; set; }
+    [JsonPropertyName("id")]
+    public string? Id { get; set; }
 
     /// <summary>
-    /// Potion ID for use_potion command (e.g., "FIRE_POTION").
-    /// Use with nth to disambiguate when multiple copies exist.
-    /// </summary>
-    [JsonPropertyName("potion_id")]
-    public string? PotionId { get; set; }
-
-    /// <summary>
-    /// N-th occurrence (0-based) when multiple cards/potions with same ID exist.
+    /// N-th occurrence (0-based) when multiple items with same ID exist.
     /// Optional, defaults to 0 if not specified.
     /// </summary>
     [JsonPropertyName("nth")]

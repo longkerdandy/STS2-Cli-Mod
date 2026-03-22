@@ -166,13 +166,13 @@ public static class PipeServer
                 "ping" => new { ok = true, data = new { connected = true } },
 
                 // play_card is async — spans multiple frames waiting for action completion
-                "play_card" => await HandlePlayCardRequestAsync(request.CardId, request.Nth, request.Target),
+                "play_card" => await HandlePlayCardRequestAsync(request.Id, request.Nth, request.Target),
 
                 // end_turn is async — waits for the enemy turn to complete before returning results
                 "end_turn" => await HandleEndTurnRequestAsync(),
 
                 // use_potion is async — spans multiple frames waiting for action completion
-                "use_potion" => await HandleUsePotionRequestAsync(request.PotionId, request.Nth, request.Target),
+                "use_potion" => await HandleUsePotionRequestAsync(request.Id, request.Nth, request.Target),
 
                 // claim_reward is async — OnSelectWrapper() is async
                 "claim_reward" => await HandleClaimRewardRequestAsync(request.Args),

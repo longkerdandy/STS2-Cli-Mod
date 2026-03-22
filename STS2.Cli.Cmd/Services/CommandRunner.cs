@@ -91,12 +91,7 @@ public static class CommandRunner
         }
 
         // Send command with ID-based parameters
-        var response = cmd switch
-        {
-            "play_card" => await client.SendCommandAsync(cmd, itemId: id, nth: nth, target: target, isCard: true),
-            "use_potion" => await client.SendCommandAsync(cmd, itemId: id, nth: nth, target: target, isCard: false),
-            _ => await client.SendCommandAsync(cmd, string.Empty, 0)
-        };
+        var response = await client.SendCommandAsync(cmd, id, nth, target);
 
         if (response == null)
         {
