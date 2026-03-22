@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
@@ -49,7 +50,7 @@ public static class GameStateExtractor
     /// <summary>
     ///     Detects which screen the player is currently on.
     ///     Priority order: MENU → COMBAT → MAP (takes precedence over stale overlays)
-    ///     → CARD_REWARD → REWARD → UNKNOWN.
+    ///     → EVENT → CARD_REWARD → REWARD → UNKNOWN.
     /// </summary>
     private static string DetectScreen()
     {
@@ -64,6 +65,17 @@ public static class GameStateExtractor
         // in the overlay stack. NMapScreen.IsOpen is the authoritative signal that
         // the player has moved past the current room to the map.
         if (NMapScreen.Instance is { IsOpen: true }) return "MAP";
+
+        // Check for event room BEFORE overlay stack.
+        // Event rooms don't use the overlay stack — the event UI is part of the room node.
+        // When proceeding from an event, the map opens but NEventRoom.Instance may still
+        // be valid momentarily. Checking MAP first avoids this stale reference.
+        var eventRoom = NEventRoom.Instance;
+        if (eventRoom is { } && eventRoom.IsInsideTree())
+        {
+            Logger.Info("Detected EVENT screen");
+            return "EVENT";
+        }
 
         // Check NOverlayStack for reward-related screens
         // CARD_REWARD must be checked before REWARD because NCardRewardSelectionScreen

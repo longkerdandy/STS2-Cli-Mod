@@ -125,8 +125,10 @@ if (eventRoom is { } && eventRoom.IsInsideTree())
 **Why before overlay stack**: Event rooms don't use the overlay stack — the event UI is part of the room node itself, not pushed as an overlay.
 
 **Deliverables**:
-- [ ] `GameStateExtractor.DetectScreen()` returns `"EVENT"` when in event room
-- [ ] `sts2 state` shows `"screen": "EVENT"` when at an event
+- [x] `GameStateExtractor.DetectScreen()` returns `"EVENT"` when in event room
+- [x] `sts2 state` shows `"screen": "EVENT"` when at an event
+
+**Status**: ✅ COMPLETED - Event screen detection implemented in `GameStateExtractor.DetectScreen()`
 
 ---
 
