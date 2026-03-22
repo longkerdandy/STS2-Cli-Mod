@@ -12,7 +12,7 @@ namespace STS2.Cli.Mod.Utils;
 public static class JsonOptions
 {
     /// <summary>
-    ///     Default JSON serializer options with camelCase naming and Unicode support.
+    ///     Default JSON serializer options with snake_case naming and Unicode support.
     ///     Ignores null values and empty collections for cleaner output.
     /// </summary>
     public static JsonSerializerOptions Default { get; } = CreateOptions();
@@ -21,7 +21,7 @@ public static class JsonOptions
     {
         var options = new JsonSerializerOptions
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
             PropertyNameCaseInsensitive = true,
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,

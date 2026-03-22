@@ -61,7 +61,7 @@ There are no test projects. Testing is done manually by running the game with th
 | Private fields | `_camelCase` | `_pipe`, `_reader`, `_cts` |
 | Local variables | camelCase | `combatState`, `aliveEnemies` |
 | Parameters | camelCase | `card`, `timeoutMs`, `ct` |
-| JSON wire format | snake_case or camelCase | `"card_index"`, `"ok"` |
+| JSON wire format | snake_case | `"card_index"`, `"is_player_turn"` |
 | Error codes | SCREAMING_SNAKE_CASE strings | `"NOT_IN_COMBAT"`, `"TARGET_REQUIRED"` |
 
 **Exception**: The `Logger` field omits the underscore prefix by convention: `private static readonly ModLogger Logger = new("ClassName");`
@@ -141,8 +141,8 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 
 ### JSON Serialization
 
-- **Mod**: `JsonIgnoreCondition.WhenWritingNull`, custom `IgnoreEmptyCollections` modifier, `UnsafeRelaxedJsonEscaping`
-- **CLI**: `PropertyNamingPolicy.CamelCase`, `UnsafeRelaxedJsonEscaping`, separate `Default` and `Pretty` variants
+- **Mod**: `JsonNamingPolicy.SnakeCaseLower`, `JsonIgnoreCondition.WhenWritingNull`, custom `IgnoreEmptyCollections` modifier, `UnsafeRelaxedJsonEscaping`
+- **CLI**: `JsonNamingPolicy.SnakeCaseLower`, `UnsafeRelaxedJsonEscaping`, separate `Default` and `Pretty` variants
 - Anonymous types for ad-hoc responses: `new { ok = true, data = new { connected = true } }`
 
 ### Thread Safety
