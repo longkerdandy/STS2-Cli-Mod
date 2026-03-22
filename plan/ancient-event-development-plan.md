@@ -192,7 +192,11 @@ sts2 advance_dialogue --auto
 
 **Status**: ✅ COMPLETED
 
-### Step 4: Update Documentation
+**Deliverables**:
+- [x] `AGENTS.md` updated with testing instructions for `advance_dialogue`
+- [x] `docs/cli-reference.md` updated with event state structure and command documentation
+
+### Step 4: Update Documentation (COMPLETED)
 
 **Modified Files**:
 - `AGENTS.md` - Add testing instructions

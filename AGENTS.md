@@ -58,6 +58,7 @@ Verify the mod works by:
 8. `sts2.exe skip_card --type card [--nth <n>]` - confirms skipping a card reward
 9. `sts2.exe proceed` - confirms leaving reward screen and proceeding to map
 10. `sts2.exe choose_event <index>` - confirms event option selection with updated event state
+11. `sts2.exe advance_dialogue [--auto]` - confirms Ancient event dialogue advancement (use --auto to skip to options)
 
 ## Code Style Guidelines
 

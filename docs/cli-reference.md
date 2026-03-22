@@ -123,6 +123,47 @@ Example:
 ./sts2 skip_card --type card --nth 1      # Skip 2nd card reward
 ```
 
+### choose_event
+
+```
+./sts2 choose_event <index>
+```
+
+Choose an option in an event room by **0-based index**.
+
+- **index**: Option index in the event's options list (0-based)
+
+Examples:
+```bash
+./sts2 choose_event 0                    # Choose first option
+./sts2 choose_event 1                    # Choose second option
+```
+
+For Ancient events, use `advance_dialogue` first if `is_in_dialogue` is true.
+
+### advance_dialogue
+
+```
+./sts2 advance_dialogue [--auto]
+```
+
+Advance dialogue in an **Ancient event**.
+
+Ancient events have a dialogue phase before options appear. Use this command to click through the dialogue.
+
+- **--auto**: Automatically advance all dialogue lines until options appear
+
+Examples:
+```bash
+./sts2 advance_dialogue                   # Advance one dialogue line
+./sts2 advance_dialogue --auto           # Auto-advance to options
+```
+
+**Workflow for Ancient events**:
+1. Check `sts2 state` - if `layout_type` is "Ancient" and `is_in_dialogue` is true
+2. Run `advance_dialogue --auto` to skip to options
+3. Then use `choose_event <index>` to select an option
+
 ### proceed
 
 ```
@@ -333,6 +374,82 @@ Returned by `./sts2 state` in the `data.rewards` field when screen is `REWARD`.
 }
 ```
 
+### Event State Structure
+
+Returned by `./sts2 state` in the `data.event` field when screen is `EVENT`.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `event_id` | string | Event identifier (e.g., "BIG_FISH") |
+| `title` | string | Localized event title |
+| `description` | string | Localized event description (current page) |
+| `layout_type` | string | "Default", "Combat", "Ancient", "Custom" |
+| `is_finished` | bool | Whether the event has concluded |
+| `is_in_dialogue` | bool | **Ancient events only**: True when dialogue is in progress |
+| `current_dialogue_line` | int | **Ancient events only**: Current dialogue line index (0-based) |
+| `total_dialogue_lines` | int | **Ancient events only**: Total number of dialogue lines |
+| `options` | array | Current available options (empty during Ancient dialogue) |
+
+### Event Option Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `index` | int | 0-based index for `choose_event` |
+| `title` | string | Localized option text |
+| `description` | string | Localized option description/tooltip |
+| `is_locked` | bool | Cannot be selected (OnChosen == null) |
+| `is_proceed` | bool | Final "proceed to map" option |
+| `relic_id` | string | Relic ID if option shows a relic |
+
+### JSON Example (Event Screen)
+
+```json
+{
+  "ok": true,
+  "data": {
+    "screen": "EVENT",
+    "timestamp": 1711123456789,
+    "event": {
+      "event_id": "BIG_FISH",
+      "title": "Big Fish",
+      "description": "You find a large fish flopping on the riverbank...",
+      "layout_type": "Default",
+      "is_finished": false,
+      "is_in_dialogue": false,
+      "options": [
+        {
+          "index": 0,
+          "title": "[Eat] Heal 5 HP.",
+          "description": "Heal 5 HP.",
+          "is_locked": false,
+          "is_proceed": false
+        }
+      ]
+    }
+  }
+}
+```
+
+### JSON Example (Ancient Event in Dialogue)
+
+```json
+{
+  "ok": true,
+  "data": {
+    "screen": "EVENT",
+    "event": {
+      "event_id": "ANCIENT_EXAMPLE",
+      "title": "Ancient One",
+      "layout_type": "Ancient",
+      "is_in_dialogue": true,
+      "current_dialogue_line": 0,
+      "total_dialogue_lines": 3,
+      "options": []
+    }
+  }
+}
+```
+
 ## Action Results
 
 After `play_card`, `end_turn`, and `use_potion`, the response `data` includes a `results` array:
@@ -353,6 +470,8 @@ After `play_card`, `end_turn`, and `use_potion`, the response `data` includes a 
 - `damage` and `block` on cards are **preview values** after all modifiers (strength, vulnerable, etc.).
 - `intents[].damage` is **per-hit**; multiply by `intents[].hits` for total incoming damage.
 - After `end_turn`, the response contains all enemy actions -- always read it.
+- **Ancient events**: Use `is_in_dialogue` field to detect dialogue phase. Run `advance_dialogue --auto` before `choose_event`.
+- **Event workflow**: For Ancient events: check `is_in_dialogue` → `advance_dialogue --auto` → wait → `choose_event`.
 
 ## Error Handling
 
@@ -373,6 +492,8 @@ After `play_card`, `end_turn`, and `use_potion`, the response `data` includes a 
 | `POTION_BELT_FULL` | Potion reward but belt has no empty slots | Skip this reward or use a potion first |
 | `NOT_SUPPORTED` | Reward type not yet supported (e.g., CardRemoval) | Skip this reward |
 | `CLAIM_FAILED` | Reward claim failed for unknown reason | Run `./sts2 state` to refresh and retry |
+| `NOT_ANCIENT_EVENT` | Tried `advance_dialogue` on non-Ancient event | Check `layout_type` in event state |
+| `NOT_IN_DIALOGUE` | Ancient event dialogue already finished | Use `choose_event` directly |
 | `CONNECTION_ERROR` | Game disconnected | Report to user and stop |
 
 On any error, run `./sts2 state` to refresh state before continuing.
