@@ -1,4 +1,6 @@
 using Godot;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
 using MegaCrit.Sts2.Core.Nodes.Screens;
@@ -9,13 +11,13 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles claiming a non-card reward (gold, potion, relic, special card) by index.
+///     Handles claiming a non-card reward (gold, potion, relic, special card) by type + ID.
 ///     Uses <see cref="NClickableControl.ForceClick" /> on the <see cref="NRewardButton" />
 ///     to trigger the full game UI flow: claim animation, signal emission, and button removal.
 /// </summary>
 public static class ClaimRewardHandler
 {
-    private static readonly ModLogger Logger = new("ClaimRewardAction");
+    private static readonly ModLogger Logger = new("ClaimRewardHandler");
 
     /// <summary>
     ///     Maximum time to wait for the reward button to be removed from the UI
@@ -29,11 +31,13 @@ public static class ClaimRewardHandler
     private const int PollIntervalMs = 100;
 
     /// <summary>
-    ///     Claims a reward at the given index from the reward screen.
+    ///     Claims a reward by type and optional ID.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    /// <param name="rewardIndex">0-based index of the reward in the reward list.</param>
-    public static async Task<object> ExecuteAsync(int rewardIndex)
+    /// <param name="rewardType">Reward type: gold, potion, relic, special_card.</param>
+    /// <param name="itemId">Item ID for potion/relic/special_card (optional for gold).</param>
+    /// <param name="nth">N-th occurrence when multiple rewards of same type exist (0-based).</param>
+    public static async Task<object> ExecuteAsync(string rewardType, string? itemId, int nth)
     {
         try
         {
@@ -45,17 +49,48 @@ public static class ClaimRewardHandler
 
             var rewardButtons = RewardUiHelper.FindRewardButtons(screen);
 
-            if (rewardIndex < 0 || rewardIndex >= rewardButtons.Count)
+            // Find rewards of the requested type
+            var matchingRewards = FindRewardsByType(rewardButtons, rewardType, itemId);
+
+            if (matchingRewards.Count == 0)
+            {
+                // Build list of available reward types for error message
+                var availableTypes = GetAvailableRewardTypes(rewardButtons);
+                Logger.Warning($"No {rewardType} reward found with id={itemId ?? "null"}. Available: {string.Join(", ", availableTypes)}");
+
                 return new
                 {
-                    ok = false, error = "INVALID_REWARD_INDEX",
-                    message = $"Reward index {rewardIndex} out of range (screen has {rewardButtons.Count} rewards)"
+                    ok = false,
+                    error = "REWARD_NOT_FOUND",
+                    message = $"No {rewardType} reward found" + (itemId != null ? $" with ID '{itemId}'" : ""),
+                    available_types = availableTypes
                 };
+            }
 
-            var rewardButton = rewardButtons[rewardIndex];
-            var reward = rewardButton.Reward;
-            if (reward == null)
-                return new { ok = false, error = "INTERNAL_ERROR", message = "Reward object is null" };
+            // If only one matching reward, nth must be 0
+            if (matchingRewards.Count == 1 && nth != 0)
+            {
+                return new
+                {
+                    ok = false,
+                    error = "AMBIGUOUS_REWARD",
+                    message = $"Only one {rewardType} reward available, but nth={nth} was specified. Use nth=0 or omit --nth."
+                };
+            }
+
+            // If multiple matching rewards, nth is required to be specified (or defaults to 0)
+            if (nth < 0 || nth >= matchingRewards.Count)
+            {
+                var idPart = itemId != null ? $" with ID '{itemId}'" : "";
+                return new
+                {
+                    ok = false,
+                    error = "INVALID_REWARD_INDEX",
+                    message = $"{rewardType}{idPart} has {matchingRewards.Count} copies. Use nth from 0 to {matchingRewards.Count - 1}."
+                };
+            }
+
+            var (rewardButton, reward) = matchingRewards[nth];
 
             // Card rewards must use choose_card / skip_card commands
             if (reward is CardReward)
@@ -75,14 +110,12 @@ public static class ClaimRewardHandler
 
             // --- Claim the reward via ForceClick ---
 
-            var rewardType = GetRewardTypeName(reward);
-            Logger.Info($"Claiming reward at index {rewardIndex}: {rewardType} via ForceClick");
+            var rewardTypeName = GetRewardTypeName(reward);
+            Logger.Info($"Claiming {rewardType} reward (nth={nth}): {rewardTypeName} via ForceClick");
 
             rewardButton.ForceClick();
 
             // Wait for the reward button to be removed from the UI.
-            // ForceClick triggers GetReward() -> OnSelectWrapper() -> RewardClaimed signal
-            // -> RewardCollectedFrom() which removes the button from the rewards container.
             var removed = await WaitForButtonRemoval(rewardButton);
             if (!removed)
             {
@@ -97,15 +130,16 @@ public static class ClaimRewardHandler
                 return new { ok = false, error = "CLAIM_FAILED", message = "Reward claim was not successful" };
             }
 
-            Logger.Info($"Reward claimed successfully: {rewardType}");
+            Logger.Info($"Reward claimed successfully: {rewardTypeName}");
 
             return new
             {
                 ok = true,
                 data = new
                 {
-                    reward_index = rewardIndex,
                     reward_type = rewardType,
+                    item_id = itemId,
+                    nth = nth,
                     claimed = true
                 }
             };
@@ -118,10 +152,98 @@ public static class ClaimRewardHandler
     }
 
     /// <summary>
-    ///     Waits for a reward button to be removed from the scene tree after ForceClick.
-    ///     The game removes the button via the <c>RewardClaimed</c> signal → <c>RewardCollectedFrom()</c>.
+    ///     Finds all rewards matching the specified type and optional ID.
     /// </summary>
-    /// <returns><c>true</c> if the button was removed within the timeout; <c>false</c> otherwise.</returns>
+    private static List<(NRewardButton Button, Reward Reward)> FindRewardsByType(
+        List<NRewardButton> rewardButtons, string rewardType, string? itemId)
+    {
+        var result = new List<(NRewardButton Button, Reward Reward)>();
+
+        foreach (var button in rewardButtons)
+        {
+            var reward = button.Reward;
+            if (reward == null) continue;
+
+            var matches = rewardType.ToLower() switch
+            {
+                "gold" => reward is GoldReward,
+                "potion" => reward is PotionReward pr &&
+                            (itemId == null || MatchesId(pr.Potion?.Id.Entry, itemId)),
+                "relic" => reward is RelicReward rr &&
+                           (itemId == null || MatchesId(rr.ClaimedRelic?.Id.Entry, itemId) ||
+                            MatchesId(GetRelicFromReflection(rr)?.Id.Entry, itemId)),
+                "special_card" => reward is SpecialCardReward scr &&
+                                 (itemId == null || MatchesId(GetCardFromReflection(scr)?.Id.Entry, itemId)),
+                _ => false
+            };
+
+            if (matches)
+                result.Add((button, reward));
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    ///     Checks if two IDs match (case-insensitive).
+    /// </summary>
+    private static bool MatchesId(string? actualId, string? expectedId)
+    {
+        if (actualId == null || expectedId == null) return false;
+        return actualId.Equals(expectedId, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    ///     Gets relic from RelicReward using reflection (private field access).
+    /// </summary>
+    private static RelicModel? GetRelicFromReflection(RelicReward relicReward)
+    {
+        try
+        {
+            var field = typeof(RelicReward).GetField("_relic",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            return field?.GetValue(relicReward) as RelicModel;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets card from SpecialCardReward using reflection (private field access).
+    /// </summary>
+    private static CardModel? GetCardFromReflection(SpecialCardReward specialCardReward)
+    {
+        try
+        {
+            var field = typeof(SpecialCardReward).GetField("_card",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            return field?.GetValue(specialCardReward) as CardModel;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets list of available reward types for error messages.
+    /// </summary>
+    private static List<string> GetAvailableRewardTypes(List<NRewardButton> rewardButtons)
+    {
+        var types = new List<string>();
+        foreach (var button in rewardButtons)
+        {
+            if (button.Reward != null)
+                types.Add(GetRewardTypeName(button.Reward));
+        }
+        return types;
+    }
+
+    /// <summary>
+    ///     Waits for a reward button to be removed from the scene tree after ForceClick.
+    /// </summary>
     private static async Task<bool> WaitForButtonRemoval(NRewardButton button)
     {
         var elapsed = 0;
@@ -130,7 +252,6 @@ public static class ClaimRewardHandler
             await Task.Delay(PollIntervalMs);
             elapsed += PollIntervalMs;
 
-            // Button removed from the tree means the reward was claimed
             if (!GodotObject.IsInstanceValid(button) || !button.IsInsideTree())
                 return true;
         }
@@ -149,6 +270,7 @@ public static class ClaimRewardHandler
         RelicReward => "Relic",
         SpecialCardReward => "SpecialCard",
         CardRemovalReward => "CardRemoval",
+        CardReward => "Card",
         _ => reward.GetType().Name
     };
 }

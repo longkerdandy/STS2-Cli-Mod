@@ -41,4 +41,16 @@ public class Request
     /// </summary>
     [JsonPropertyName("nth")]
     public int? Nth { get; set; }
+
+    /// <summary>
+    /// Reward type for reward commands (e.g., "gold", "potion", "relic", "card", "special_card").
+    /// </summary>
+    [JsonPropertyName("reward_type")]
+    public string? RewardType { get; set; }
+
+    /// <summary>
+    /// Card ID for choose_card command (the card to select from the card reward).
+    /// </summary>
+    [JsonPropertyName("card_id")]
+    public string? CardId { get; set; }
 }

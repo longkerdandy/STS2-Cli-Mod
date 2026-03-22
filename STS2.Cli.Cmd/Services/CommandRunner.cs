@@ -111,6 +111,131 @@ public static class CommandRunner
     }
 
     /// <summary>
+    ///     Executes a reward command with type, ID, and nth parameters.
+    /// </summary>
+    public static async Task<int> ExecuteRewardAsync(
+        string cmd,
+        string rewardType,
+        string? itemId,
+        int nth,
+        bool pretty = false,
+        int timeoutMs = 5000)
+    {
+        using var client = new PipeClient();
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+
+        if (!await client.ConnectAsync(timeoutMs))
+        {
+            WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        var response = await client.SendRewardCommandAsync(cmd, rewardType, itemId, nth);
+
+        if (response == null)
+        {
+            WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        if (response.Ok)
+        {
+            WriteSuccess(response.Data, jsonOptions);
+            return ExitSuccess;
+        }
+
+        WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
+        return MapErrorToExitCode(response.Error);
+    }
+
+    /// <summary>
+    ///     Executes a choose_card command with type, card_id, and nth parameters.
+    /// </summary>
+    public static async Task<int> ExecuteChooseCardAsync(
+        string rewardType,
+        string cardId,
+        int nth,
+        bool pretty = false,
+        int timeoutMs = 5000)
+    {
+        using var client = new PipeClient();
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+
+        if (!await client.ConnectAsync(timeoutMs))
+        {
+            WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        var response = await client.SendChooseCardCommandAsync(rewardType, cardId, nth);
+
+        if (response == null)
+        {
+            WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        if (response.Ok)
+        {
+            WriteSuccess(response.Data, jsonOptions);
+            return ExitSuccess;
+        }
+
+        WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
+        return MapErrorToExitCode(response.Error);
+    }
+
+    /// <summary>
+    ///     Executes a skip_card command with type and nth parameters.
+    /// </summary>
+    public static async Task<int> ExecuteSkipCardAsync(
+        string rewardType,
+        int nth,
+        bool pretty = false,
+        int timeoutMs = 5000)
+    {
+        using var client = new PipeClient();
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+
+        if (!await client.ConnectAsync(timeoutMs))
+        {
+            WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        var response = await client.SendSkipCardCommandAsync(rewardType, nth);
+
+        if (response == null)
+        {
+            WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        if (response.Ok)
+        {
+            WriteSuccess(response.Data, jsonOptions);
+            return ExitSuccess;
+        }
+
+        WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
+        return MapErrorToExitCode(response.Error);
+    }
+
+    /// <summary>
+    ///     Directly outputs an error and returns exit code (for parameter validation failures).
+    /// </summary>
+    public static async Task<int> ExecuteAsync(
+        string cmd,
+        string error,
+        string message,
+        bool pretty = false)
+    {
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+        WriteError(error, message, jsonOptions);
+        return MapErrorToExitCode(error);
+    }
+
+    /// <summary>
     ///     Maps a Mod error code to a CLI exit code.
     /// </summary>
     private static int MapErrorToExitCode(string? error) => error switch
@@ -129,7 +254,9 @@ public static class CommandRunner
         "TARGET_NOT_ALLOWED" or "INVALID_POTION_SLOT" or
         "EMPTY_POTION_SLOT" or "INVALID_REWARD_INDEX" or
         "NOT_CARD_REWARD" or "USE_CHOOSE_CARD" or
-        "CARD_NOT_FOUND" or "POTION_NOT_FOUND" or "AMBIGUOUS_ID" => ExitInvalidParam,
+        "CARD_NOT_FOUND" or "POTION_NOT_FOUND" or "AMBIGUOUS_ID" or
+        "INVALID_REWARD_TYPE" or "REWARD_NOT_FOUND" or "ID_MISMATCH" or
+        "AMBIGUOUS_REWARD" => ExitInvalidParam,
 
         // Timeout
         "TIMEOUT" => ExitTimeout,

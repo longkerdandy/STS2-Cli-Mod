@@ -174,14 +174,14 @@ public static class PipeServer
                 // use_potion is async — spans multiple frames waiting for action completion
                 "use_potion" => await HandleUsePotionRequestAsync(request.Id, request.Nth, request.Target),
 
-                // claim_reward is async — OnSelectWrapper() is async
-                "claim_reward" => await HandleClaimRewardRequestAsync(request.Args),
+                // claim_reward is async — uses type + id + nth for stable identification
+                "claim_reward" => await HandleClaimRewardRequestAsync(request.RewardType, request.Id, request.Nth),
 
-                // choose_card is async — CardPileCmd.Add() is async
-                "choose_card" => await HandleChooseCardRequestAsync(request.Args),
+                // choose_card is async — uses reward type + card_id + nth
+                "choose_card" => await HandleChooseCardRequestAsync(request.RewardType, request.CardId, request.Nth),
 
-                // skip_card is async — opens card screen then clicks skip button
-                "skip_card" => await HandleSkipCardRequestAsync(request.Args),
+                // skip_card is async — uses reward type + nth
+                "skip_card" => await HandleSkipCardRequestAsync(request.RewardType, request.Nth),
 
                 // proceed runs synchronously on the main thread — ForceClick is fire-and-forget
                 "proceed" => HandleProceedRequest(),
@@ -270,44 +270,48 @@ public static class PipeServer
 
     /// <summary>
     ///     Handles the 'claim_reward' command asynchronously.
-    ///     Validates arguments on the pipe thread, then delegates to <see cref="ClaimRewardHandler.ExecuteAsync" />
-    ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to claim the reward.
+    ///     Uses reward type + item ID + nth for stable identification.
     /// </summary>
-    /// <param name="args">Command arguments, expects reward index as the first element.</param>
+    /// <param name="rewardType">Reward type (gold, potion, relic, special_card).</param>
+    /// <param name="itemId">Item ID for potion/relic/special_card (optional for gold).</param>
+    /// <param name="nth">N-th occurrence when multiple rewards of same type exist.</param>
     /// <returns>Response indicating success or failure.</returns>
-    private static async Task<object> HandleClaimRewardRequestAsync(int[]? args)
+    private static async Task<object> HandleClaimRewardRequestAsync(string? rewardType, string? itemId, int? nth)
     {
-        if (args == null || args.Length == 0)
-            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward index required" };
+        if (string.IsNullOrEmpty(rewardType))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward type required (--type)" };
 
-        var rewardIndex = args[0];
-        Logger.Info($"Requested to claim reward at index {rewardIndex}");
+        var nthValue = nth ?? 0;
+        Logger.Info($"Requested to claim reward: type={rewardType}, id={itemId ?? "null"}, nth={nthValue}");
 
-        return await MainThreadExecutor.RunOnMainThreadAsync(() => ClaimRewardHandler.ExecuteAsync(rewardIndex));
+        return await MainThreadExecutor.RunOnMainThreadAsync(() =>
+            ClaimRewardHandler.ExecuteAsync(rewardType, itemId, nthValue));
     }
 
     /// <summary>
     ///     Handles the 'choose_card' command asynchronously.
-    ///     Validates arguments on the pipe thread, then delegates to <see cref="ChooseCardHandler.ExecuteAsync" />
-    ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to pick a card from a card reward.
+    ///     Uses reward type + card ID + nth for stable identification.
     /// </summary>
-    /// <param name="args">Command arguments, expects [reward_index, card_index].</param>
+    /// <param name="rewardType">Reward type (only 'card' is supported).</param>
+    /// <param name="cardId">Card ID to select.</param>
+    /// <param name="nth">N-th card reward when multiple exist.</param>
     /// <returns>Response indicating success or failure.</returns>
-    private static async Task<object> HandleChooseCardRequestAsync(int[]? args)
+    private static async Task<object> HandleChooseCardRequestAsync(string? rewardType, string? cardId, int? nth)
     {
-        if (args == null || args.Length < 2)
-            return new
-            {
-                ok = false, error = "MISSING_ARGUMENT",
-                message = "Reward index and card index required (e.g., choose_card <reward_index> <card_index>)"
-            };
+        if (string.IsNullOrEmpty(rewardType))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward type required (--type)" };
 
-        var rewardIndex = args[0];
-        var cardIndex = args[1];
-        Logger.Info($"Requested to choose card at reward index {rewardIndex}, card index {cardIndex}");
+        if (string.IsNullOrEmpty(cardId))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Card ID required (--card_id)" };
+
+        if (rewardType != "card")
+            return new { ok = false, error = "INVALID_REWARD_TYPE", message = "choose_card only supports --type card" };
+
+        var nthValue = nth ?? 0;
+        Logger.Info($"Requested to choose card: type={rewardType}, card_id={cardId}, nth={nthValue}");
 
         return await MainThreadExecutor.RunOnMainThreadAsync(
-            () => ChooseCardHandler.ExecuteAsync(rewardIndex, cardIndex));
+            () => ChooseCardHandler.ExecuteAsync(rewardType, cardId, nthValue));
     }
 
     /// <summary>
@@ -315,18 +319,22 @@ public static class PipeServer
     ///     Validates arguments on the pipe thread, then delegates to <see cref="ChooseCardHandler.ExecuteSkipAsync" />
     ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to open the card screen and click skip.
     /// </summary>
-    /// <param name="args">Command arguments, expects reward index as the first element.</param>
+    /// <param name="rewardType">Reward type (only 'card' is supported).</param>
+    /// <param name="nth">N-th card reward when multiple exist.</param>
     /// <returns>Response indicating success or failure.</returns>
-    private static async Task<object> HandleSkipCardRequestAsync(int[]? args)
+    private static async Task<object> HandleSkipCardRequestAsync(string? rewardType, int? nth)
     {
-        if (args == null || args.Length == 0)
-            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward index required" };
+        if (string.IsNullOrEmpty(rewardType))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward type required (--type)" };
 
-        var rewardIndex = args[0];
-        Logger.Info($"Requested to skip card reward at index {rewardIndex}");
+        if (rewardType != "card")
+            return new { ok = false, error = "INVALID_REWARD_TYPE", message = "skip_card only supports --type card" };
+
+        var nthValue = nth ?? 0;
+        Logger.Info($"Requested to skip card reward: type={rewardType}, nth={nthValue}");
 
         return await MainThreadExecutor.RunOnMainThreadAsync(
-            () => ChooseCardHandler.ExecuteSkipAsync(rewardIndex));
+            () => ChooseCardHandler.ExecuteSkipAsync(rewardType, nthValue));
     }
 
     /// <summary>

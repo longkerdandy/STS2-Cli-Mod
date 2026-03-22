@@ -1,4 +1,6 @@
 using Godot;
+using MegaCrit.Sts2.Core.Entities.Cards;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
 using MegaCrit.Sts2.Core.Nodes.Screens;
@@ -12,24 +14,19 @@ namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
 ///     Handles choosing a card from a <see cref="CardReward" /> or skipping the card reward entirely.
-///     Uses the full game UI flow: ForceClick on the <see cref="NRewardButton" /> to open the
-///     <see cref="NCardRewardSelectionScreen" />, then emit <see cref="NCardHolder.SignalName.Pressed" />
-///     on the target card holder (or ForceClick on the skip button).
-///     This ensures all game hooks, animations, history recording, and sync are handled by the game.
+///     Uses reward type + card ID + nth for stable identification.
 /// </summary>
 public static class ChooseCardHandler
 {
-    private static readonly ModLogger Logger = new("ChooseCardAction");
+    private static readonly ModLogger Logger = new("ChooseCardHandler");
 
     /// <summary>
     ///     Delay after the card reward selection screen opens before interacting with cards.
-    ///     The game disables cards for 350ms via <c>DisableCardsForShortTimeAfterOpening()</c>.
     /// </summary>
     private const int CardEnableDelayMs = 500;
 
     /// <summary>
-    ///     Maximum time to wait for the card reward button to be removed from the UI
-    ///     after choosing a card (covers card-fly VFX animation).
+    ///     Maximum time to wait for the card reward button to be removed from the UI.
     /// </summary>
     private const int CompletionTimeoutMs = 5000;
 
@@ -39,12 +36,13 @@ public static class ChooseCardHandler
     private const int PollIntervalMs = 100;
 
     /// <summary>
-    ///     Picks a card from a card reward by driving the full game UI flow.
-    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
+    ///     Picks a card from a card reward using card ID.
+    ///     Must be called on the Godot main thread.
     /// </summary>
-    /// <param name="rewardIndex">0-based index of the card reward in the reward list.</param>
-    /// <param name="cardIndex">0-based index of the card within the card reward choices.</param>
-    public static async Task<object> ExecuteAsync(int rewardIndex, int cardIndex)
+    /// <param name="rewardType">Reward type (only 'card' is supported).</param>
+    /// <param name="cardId">Card ID to select (e.g., STRIKE_IRONCLAD).</param>
+    /// <param name="nth">N-th card reward when multiple exist (0-based).</param>
+    public static async Task<object> ExecuteAsync(string rewardType, string cardId, int nth)
     {
         try
         {
@@ -54,25 +52,47 @@ public static class ChooseCardHandler
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 
-            var (rewardButton, error) = FindCardRewardButton(screen, rewardIndex);
-            if (error != null) return error;
+            // Find all card rewards
+            var cardRewards = FindCardRewards(screen);
 
-            // Validate card index against the card reward's choices
-            var cardReward = (CardReward)rewardButton!.Reward!;
-            var cardCount = cardReward.Cards.Count();
-            if (cardIndex < 0 || cardIndex >= cardCount)
+            if (cardRewards.Count == 0)
+                return new { ok = false, error = "REWARD_NOT_FOUND", message = "No card rewards available" };
+
+            // If multiple card rewards exist and nth is out of range
+            if (nth < 0 || nth >= cardRewards.Count)
+            {
                 return new
                 {
-                    ok = false, error = "INVALID_CARD_INDEX",
-                    message = $"Card index {cardIndex} out of range (reward has {cardCount} card choices)"
+                    ok = false,
+                    error = "INVALID_REWARD_INDEX",
+                    message = $"Card reward count: {cardRewards.Count}. Use nth from 0 to {cardRewards.Count - 1}."
                 };
+            }
+
+            var (rewardButton, cardReward) = cardRewards[nth];
+
+            // Find the specific card by ID within this reward
+            var cardChoice = FindCardById(cardReward, cardId);
+            if (cardChoice == null)
+            {
+                var availableCards = GetAvailableCardIds(cardReward);
+                Logger.Warning($"Card '{cardId}' not found in card reward (nth={nth}). Available: {string.Join(", ", availableCards)}");
+
+                return new
+                {
+                    ok = false,
+                    error = "CARD_NOT_FOUND",
+                    message = $"Card '{cardId}' not found in the card reward",
+                    available_cards = availableCards
+                };
+            }
 
             // --- Open the card reward selection screen via ForceClick ---
 
-            Logger.Info($"Opening card reward screen at index {rewardIndex} via ForceClick");
+            Logger.Info($"Opening card reward screen (nth={nth}) via ForceClick to select card: {cardId}");
             rewardButton.ForceClick();
 
-            // Wait for NCardRewardSelectionScreen to appear on the overlay stack
+            // Wait for NCardRewardSelectionScreen to appear
             var cardScreen = await RewardUiHelper.WaitForCardRewardScreen();
             if (cardScreen == null)
                 return new
@@ -81,50 +101,46 @@ public static class ChooseCardHandler
                     message = "Card reward selection screen did not open in time"
                 };
 
-            // Wait for cards to become clickable (game disables them for 350ms after opening)
+            // Wait for cards to become clickable
             await Task.Delay(CardEnableDelayMs);
 
             // --- Find and select the target card ---
 
             var cardHolders = RewardUiHelper.FindCardHolders(cardScreen);
-            if (cardIndex >= cardHolders.Count)
+            var targetHolder = FindCardHolderById(cardHolders, cardId);
+
+            if (targetHolder == null)
                 return new
                 {
-                    ok = false, error = "INVALID_CARD_INDEX",
-                    message =
-                        $"Card index {cardIndex} out of range (screen has {cardHolders.Count} card holders)"
+                    ok = false, error = "CARD_NOT_FOUND",
+                    message = $"Card '{cardId}' not found on the selection screen"
                 };
-
-            var targetHolder = cardHolders[cardIndex];
 
             // Get card info before selecting (for response)
             var cardModel = targetHolder.CardModel;
-            var cardId = cardModel?.Id.Entry ?? "UNKNOWN";
+            var selectedCardId = cardModel?.Id.Entry ?? "UNKNOWN";
             var cardName = cardModel != null ? StripGameTags(cardModel.Title) : "Unknown";
 
-            Logger.Info($"Selecting card at index {cardIndex}: {cardId} via Pressed signal");
+            Logger.Info($"Selecting card: {selectedCardId} via Pressed signal");
 
-            // Emit Pressed signal — same as AutoSlayer's approach.
-            // NCardHolder does not extend NClickableControl, so ForceClick is not available.
-            // The Pressed signal is connected to NCardRewardSelectionScreen.SelectCard()
-            // which resolves the TaskCompletionSource in CardReward.OnSelect().
+            // Emit Pressed signal
             targetHolder.EmitSignal(NCardHolder.SignalName.Pressed, targetHolder);
 
-            // Wait for the reward button to be removed (indicates full flow completed)
+            // Wait for the reward button to be removed
             var completed = await WaitForRewardCompletion(rewardButton);
             if (!completed)
                 Logger.Warning("Card selection completed but reward button was not removed in time");
 
-            Logger.Info($"Card '{cardId}' selected successfully");
+            Logger.Info($"Card '{selectedCardId}' selected successfully");
 
             return new
             {
                 ok = true,
                 data = new
                 {
-                    reward_index = rewardIndex,
-                    card_index = cardIndex,
-                    card_id = cardId,
+                    reward_type = rewardType,
+                    nth = nth,
+                    card_id = selectedCardId,
                     card_name = cardName
                 }
             };
@@ -137,12 +153,12 @@ public static class ChooseCardHandler
     }
 
     /// <summary>
-    ///     Skips a card reward by driving the full game UI flow.
-    ///     Opens the card selection screen, then clicks the Skip alternative button.
-    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
+    ///     Skips a card reward.
+    ///     Must be called on the Godot main thread.
     /// </summary>
-    /// <param name="rewardIndex">0-based index of the card reward in the reward list.</param>
-    public static async Task<object> ExecuteSkipAsync(int rewardIndex)
+    /// <param name="rewardType">Reward type (only 'card' is supported).</param>
+    /// <param name="nth">N-th card reward when multiple exist (0-based).</param>
+    public static async Task<object> ExecuteSkipAsync(string rewardType, int nth)
     {
         try
         {
@@ -152,15 +168,30 @@ public static class ChooseCardHandler
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 
-            var (rewardButton, error) = FindCardRewardButton(screen, rewardIndex);
-            if (error != null) return error;
+            // Find all card rewards
+            var cardRewards = FindCardRewards(screen);
+
+            if (cardRewards.Count == 0)
+                return new { ok = false, error = "REWARD_NOT_FOUND", message = "No card rewards available" };
+
+            if (nth < 0 || nth >= cardRewards.Count)
+            {
+                return new
+                {
+                    ok = false,
+                    error = "INVALID_REWARD_INDEX",
+                    message = $"Card reward count: {cardRewards.Count}. Use nth from 0 to {cardRewards.Count - 1}."
+                };
+            }
+
+            var (rewardButton, _) = cardRewards[nth];
 
             // --- Open the card reward selection screen via ForceClick ---
 
-            Logger.Info($"Opening card reward screen at index {rewardIndex} for skip via ForceClick");
-            rewardButton!.ForceClick();
+            Logger.Info($"Opening card reward screen (nth={nth}) for skip via ForceClick");
+            rewardButton.ForceClick();
 
-            // Wait for NCardRewardSelectionScreen to appear on the overlay stack
+            // Wait for NCardRewardSelectionScreen to appear
             var cardScreen = await RewardUiHelper.WaitForCardRewardScreen();
             if (cardScreen == null)
                 return new
@@ -182,15 +213,12 @@ public static class ChooseCardHandler
                     message = "No alternative buttons found on card reward screen"
                 };
 
-            // The first alternative button is typically "Skip"
-            // (generated by CardRewardAlternative.Generate when CanSkip is true)
             var skipButton = altButtons[0];
 
             Logger.Info("Clicking Skip button via ForceClick");
             skipButton.ForceClick();
 
-            // After skip, the card reward screen closes and the reward button stays
-            // (DismissScreenAndKeepReward). Wait for the card screen to be removed.
+            // Wait for the card screen to be dismissed
             var dismissed = await WaitForCardScreenDismissed();
             if (!dismissed)
                 Logger.Warning("Card reward screen was not dismissed in time after skip");
@@ -202,7 +230,8 @@ public static class ChooseCardHandler
                 ok = true,
                 data = new
                 {
-                    reward_index = rewardIndex,
+                    reward_type = rewardType,
+                    nth = nth,
                     skipped = true
                 }
             };
@@ -215,41 +244,69 @@ public static class ChooseCardHandler
     }
 
     /// <summary>
-    ///     Finds the <see cref="NRewardButton" /> at the given index and validates it is a <see cref="CardReward" />.
+    ///     Finds all card rewards on the screen.
     /// </summary>
-    /// <returns>
-    ///     A tuple of (button, null) on success, or (null, errorResponse) on failure.
-    /// </returns>
-    private static (NRewardButton? button, object? error) FindCardRewardButton(
-        NRewardsScreen screen, int rewardIndex)
+    private static List<(NRewardButton Button, CardReward CardReward)> FindCardRewards(NRewardsScreen screen)
     {
+        var result = new List<(NRewardButton Button, CardReward CardReward)>();
         var rewardButtons = RewardUiHelper.FindRewardButtons(screen);
 
-        if (rewardIndex < 0 || rewardIndex >= rewardButtons.Count)
-            return (null, new
-            {
-                ok = false, error = "INVALID_REWARD_INDEX",
-                message = $"Reward index {rewardIndex} out of range (screen has {rewardButtons.Count} rewards)"
-            });
+        foreach (var button in rewardButtons)
+        {
+            if (button.Reward is CardReward cardReward)
+                result.Add((button, cardReward));
+        }
 
-        var rewardButton = rewardButtons[rewardIndex];
-        var reward = rewardButton.Reward;
-        if (reward == null)
-            return (null, new { ok = false, error = "INTERNAL_ERROR", message = "Reward object is null" });
+        return result;
+    }
 
-        if (reward is not CardReward)
-            return (null, new
-            {
-                ok = false, error = "NOT_CARD_REWARD",
-                message = $"Reward at index {rewardIndex} is not a card reward (type: {reward.GetType().Name})"
-            });
+    /// <summary>
+    ///     Finds a card by ID within a card reward.
+    /// </summary>
+    private static CardModel? FindCardById(CardReward cardReward, string cardId)
+    {
+        var cards = cardReward.Cards;
+        if (cards == null) return null;
 
-        return (rewardButton, null);
+        foreach (var card in cards)
+        {
+            if (card.Id.Entry.Equals(cardId, StringComparison.OrdinalIgnoreCase))
+                return card;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Gets list of available card IDs in a reward for error messages.
+    /// </summary>
+    private static List<string> GetAvailableCardIds(CardReward cardReward)
+    {
+        var ids = new List<string>();
+        var cards = cardReward.Cards;
+        if (cards == null) return ids;
+
+        foreach (var card in cards)
+            ids.Add(card.Id.Entry);
+
+        return ids;
+    }
+
+    /// <summary>
+    ///     Finds the card holder by card ID.
+    /// </summary>
+    private static NCardHolder? FindCardHolderById(List<NCardHolder> cardHolders, string cardId)
+    {
+        foreach (var holder in cardHolders)
+        {
+            if (holder.CardModel?.Id.Entry.Equals(cardId, StringComparison.OrdinalIgnoreCase) == true)
+                return holder;
+        }
+        return null;
     }
 
     /// <summary>
     ///     Waits for a reward button to be removed from the scene tree after card selection.
-    ///     The game removes the button via <c>RewardClaimed</c> signal → <c>RewardCollectedFrom()</c>.
     /// </summary>
     private static async Task<bool> WaitForRewardCompletion(NRewardButton button)
     {
@@ -268,7 +325,6 @@ public static class ChooseCardHandler
 
     /// <summary>
     ///     Waits for the <see cref="NCardRewardSelectionScreen" /> to be removed from the overlay stack.
-    ///     After skip, <c>CardReward.OnSelect()</c> removes the screen and returns false.
     /// </summary>
     private static async Task<bool> WaitForCardScreenDismissed()
     {

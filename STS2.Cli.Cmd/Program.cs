@@ -54,23 +54,19 @@ internal static class Program
             CreateTargetOption("Target enemy combat ID (for targeted potions)"),
             prettyOption));
 
-        // sts2 claim_reward <index> — claim a non-card reward (gold, potion, relic)
-        rootCommand.AddCommand(CreateIndexedCommand(
-            "claim_reward", "Claim a reward (gold, potion, relic)",
-            new Argument<int>("index", "Reward index in the reward list (0-based)"),
+        // sts2 claim_reward --type <type> [--id <id>] [--nth <n>] — claim a non-card reward
+        rootCommand.AddCommand(CreateRewardCommand(
+            "claim_reward", "Claim a reward by type (gold, potion, relic, special_card)",
             prettyOption));
 
-        // sts2 choose_card <reward_index> <card_index> — pick a card from a card reward
-        rootCommand.AddCommand(CreateTwoArgCommand(
+        // sts2 choose_card --type card [--nth <n>] --card_id <card_id> — pick a card from a card reward
+        rootCommand.AddCommand(CreateChooseCardCommand(
             "choose_card", "Pick a card from a card reward",
-            new Argument<int>("reward_index", "Reward index in the reward list (0-based)"),
-            new Argument<int>("card_index", "Card index within the card reward choices (0-based)"),
             prettyOption));
 
-        // sts2 skip_card <reward_index> — skip a card reward (take nothing)
-        rootCommand.AddCommand(CreateIndexedCommand(
+        // sts2 skip_card --type card [--nth <n>] — skip a card reward
+        rootCommand.AddCommand(CreateSkipCardCommand(
             "skip_card", "Skip a card reward",
-            new Argument<int>("reward_index", "Reward index in the reward list (0-based)"),
             prettyOption));
 
         // sts2 proceed — leave the reward screen and proceed to the map
@@ -159,6 +155,133 @@ internal static class Program
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
             context.ExitCode = await CommandRunner.ExecuteAsync(name, [first, second], pretty: pretty);
         });
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates a reward claim command with type, optional ID, and optional nth.
+    /// </summary>
+    private static Command CreateRewardCommand(
+        string name, string description,
+        Option<bool> prettyOption)
+    {
+        var typeOption = new Option<string>("--type",
+            description: "Reward type: gold, potion, relic, special_card",
+            parseArgument: result =>
+            {
+                var value = result.Tokens.Single().Value.ToLower();
+                if (value is "gold" or "potion" or "relic" or "special_card")
+                    return value;
+                result.ErrorMessage = $"Invalid reward type '{value}'. Must be one of: gold, potion, relic, special_card";
+                return null!;
+            });
+        typeOption.IsRequired = true;
+
+        var idOption = new Option<string>("--id",
+            description: "Item ID (potion_id, relic_id, or card_id). Required for potion, relic, and special_card.");
+
+        var nthOption = new Option<int>("--nth",
+            () => 0,
+            description: "N-th occurrence when multiple rewards of same type exist (0-based). Optional, defaults to 0.");
+
+        var command = new Command(name, description);
+        command.AddOption(typeOption);
+        command.AddOption(idOption);
+        command.AddOption(nthOption);
+
+        command.SetHandler(async context =>
+        {
+            var type = context.ParseResult.GetValueForOption(typeOption);
+            var id = context.ParseResult.GetValueForOption(idOption);
+            var nth = context.ParseResult.GetValueForOption(nthOption);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+
+            // Validate: potion, relic, special_card require --id
+            if (type is "potion" or "relic" or "special_card" && string.IsNullOrEmpty(id))
+            {
+                context.ExitCode = await CommandRunner.ExecuteAsync(name, 
+                    error: $"MISSING_ARGUMENT", 
+                    message: $"Reward type '{type}' requires --id parameter",
+                    pretty: pretty);
+                return;
+            }
+
+            context.ExitCode = await CommandRunner.ExecuteRewardAsync(name, type, id, nth, pretty);
+        });
+
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates a choose_card command for selecting a card from a card reward.
+    /// </summary>
+    private static Command CreateChooseCardCommand(
+        string name, string description,
+        Option<bool> prettyOption)
+    {
+        // --type card (only card rewards are supported)
+        var typeOption = new Option<string>("--type",
+            () => "card",
+            description: "Reward type (only 'card' is supported)");
+
+        // --card_id (required - which card to pick)
+        var cardIdOption = new Option<string>("--card_id",
+            description: "Card ID to select (e.g., STRIKE_IRONCLAD)");
+        cardIdOption.IsRequired = true;
+
+        // --nth (optional - which card reward if multiple)
+        var nthOption = new Option<int>("--nth",
+            () => 0,
+            description: "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
+
+        var command = new Command(name, description);
+        command.AddOption(typeOption);
+        command.AddOption(cardIdOption);
+        command.AddOption(nthOption);
+
+        command.SetHandler(async context =>
+        {
+            var type = context.ParseResult.GetValueForOption(typeOption);
+            var cardId = context.ParseResult.GetValueForOption(cardIdOption);
+            var nth = context.ParseResult.GetValueForOption(nthOption);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+
+            context.ExitCode = await CommandRunner.ExecuteChooseCardAsync(type, cardId, nth, pretty);
+        });
+
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates a skip_card command for skipping a card reward.
+    /// </summary>
+    private static Command CreateSkipCardCommand(
+        string name, string description,
+        Option<bool> prettyOption)
+    {
+        // --type card (only card rewards can be skipped)
+        var typeOption = new Option<string>("--type",
+            () => "card",
+            description: "Reward type (only 'card' is supported)");
+
+        // --nth (optional - which card reward if multiple)
+        var nthOption = new Option<int>("--nth",
+            () => 0,
+            description: "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
+
+        var command = new Command(name, description);
+        command.AddOption(typeOption);
+        command.AddOption(nthOption);
+
+        command.SetHandler(async context =>
+        {
+            var type = context.ParseResult.GetValueForOption(typeOption);
+            var nth = context.ParseResult.GetValueForOption(nthOption);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+
+            context.ExitCode = await CommandRunner.ExecuteSkipCardAsync(type, nth, pretty);
+        });
+
         return command;
     }
 }

@@ -152,4 +152,99 @@ public class PipeClient : IDisposable
             return null;
         }
     }
+
+    /// <summary>
+    ///     Sends a reward command to the mod and returns the response.
+    /// </summary>
+    public async Task<Response?> SendRewardCommandAsync(
+        string cmd,
+        string rewardType,
+        string? itemId,
+        int nth)
+    {
+        if (_pipe is not { IsConnected: true }) return null;
+
+        try
+        {
+            var request = new Request
+            {
+                Cmd = cmd,
+                RewardType = rewardType,
+                Id = itemId,
+                Nth = nth
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
+            await _writer!.WriteLineAsync(requestJson);
+
+            var responseJson = await _reader!.ReadLineAsync();
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Sends a choose_card command to the mod and returns the response.
+    /// </summary>
+    public async Task<Response?> SendChooseCardCommandAsync(
+        string rewardType,
+        string cardId,
+        int nth)
+    {
+        if (_pipe is not { IsConnected: true }) return null;
+
+        try
+        {
+            var request = new Request
+            {
+                Cmd = "choose_card",
+                RewardType = rewardType,
+                CardId = cardId,
+                Nth = nth
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
+            await _writer!.WriteLineAsync(requestJson);
+
+            var responseJson = await _reader!.ReadLineAsync();
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Sends a skip_card command to the mod and returns the response.
+    /// </summary>
+    public async Task<Response?> SendSkipCardCommandAsync(
+        string rewardType,
+        int nth)
+    {
+        if (_pipe is not { IsConnected: true }) return null;
+
+        try
+        {
+            var request = new Request
+            {
+                Cmd = "skip_card",
+                RewardType = rewardType,
+                Nth = nth
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
+            await _writer!.WriteLineAsync(requestJson);
+
+            var responseJson = await _reader!.ReadLineAsync();
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 }
