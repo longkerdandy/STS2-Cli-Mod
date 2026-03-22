@@ -1,6 +1,9 @@
 using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.GameActions;
+using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -30,6 +33,29 @@ public static class ActionUtils
             Logger.Warning($"Failed to get local player: {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>
+    ///     Validates that combat is active and the player can act.
+    ///     Checks: combat in progress, not ending, play phase, actions not disabled.
+    ///     Returns an error response object if any check fails, or <c>null</c> if all pass.
+    /// </summary>
+    /// <returns>An anonymous error object, or <c>null</c> if validation passed.</returns>
+    public static object? ValidateCombatReady()
+    {
+        if (!CombatManager.Instance.IsInProgress)
+            return new { ok = false, error = "NOT_IN_COMBAT", message = "Not currently in combat" };
+
+        if (CombatManager.Instance.IsOverOrEnding)
+            return new { ok = false, error = "COMBAT_ENDING", message = "Combat is over or ending" };
+
+        if (!CombatManager.Instance.IsPlayPhase)
+            return new { ok = false, error = "NOT_PLAYER_TURN", message = "Not in play phase" };
+
+        if (CombatManager.Instance.PlayerActionsDisabled)
+            return new { ok = false, error = "ACTIONS_DISABLED", message = "Player actions are currently disabled" };
+
+        return null;
     }
 
     /// <summary>
@@ -73,5 +99,28 @@ public static class ActionUtils
             Logger.Warning($"Failed to resolve target with combat_id {combatId}: {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>
+    ///     Enqueues a <see cref="GameAction" />, subscribes to its lifecycle events,
+    ///     and awaits completion with a timeout.
+    ///     Bridges <c>AfterFinished</c> and <c>BeforeCancelled</c> to a <see cref="TaskCompletionSource{T}" />.
+    /// </summary>
+    /// <param name="action">The game action to enqueue.</param>
+    /// <param name="timeoutMs">Maximum milliseconds to wait for the action to complete.</param>
+    /// <returns>
+    ///     <see cref="GameActionState.Finished" /> or <see cref="GameActionState.Canceled" /> on completion;
+    ///     <c>null</c> if the timeout elapsed before the action resolved.
+    /// </returns>
+    public static async Task<GameActionState?> EnqueueAndAwaitAsync(GameAction action, int timeoutMs)
+    {
+        var tcs = new TaskCompletionSource<GameActionState>();
+        action.AfterFinished += _ => tcs.TrySetResult(GameActionState.Finished);
+        action.BeforeCancelled += _ => tcs.TrySetResult(GameActionState.Canceled);
+
+        RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);
+
+        var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeoutMs));
+        return completedTask == tcs.Task ? tcs.Task.Result : null;
     }
 }

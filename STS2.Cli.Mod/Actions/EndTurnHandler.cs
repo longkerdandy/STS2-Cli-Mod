@@ -30,25 +30,8 @@ public static class EndTurnHandler
         {
             // --- Validation (synchronous, single frame) ---
 
-            if (!CombatManager.Instance.IsInProgress)
-                return new { ok = false, error = "NOT_IN_COMBAT", message = "Not currently in combat" };
-
-            if (CombatManager.Instance.IsOverOrEnding)
-                return new { ok = false, error = "COMBAT_ENDING", message = "Combat is over or ending" };
-
-            if (!CombatManager.Instance.IsPlayPhase)
-                return new
-                {
-                    ok = false, error = "NOT_PLAYER_TURN",
-                    message = "Not in play phase - cannot end turn during enemy turn"
-                };
-
-            if (CombatManager.Instance.PlayerActionsDisabled)
-                return new
-                {
-                    ok = false, error = "ACTIONS_DISABLED",
-                    message = "Player actions are currently disabled (turn may already be ending)"
-                };
+            var combatError = ActionUtils.ValidateCombatReady();
+            if (combatError != null) return combatError;
 
             // Get player
             var player = ActionUtils.GetLocalPlayer();

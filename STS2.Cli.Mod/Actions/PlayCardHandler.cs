@@ -3,7 +3,6 @@ using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions;
-using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -33,23 +32,8 @@ public static class PlayCardHandler
         {
             // --- Validation (synchronous, single frame) ---
 
-            if (!CombatManager.Instance.IsInProgress)
-                return new { ok = false, error = "NOT_IN_COMBAT", message = "Not currently in combat" };
-
-            if (CombatManager.Instance.IsOverOrEnding)
-                return new { ok = false, error = "COMBAT_ENDING", message = "Combat is over or ending" };
-
-            if (!CombatManager.Instance.IsPlayPhase)
-                return new
-                {
-                    ok = false, error = "NOT_PLAYER_TURN", message = "Not in play phase - cannot act during enemy turn"
-                };
-
-            if (CombatManager.Instance.PlayerActionsDisabled)
-                return new
-                {
-                    ok = false, error = "ACTIONS_DISABLED", message = "Player actions are currently disabled"
-                };
+            var combatError = ActionUtils.ValidateCombatReady();
+            if (combatError != null) return combatError;
 
             var player = ActionUtils.GetLocalPlayer();
             if (player?.PlayerCombatState == null)
@@ -109,26 +93,17 @@ public static class PlayCardHandler
 
             var action = new PlayCardAction(card, target);
 
-            // Bridge action lifecycle events to a TaskCompletionSource
-            var tcs = new TaskCompletionSource<GameActionState>();
-            action.AfterFinished += _ => tcs.TrySetResult(GameActionState.Finished);
-            action.BeforeCancelled += _ => tcs.TrySetResult(GameActionState.Canceled);
-
-            RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(action);
-
             var targetName = target?.Monster?.Title.GetFormattedText();
             var targetMsg = targetName != null ? $" targeting {targetName}" : "";
             Logger.Info($"PlayCardAction enqueued: '{card.Title}'{targetMsg}");
 
-            // Wait for the action to finish or be cancelled (with timeout)
-            var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(ActionTimeoutMs));
-            if (completedTask != tcs.Task)
+            var finalState = await ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
+            if (finalState == null)
             {
                 Logger.Warning("PlayCardAction timed out waiting for completion");
                 return new { ok = false, error = "TIMEOUT", message = "Card action did not complete in time" };
             }
 
-            var finalState = tcs.Task.Result;
             if (finalState == GameActionState.Canceled)
             {
                 Logger.Info("PlayCardAction was cancelled by the game");
