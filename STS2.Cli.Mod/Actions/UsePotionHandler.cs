@@ -173,7 +173,7 @@ public static class UsePotionHandler
     /// <param name="player">The player.</param>
     /// <param name="potionId">Potion ID to find.</param>
     /// <param name="nth">N-th occurrence (0-based).</param>
-    /// <returns>Tuple of (potion, slot, error). If error is not null, potion and slot are invalid.</returns>
+    /// <returns>Tuple of (potion, slot, error). If the error is not null, potion and slot are invalid.</returns>
     private static (PotionModel Potion, int Slot, object? Error) FindPotionById(Player player, string potionId, int nth)
     {
         // Collect all non-null potions with their slots
@@ -189,7 +189,7 @@ public static class UsePotionHandler
 
         if (matchingPotions.Count == 0)
         {
-            // Build list of available potion IDs for error message
+            // Build a list of available potion IDs for the error message
             var availablePotions = new List<string>();
             for (var slot = 0; slot < player.MaxPotionCount; slot++)
             {

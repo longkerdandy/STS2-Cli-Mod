@@ -2,7 +2,6 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 using STS2.Cli.Mod.Utils;
@@ -146,7 +145,7 @@ public static class PlayCardHandler
     /// <param name="hand">The player's hand (CardPile).</param>
     /// <param name="cardId">Card ID to find.</param>
     /// <param name="nth">N-th occurrence (0-based).</param>
-    /// <returns>Tuple of (card, cardIndex, error). If error is not null, card and cardIndex are invalid.</returns>
+    /// <returns>Tuple of (card, cardIndex, error). If the error is not null, card and cardIndex are invalid.</returns>
     private static (CardModel Card, int Index, object? Error) FindCardById(CardPile hand, string cardId, int nth)
     {
         // Find all matching cards
@@ -161,7 +160,7 @@ public static class PlayCardHandler
 
         if (matchingCards.Count == 0)
         {
-            // Build list of available card IDs for error message
+            // Build a list of available card IDs for the error message
             var availableIds = hand.Cards.Select(c => c.Id.Entry).Distinct().ToList();
             var availableStr = string.Join(", ", availableIds);
             Logger.Warning($"Card '{cardId}' not found in hand. Available: {availableStr}");

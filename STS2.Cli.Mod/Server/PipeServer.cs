@@ -183,7 +183,7 @@ public static class PipeServer
                 // skip_card is async — opens card screen then clicks skip button
                 "skip_card" => await HandleSkipCardRequestAsync(request.Args),
 
-                // proceed runs synchronously on main thread — ForceClick is fire-and-forget
+                // proceed runs synchronously on the main thread — ForceClick is fire-and-forget
                 "proceed" => HandleProceedRequest(),
 
                 // Synchronous commands — single-frame game state access on the main thread
@@ -222,7 +222,7 @@ public static class PipeServer
     /// <param name="cardId">Card ID to play (e.g., "STRIKE_IRONCLAD").</param>
     /// <param name="nth">Optional N-th occurrence when multiple copies exist (0-based).</param>
     /// <param name="target">Optional target combat ID for targeted cards.</param>
-    /// <returns>Response indicating success or failure, with execution results on success.</returns>
+    /// <returns>Response indicating success or failure, with execution results when success.</returns>
     private static async Task<object> HandlePlayCardRequestAsync(string? cardId, int? nth, int? target)
     {
         if (string.IsNullOrEmpty(cardId))
@@ -242,7 +242,7 @@ public static class PipeServer
     /// <param name="potionId">Potion ID to use (e.g., "FIRE_POTION").</param>
     /// <param name="nth">Optional N-th occurrence when multiple copies exist (0-based).</param>
     /// <param name="target">Optional target combat ID for targeted potions.</param>
-    /// <returns>Response indicating success or failure, with execution results on success.</returns>
+    /// <returns>Response indicating success or failure, with execution results when success.</returns>
     private static async Task<object> HandleUsePotionRequestAsync(string? potionId, int? nth, int? target)
     {
         if (string.IsNullOrEmpty(potionId))
@@ -260,7 +260,7 @@ public static class PipeServer
     ///     <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to await
     ///     enemy turn completion and collect execution results.
     /// </summary>
-    /// <returns>Response indicating success or failure, with execution results on success.</returns>
+    /// <returns>Response indicating success or failure, with execution results when success.</returns>
     private static async Task<object> HandleEndTurnRequestAsync()
     {
         Logger.Info("Requested to end turn");
@@ -332,7 +332,7 @@ public static class PipeServer
     /// <summary>
     ///     Handles the 'proceed' command synchronously.
     ///     Delegates to <see cref="ProceedHandler.Execute" /> via
-    ///     <see cref="MainThreadExecutor.RunOnMainThread{T}" /> to click the proceed button.
+    ///     <see cref="MainThreadExecutor.RunOnMainThread{T}" /> to click the "proceed" button.
     /// </summary>
     /// <returns>Response indicating success or failure.</returns>
     private static object HandleProceedRequest()

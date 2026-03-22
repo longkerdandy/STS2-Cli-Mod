@@ -29,10 +29,6 @@ internal static class Program
             getDefaultValue: () => false);
         rootCommand.AddGlobalOption(prettyOption);
 
-        // Shared --target option factory for targeted commands
-        Option<int?> CreateTargetOption(string description) =>
-            new("--target", description);
-
         // sts2 ping — test connection to the mod
         rootCommand.AddCommand(CreateSimpleCommand("ping", "Test connection to the mod", prettyOption));
 
@@ -81,6 +77,10 @@ internal static class Program
         rootCommand.AddCommand(CreateSimpleCommand("proceed", "Leave reward screen and proceed to map", prettyOption));
 
         return await rootCommand.InvokeAsync(args);
+
+        // Shared --target option factory for targeted commands
+        Option<int?> CreateTargetOption(string description) =>
+            new("--target", description);
     }
 
     /// <summary>
@@ -118,27 +118,6 @@ internal static class Program
         {
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
             context.ExitCode = await CommandRunner.ExecuteAsync(name, pretty: pretty);
-        });
-        return command;
-    }
-
-    /// <summary>
-    ///     Creates a command with a positional argument and optional --target (e.g., play_card, use_potion).
-    /// </summary>
-    private static Command CreateTargetedCommand(
-        string name, string description,
-        Argument<int> indexArg, Option<int?> targetOption,
-        Option<bool> prettyOption)
-    {
-        var command = new Command(name, description);
-        command.AddArgument(indexArg);
-        command.AddOption(targetOption);
-        command.SetHandler(async context =>
-        {
-            var index = context.ParseResult.GetValueForArgument(indexArg);
-            var target = context.ParseResult.GetValueForOption(targetOption);
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            context.ExitCode = await CommandRunner.ExecuteAsync(name, [index], target, pretty);
         });
         return command;
     }
