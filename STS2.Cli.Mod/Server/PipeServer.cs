@@ -183,6 +183,9 @@ public static class PipeServer
                 // skip_card is async — uses reward type + nth
                 "skip_card" => await HandleSkipCardRequestAsync(request.RewardType, request.Nth),
 
+                // choose_event is async — ForceClick option button + polling for state change
+                "choose_event" => await HandleChooseEventRequestAsync(request.Args),
+
                 // proceed runs synchronously on the main thread — ForceClick is fire-and-forget
                 "proceed" => HandleProceedRequest(),
 
@@ -348,6 +351,25 @@ public static class PipeServer
         Logger.Info("Requested to proceed from reward screen");
 
         return MainThreadExecutor.RunOnMainThread(ProceedHandler.Execute);
+    }
+
+    /// <summary>
+    ///     Handles the 'choose_event' command asynchronously.
+    ///     Validates arguments on the pipe thread, then delegates to <see cref="ChooseEventHandler.ExecuteAsync" />
+    ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to choose an event option.
+    /// </summary>
+    /// <param name="args">Command arguments, expects option index as the first element.</param>
+    /// <returns>Response indicating success or failure with updated event state.</returns>
+    private static async Task<object> HandleChooseEventRequestAsync(int[]? args)
+    {
+        if (args == null || args.Length == 0)
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Option index required" };
+
+        var optionIndex = args[0];
+        Logger.Info($"Requested to choose event option at index {optionIndex}");
+
+        return await MainThreadExecutor.RunOnMainThreadAsync(
+            () => ChooseEventHandler.ExecuteAsync(optionIndex));
     }
 
     /// <summary>

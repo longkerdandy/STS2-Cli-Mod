@@ -344,10 +344,12 @@ sts2 choose_event <index>
 | `EVENT_TIMEOUT` | 4 (timeout) | Post-click polling timed out |
 
 **Deliverables**:
-- [ ] `ChooseEventHandler.ExecuteAsync(int optionIndex)` with guard clauses + ForceClick + polling
-- [ ] `PipeServer` routes `choose_event` to handler
-- [ ] CLI `sts2 choose_event <index>` command (indexed pattern like `claim_reward`)
-- [ ] Error codes added to `CommandRunner.MapErrorToExitCode()`
+- [x] `ChooseEventHandler.ExecuteAsync(int optionIndex)` with guard clauses + ForceClick + polling
+- [x] `PipeServer` routes `choose_event` to handler
+- [x] CLI `sts2 choose_event <index>` command (indexed pattern like `claim_reward`)
+- [x] Error codes added to `CommandRunner.MapErrorToExitCode()`
+
+**Status**: ✅ COMPLETED - Event option selection implemented with polling and updated state return
 
 ---
 

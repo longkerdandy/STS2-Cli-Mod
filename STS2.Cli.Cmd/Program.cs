@@ -69,6 +69,12 @@ internal static class Program
             "skip_card", "Skip a card reward",
             prettyOption));
 
+        // sts2 choose_event <index> — choose an option in an event
+        rootCommand.AddCommand(CreateIndexedCommand(
+            "choose_event", "Choose an option in an event room",
+            new Argument<int>("index", "Option index (0-based)"),
+            prettyOption));
+
         // sts2 proceed — leave the reward screen and proceed to the map
         rootCommand.AddCommand(CreateSimpleCommand("proceed", "Leave reward screen and proceed to map", prettyOption));
 

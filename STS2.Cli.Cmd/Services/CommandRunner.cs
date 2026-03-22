@@ -246,11 +246,14 @@ public static class CommandRunner
         "CANNOT_PLAY_CARD" or "ACTION_CANCELLED" or
         "POTION_ALREADY_QUEUED" or "POTION_NOT_USABLE" or
         "NOT_ON_REWARD_SCREEN" or "POTION_BELT_FULL" or
-        "NOT_SUPPORTED" or "CLAIM_FAILED" => ExitInvalidState,
+        "NOT_SUPPORTED" or "CLAIM_FAILED" or
+        "NOT_IN_EVENT" or "NO_EVENT_LAYOUT" or
+        "OPTION_LOCKED" or "OPTION_BUTTON_NOT_FOUND" => ExitInvalidState,
 
         // Invalid parameter — caller provided wrong arguments
         "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or
-        "INVALID_CARD_INDEX" or "TARGET_REQUIRED" or "TARGET_NOT_FOUND" or
+        "INVALID_CARD_INDEX" or "INVALID_OPTION_INDEX" or
+        "TARGET_REQUIRED" or "TARGET_NOT_FOUND" or
         "TARGET_NOT_ALLOWED" or "INVALID_POTION_SLOT" or
         "EMPTY_POTION_SLOT" or "INVALID_REWARD_INDEX" or
         "NOT_CARD_REWARD" or "USE_CHOOSE_CARD" or
@@ -259,7 +262,7 @@ public static class CommandRunner
         "AMBIGUOUS_REWARD" => ExitInvalidParam,
 
         // Timeout
-        "TIMEOUT" => ExitTimeout,
+        "TIMEOUT" or "EVENT_TIMEOUT" => ExitTimeout,
 
         // Internal errors, state extraction failures, and unknown errors
         _ => ExitConnectionError
