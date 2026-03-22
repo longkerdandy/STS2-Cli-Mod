@@ -247,4 +247,31 @@ public class PipeClient : IDisposable
             return null;
         }
     }
+
+    /// <summary>
+    ///     Sends an advance_dialogue command to the mod and returns the response.
+    /// </summary>
+    public async Task<Response?> SendAdvanceDialogueCommandAsync(bool auto)
+    {
+        if (_pipe is not { IsConnected: true }) return null;
+
+        try
+        {
+            var request = new Request
+            {
+                Cmd = "advance_dialogue",
+                Args = new[] { auto ? 1 : 0 }
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
+            await _writer!.WriteLineAsync(requestJson);
+
+            var responseJson = await _reader!.ReadLineAsync();
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 }

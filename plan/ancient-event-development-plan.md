@@ -139,6 +139,8 @@ public int? TotalDialogueLines { get; set; }  // Total lines (optional)
 6. **If auto mode**: Repeat steps 3-5 until `IsDialogueOnLastLine` or max iterations (e.g., 50)
 7. **Return updated event state**
 
+**Status**: ✅ COMPLETED
+
 **Response**:
 ```json
 // Single advance
@@ -187,6 +189,8 @@ sts2 advance_dialogue --auto
 | `NOT_ANCIENT_EVENT` | Event is not an Ancient event |
 | `NOT_IN_DIALOGUE` | Already in options phase (dialogue finished) |
 | `DIALOGUE_HITBOX_NOT_FOUND` | Cannot find dialogue hitbox node |
+
+**Status**: ✅ COMPLETED
 
 ### Step 4: Update Documentation
 

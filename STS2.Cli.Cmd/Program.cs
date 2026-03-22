@@ -75,6 +75,11 @@ internal static class Program
             new Argument<int>("index", "Option index (0-based)"),
             prettyOption));
 
+        // sts2 advance_dialogue [--auto] — advance Ancient event dialogue
+        rootCommand.AddCommand(CreateAdvanceDialogueCommand(
+            "advance_dialogue", "Advance dialogue in an Ancient event",
+            prettyOption));
+
         // sts2 proceed — leave the reward screen and proceed to the map
         rootCommand.AddCommand(CreateSimpleCommand("proceed", "Leave reward screen and proceed to map", prettyOption));
 
@@ -286,6 +291,32 @@ internal static class Program
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
 
             context.ExitCode = await CommandRunner.ExecuteSkipCardAsync(type, nth, pretty);
+        });
+
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates an advance_dialogue command for Ancient events.
+    /// </summary>
+    private static Command CreateAdvanceDialogueCommand(
+        string name, string description,
+        Option<bool> prettyOption)
+    {
+        // --auto (optional - auto-advance all dialogue lines)
+        var autoOption = new Option<bool>("--auto",
+            () => false,
+            description: "Auto-advance all dialogue lines until options appear");
+
+        var command = new Command(name, description);
+        command.AddOption(autoOption);
+
+        command.SetHandler(async context =>
+        {
+            var auto = context.ParseResult.GetValueForOption(autoOption);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+
+            context.ExitCode = await CommandRunner.ExecuteAdvanceDialogueAsync(auto, pretty);
         });
 
         return command;

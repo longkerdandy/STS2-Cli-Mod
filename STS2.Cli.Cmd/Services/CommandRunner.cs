@@ -222,6 +222,41 @@ public static class CommandRunner
     }
 
     /// <summary>
+    ///     Executes an advance_dialogue command for Ancient events.
+    /// </summary>
+    public static async Task<int> ExecuteAdvanceDialogueAsync(
+        bool auto,
+        bool pretty = false,
+        int timeoutMs = 5000)
+    {
+        using var client = new PipeClient();
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+
+        if (!await client.ConnectAsync(timeoutMs))
+        {
+            WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        var response = await client.SendAdvanceDialogueCommandAsync(auto);
+
+        if (response == null)
+        {
+            WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        if (response.Ok)
+        {
+            WriteSuccess(response.Data, jsonOptions);
+            return ExitSuccess;
+        }
+
+        WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
+        return MapErrorToExitCode(response.Error);
+    }
+
+    /// <summary>
     ///     Directly outputs an error and returns exit code (for parameter validation failures).
     /// </summary>
     public static async Task<int> ExecuteAsync(
@@ -248,7 +283,8 @@ public static class CommandRunner
         "NOT_ON_REWARD_SCREEN" or "POTION_BELT_FULL" or
         "NOT_SUPPORTED" or "CLAIM_FAILED" or
         "NOT_IN_EVENT" or "NO_EVENT_LAYOUT" or
-        "OPTION_LOCKED" or "OPTION_BUTTON_NOT_FOUND" => ExitInvalidState,
+        "OPTION_LOCKED" or "OPTION_BUTTON_NOT_FOUND" or
+        "NOT_ANCIENT_EVENT" or "NOT_IN_DIALOGUE" or "DIALOGUE_HITBOX_NOT_FOUND" => ExitInvalidState,
 
         // Invalid parameter — caller provided wrong arguments
         "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or

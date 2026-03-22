@@ -186,6 +186,9 @@ public static class PipeServer
                 // choose_event is async — ForceClick option button + polling for state change
                 "choose_event" => await HandleChooseEventRequestAsync(request.Args),
 
+                // advance_dialogue is async — ForceClick dialogue hitbox + polling for Ancient events
+                "advance_dialogue" => await HandleAdvanceDialogueRequestAsync(request.Args),
+
                 // proceed runs synchronously on the main thread — ForceClick is fire-and-forget
                 "proceed" => HandleProceedRequest(),
 
@@ -370,6 +373,23 @@ public static class PipeServer
 
         return await MainThreadExecutor.RunOnMainThreadAsync(
             () => ChooseEventHandler.ExecuteAsync(optionIndex));
+    }
+
+    /// <summary>
+    ///     Handles the 'advance_dialogue' command asynchronously.
+    ///     Validates arguments on the pipe thread, then delegates to <see cref="AdvanceDialogueHandler.ExecuteAsync" />
+    ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to advance Ancient event dialogue.
+    /// </summary>
+    /// <param name="args">Command arguments, expects [1] for auto mode as first element (optional).</param>
+    /// <returns>Response indicating success or failure with updated event state.</returns>
+    private static async Task<object> HandleAdvanceDialogueRequestAsync(int[]? args)
+    {
+        // args[0] = 1 for auto mode, 0 or not present for single advance
+        var auto = args is { Length: > 0 } && args[0] == 1;
+        Logger.Info($"Requested to advance dialogue (auto={auto})");
+
+        return await MainThreadExecutor.RunOnMainThreadAsync(
+            () => AdvanceDialogueHandler.ExecuteAsync(auto));
     }
 
     /// <summary>
