@@ -240,10 +240,12 @@ This needs investigation during implementation. The `EventModel.CurrentOptions` 
 ```
 
 **Deliverables**:
-- [ ] `EventStateDto` and `EventOptionDto` DTO classes
-- [ ] `EventStateBuilder.Build()` extracts event state from `NEventRoom`
-- [ ] `GameStateDto.Event` property added
-- [ ] `GameStateExtractor` returns event state when screen is `"EVENT"`
+- [x] `EventStateDto` and `EventOptionDto` DTO classes
+- [x] `EventStateBuilder.Build()` extracts event state from `NEventRoom`
+- [x] `GameStateDto.Event` property added
+- [x] `GameStateExtractor` returns event state when screen is `"EVENT"`
+
+**Status**: ✅ COMPLETED - Event state extraction implemented with full DTO support
 
 ---
 

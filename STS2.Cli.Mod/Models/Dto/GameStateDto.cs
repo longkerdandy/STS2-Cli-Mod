@@ -33,4 +33,9 @@ public class GameStateDto
     ///     Reward state if on reward screen, null otherwise.
     /// </summary>
     public RewardStateDto? Rewards { get; set; }
+
+    /// <summary>
+    ///     Event state if at an event room, null otherwise.
+    /// </summary>
+    public EventStateDto? Event { get; set; }
 }

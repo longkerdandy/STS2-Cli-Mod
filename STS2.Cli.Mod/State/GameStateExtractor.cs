@@ -38,6 +38,9 @@ public static class GameStateExtractor
             // Extract reward state if on reward screen
             if (state.Screen == "REWARD") state.Rewards = ExtractRewardState();
 
+            // Extract event state if at an event
+            if (state.Screen == "EVENT") state.Event = ExtractEventState();
+
             return state;
         }
         catch (Exception ex)
@@ -186,6 +189,23 @@ public static class GameStateExtractor
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract reward state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the event state from the <see cref="NEventRoom" />.
+    ///     Uses reflection to access the private EventModel field.
+    /// </summary>
+    private static EventStateDto? ExtractEventState()
+    {
+        try
+        {
+            return EventStateBuilder.Build();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract event state: {ex.Message}");
             return null;
         }
     }
