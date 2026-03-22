@@ -168,7 +168,7 @@ public static class PipeServer
                 // play_card is async — spans multiple frames waiting for action completion
                 "play_card" => await HandlePlayCardRequestAsync(request.Args, request.Target),
 
-                // end_turn is async — waits for enemy turn to complete before returning results
+                // end_turn is async — waits for the enemy turn to complete before returning results
                 "end_turn" => await HandleEndTurnRequestAsync(),
 
                 // use_potion is async — spans multiple frames waiting for action completion
@@ -251,7 +251,7 @@ public static class PipeServer
     {
         Logger.Info("Requested to end turn");
 
-        return await MainThreadExecutor.RunOnMainThreadAsync(() => EndTurnHandler.ExecuteAsync());
+        return await MainThreadExecutor.RunOnMainThreadAsync(EndTurnHandler.ExecuteAsync);
     }
 
     /// <summary>

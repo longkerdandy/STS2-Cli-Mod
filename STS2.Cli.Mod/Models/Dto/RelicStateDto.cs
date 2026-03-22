@@ -34,7 +34,7 @@ public class RelicStateDto
     public required string Status { get; set; }
 
     /// <summary>
-    ///     Counter value for relics that track counts (null if relic has no counter).
+    ///     Counter value for relics that track counts (null if the relic has no counter).
     /// </summary>
     public int? Counter { get; set; }
 }

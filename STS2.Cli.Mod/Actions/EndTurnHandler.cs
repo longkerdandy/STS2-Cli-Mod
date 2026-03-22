@@ -67,7 +67,7 @@ public static class EndTurnHandler
                 PlayerCmd.EndTurn(player, canBackOut: false);
                 Logger.Info("EndTurn action executed via PlayerCmd, waiting for enemy turn...");
 
-                // Wait for next player turn or combat end (with timeout)
+                // Wait for the next player turn or combat end (with timeout)
                 var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(TurnTimeoutMs));
                 if (completedTask != tcs.Task)
                 {
