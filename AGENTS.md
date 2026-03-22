@@ -40,6 +40,7 @@ There are no test projects. Testing is done manually by running the game with th
 2. `sts2 state` - confirms state extraction (returns full combat state as JSON)
 3. `sts2 play_card <index> [--target <combat_id>]` - confirms card play with execution results (damage, block, powers)
 4. `sts2 end_turn` - confirms end turn action with execution results (enemy turn damage, block, powers)
+5. `sts2 use_potion <slot> [--target <combat_id>]` - confirms potion use with execution results (damage, block, powers)
 
 ## Code Style Guidelines
 

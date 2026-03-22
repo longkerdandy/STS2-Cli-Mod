@@ -8,7 +8,7 @@ namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
 ///     Converts <see cref="CombatHistoryEntry" /> objects into JSON-friendly anonymous objects
-///     for inclusion in action responses. Focuses on core combat effects: damage, block, and powers.
+///     for inclusion in action responses. Covers core combat effects: damage, block, powers, and potions.
 /// </summary>
 public static class CombatHistoryBuilder
 {
@@ -79,6 +79,13 @@ public static class CombatHistoryBuilder
                     target_name = GetCreatureId(e.Actor),
                     power_id = e.Power.Id.Entry,
                     amount = (int)e.Amount
+                },
+                PotionUsedEntry e => new
+                {
+                    type = "potion_used",
+                    target_id = (int?)e.Target?.CombatId,
+                    target_name = e.Target != null ? GetCreatureId(e.Target) : null,
+                    potion_id = e.Potion.Id.Entry
                 },
                 _ => null
             };

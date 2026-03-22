@@ -171,6 +171,9 @@ public static class PipeServer
                 // end_turn is async — waits for enemy turn to complete before returning results
                 "end_turn" => await HandleEndTurnRequestAsync(),
 
+                // use_potion is async — spans multiple frames waiting for action completion
+                "use_potion" => await HandleUsePotionRequestAsync(request.Args, request.Target),
+
                 // Synchronous commands — single-frame game state access on the main thread
                 _ => MainThreadExecutor.RunOnMainThread(() => cmd switch
                 {
@@ -216,6 +219,25 @@ public static class PipeServer
         Logger.Info($"Requested to play card at index {cardIndex}, target={target?.ToString() ?? "none"}");
 
         return await MainThreadExecutor.RunOnMainThreadAsync(() => PlayCardHandler.ExecuteAsync(cardIndex, target));
+    }
+
+    /// <summary>
+    ///     Handles the 'use_potion' command asynchronously.
+    ///     Validates arguments on the pipe thread, then delegates to <see cref="UsePotionHandler.ExecuteAsync" />
+    ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to await action completion.
+    /// </summary>
+    /// <param name="args">Command arguments, expects potion slot index as the first element.</param>
+    /// <param name="target">Optional target combat ID for targeted potions.</param>
+    /// <returns>Response indicating success or failure, with execution results on success.</returns>
+    private static async Task<object> HandleUsePotionRequestAsync(int[]? args, int? target)
+    {
+        if (args == null || args.Length == 0)
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Potion slot index required" };
+
+        var slot = args[0];
+        Logger.Info($"Requested to use potion at slot {slot}, target={target?.ToString() ?? "none"}");
+
+        return await MainThreadExecutor.RunOnMainThreadAsync(() => UsePotionHandler.ExecuteAsync(slot, target));
     }
 
     /// <summary>

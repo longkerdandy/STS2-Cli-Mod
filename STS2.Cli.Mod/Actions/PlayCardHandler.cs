@@ -85,7 +85,7 @@ public static class PlayCardHandler
                         message = "Card requires a target. Provide 'target' with an enemy combat_id."
                     };
 
-                target = ResolveTarget((uint)targetCombatId.Value);
+                target = ActionUtils.ResolveEnemyTarget((uint)targetCombatId.Value);
                 if (target == null)
                     return new
                     {
@@ -163,44 +163,4 @@ public static class PlayCardHandler
         }
     }
 
-    /// <summary>
-    ///     Resolves a target creature by combat ID using the game's native lookup.
-    ///     Returns null if the creature is not found, not an enemy, or not hittable
-    ///     (dead or blocked by <c>Hook.ShouldAllowHitting</c>).
-    /// </summary>
-    private static Creature? ResolveTarget(uint combatId)
-    {
-        try
-        {
-            var combatState = CombatManager.Instance.DebugOnlyGetState();
-            if (combatState == null)
-                return null;
-
-            var creature = combatState.GetCreature(combatId);
-            if (creature == null)
-            {
-                Logger.Warning($"No creature found with combat_id {combatId}");
-                return null;
-            }
-
-            if (creature.Side != CombatSide.Enemy)
-            {
-                Logger.Warning($"Creature with combat_id {combatId} is not an enemy (side={creature.Side})");
-                return null;
-            }
-
-            if (!creature.IsHittable)
-            {
-                Logger.Warning($"Creature with combat_id {combatId} is not hittable");
-                return null;
-            }
-
-            return creature;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to resolve target with combat_id {combatId}: {ex.Message}");
-            return null;
-        }
-    }
 }
