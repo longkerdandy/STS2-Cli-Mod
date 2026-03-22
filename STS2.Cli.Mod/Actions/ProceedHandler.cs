@@ -1,8 +1,6 @@
-using Godot;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens;
-using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -29,13 +27,13 @@ public static class ProceedHandler
         {
             // --- Validation ---
 
-            var screen = FindRewardsScreen();
+            var screen = RewardUiHelper.FindRewardsScreen();
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 
             // --- Find and click the proceed button ---
 
-            var proceedButton = FindFirst<NProceedButton>(screen);
+            var proceedButton = RewardUiHelper.FindFirst<NProceedButton>(screen);
             if (proceedButton == null)
             {
                 Logger.Warning("NProceedButton not found in NRewardsScreen");
@@ -78,49 +76,5 @@ public static class ProceedHandler
             Logger.Error($"Failed to proceed from reward screen: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
         }
-    }
-
-    /// <summary>
-    ///     Finds the <see cref="NRewardsScreen" /> in the overlay stack.
-    /// </summary>
-    private static NRewardsScreen? FindRewardsScreen()
-    {
-        var overlayStack = NOverlayStack.Instance;
-        if (overlayStack == null) return null;
-
-        var top = overlayStack.Peek();
-        if (top is NRewardsScreen rewardsScreen)
-            return rewardsScreen;
-
-        foreach (var child in overlayStack.GetChildren())
-        {
-            if (child is NRewardsScreen found)
-                return found;
-        }
-
-        return null;
-    }
-
-    /// <summary>
-    ///     Recursively searches for the first node of type <typeparamref name="T" />
-    ///     within the given <paramref name="start" /> node's subtree.
-    ///     Mirrors <c>UiHelper.FindFirst&lt;T&gt;</c> from the AutoSlayer.
-    /// </summary>
-    private static T? FindFirst<T>(Node start) where T : Node
-    {
-        if (!GodotObject.IsInstanceValid(start))
-            return null;
-
-        if (start is T result)
-            return result;
-
-        foreach (var child in start.GetChildren())
-        {
-            var found = FindFirst<T>(child);
-            if (found != null)
-                return found;
-        }
-
-        return null;
     }
 }

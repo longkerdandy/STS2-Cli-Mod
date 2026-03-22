@@ -180,8 +180,8 @@ public static class PipeServer
                 // choose_card is async — CardPileCmd.Add() is async
                 "choose_card" => await HandleChooseCardRequestAsync(request.Args),
 
-                // skip_card validates on pipe thread, then runs synchronously on main thread
-                "skip_card" => HandleSkipCardRequest(request.Args),
+                // skip_card is async — opens card screen then clicks skip button
+                "skip_card" => await HandleSkipCardRequestAsync(request.Args),
 
                 // proceed runs synchronously on main thread — ForceClick is fire-and-forget
                 "proceed" => HandleProceedRequest(),
@@ -309,13 +309,13 @@ public static class PipeServer
     }
 
     /// <summary>
-    ///     Handles the 'skip_card' command synchronously.
-    ///     Validates arguments on the pipe thread, then delegates to <see cref="ChooseCardHandler.ExecuteSkip" />
-    ///     via <see cref="MainThreadExecutor.RunOnMainThread{T}" /> for single-frame execution.
+    ///     Handles the 'skip_card' command asynchronously.
+    ///     Validates arguments on the pipe thread, then delegates to <see cref="ChooseCardHandler.ExecuteSkipAsync" />
+    ///     via <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" /> to open the card screen and click skip.
     /// </summary>
     /// <param name="args">Command arguments, expects reward index as the first element.</param>
     /// <returns>Response indicating success or failure.</returns>
-    private static object HandleSkipCardRequest(int[]? args)
+    private static async Task<object> HandleSkipCardRequestAsync(int[]? args)
     {
         if (args == null || args.Length == 0)
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward index required" };
@@ -323,7 +323,8 @@ public static class PipeServer
         var rewardIndex = args[0];
         Logger.Info($"Requested to skip card reward at index {rewardIndex}");
 
-        return MainThreadExecutor.RunOnMainThread(() => ChooseCardHandler.ExecuteSkip(rewardIndex));
+        return await MainThreadExecutor.RunOnMainThreadAsync(
+            () => ChooseCardHandler.ExecuteSkipAsync(rewardIndex));
     }
 
     /// <summary>

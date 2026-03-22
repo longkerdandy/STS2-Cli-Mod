@@ -1,4 +1,5 @@
 using Godot;
+using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
@@ -9,12 +10,23 @@ namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
 ///     Handles claiming a non-card reward (gold, potion, relic, special card) by index.
-///     Locates the reward button on the <see cref="NRewardsScreen" />, calls
-///     <see cref="Reward.OnSelectWrapper" /> to claim, and removes the button from the UI.
+///     Uses <see cref="NClickableControl.ForceClick" /> on the <see cref="NRewardButton" />
+///     to trigger the full game UI flow: claim animation, signal emission, and button removal.
 /// </summary>
 public static class ClaimRewardHandler
 {
     private static readonly ModLogger Logger = new("ClaimRewardAction");
+
+    /// <summary>
+    ///     Maximum time to wait for the reward button to be removed from the UI
+    ///     after ForceClick (covers claim animation for relic/potion fly-to-inventory).
+    /// </summary>
+    private const int ClaimTimeoutMs = 5000;
+
+    /// <summary>
+    ///     Polling interval when waiting for the reward button removal.
+    /// </summary>
+    private const int PollIntervalMs = 100;
 
     /// <summary>
     ///     Claims a reward at the given index from the reward screen.
@@ -27,32 +39,11 @@ public static class ClaimRewardHandler
         {
             // --- Validation ---
 
-            var screen = FindRewardsScreen();
+            var screen = RewardUiHelper.FindRewardsScreen();
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 
-            // Find reward buttons from the rewards container
-            Control? rewardsContainer;
-            try
-            {
-                rewardsContainer = screen.GetNode<Control>("%RewardsContainer");
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning($"Failed to access RewardsContainer: {ex.Message}");
-                return new { ok = false, error = "INTERNAL_ERROR", message = "Failed to access rewards container" };
-            }
-
-            if (rewardsContainer == null)
-                return new { ok = false, error = "INTERNAL_ERROR", message = "Rewards container is null" };
-
-            // Collect reward buttons
-            var rewardButtons = new List<NRewardButton>();
-            foreach (var child in rewardsContainer.GetChildren())
-            {
-                if (child is NRewardButton button)
-                    rewardButtons.Add(button);
-            }
+            var rewardButtons = RewardUiHelper.FindRewardButtons(screen);
 
             if (rewardIndex < 0 || rewardIndex >= rewardButtons.Count)
                 return new
@@ -82,15 +73,20 @@ public static class ClaimRewardHandler
                     message = "Card removal reward is not yet supported"
                 };
 
-            // --- Claim the reward ---
+            // --- Claim the reward via ForceClick ---
 
             var rewardType = GetRewardTypeName(reward);
-            Logger.Info($"Claiming reward at index {rewardIndex}: {rewardType}");
+            Logger.Info($"Claiming reward at index {rewardIndex}: {rewardType} via ForceClick");
 
-            var success = await reward.OnSelectWrapper();
-            if (!success)
+            rewardButton.ForceClick();
+
+            // Wait for the reward button to be removed from the UI.
+            // ForceClick triggers GetReward() -> OnSelectWrapper() -> RewardClaimed signal
+            // -> RewardCollectedFrom() which removes the button from the rewards container.
+            var removed = await WaitForButtonRemoval(rewardButton);
+            if (!removed)
             {
-                // PotionReward returns false when belt is full
+                // Button still present — claim likely failed (e.g., potion belt full)
                 if (reward is PotionReward)
                     return new
                     {
@@ -101,9 +97,7 @@ public static class ClaimRewardHandler
                 return new { ok = false, error = "CLAIM_FAILED", message = "Reward claim was not successful" };
             }
 
-            // Remove the button from the rewards screen UI
-            screen.RewardCollectedFrom(rewardButton);
-            Logger.Info($"Reward claimed and removed from screen: {rewardType}");
+            Logger.Info($"Reward claimed successfully: {rewardType}");
 
             return new
             {
@@ -124,26 +118,25 @@ public static class ClaimRewardHandler
     }
 
     /// <summary>
-    ///     Finds the <see cref="NRewardsScreen" /> in the overlay stack.
+    ///     Waits for a reward button to be removed from the scene tree after ForceClick.
+    ///     The game removes the button via the <c>RewardClaimed</c> signal → <c>RewardCollectedFrom()</c>.
     /// </summary>
-    private static NRewardsScreen? FindRewardsScreen()
+    /// <returns><c>true</c> if the button was removed within the timeout; <c>false</c> otherwise.</returns>
+    private static async Task<bool> WaitForButtonRemoval(NRewardButton button)
     {
-        var overlayStack = NOverlayStack.Instance;
-        if (overlayStack == null) return null;
-
-        // Fast path: top overlay is the rewards screen
-        var top = overlayStack.Peek();
-        if (top is NRewardsScreen rewardsScreen)
-            return rewardsScreen;
-
-        // Slow path: search children (card selection may be on top)
-        foreach (var child in overlayStack.GetChildren())
+        var elapsed = 0;
+        while (elapsed < ClaimTimeoutMs)
         {
-            if (child is NRewardsScreen found)
-                return found;
+            await Task.Delay(PollIntervalMs);
+            elapsed += PollIntervalMs;
+
+            // Button removed from the tree means the reward was claimed
+            if (!GodotObject.IsInstanceValid(button) || !button.IsInsideTree())
+                return true;
         }
 
-        return null;
+        Logger.Warning($"Timed out waiting for reward button removal after {ClaimTimeoutMs}ms");
+        return false;
     }
 
     /// <summary>
