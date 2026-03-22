@@ -1,4 +1,5 @@
 using System.Reflection;
+using Godot;
 using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Events;
@@ -21,6 +22,18 @@ public static class EventStateBuilder
     /// </summary>
     private static readonly FieldInfo? EventRoomEventField =
         typeof(NEventRoom).GetField("_event", BindingFlags.NonPublic | BindingFlags.Instance);
+
+    /// <summary>
+    ///     Cached reflection field for <see cref="NAncientEventLayout" />._dialogue (private).
+    /// </summary>
+    private static readonly FieldInfo? AncientDialogueField =
+        typeof(NAncientEventLayout).GetField("_dialogue", BindingFlags.NonPublic | BindingFlags.Instance);
+
+    /// <summary>
+    ///     Cached reflection field for <see cref="NAncientEventLayout" />._currentDialogueLine (private).
+    /// </summary>
+    private static readonly FieldInfo? AncientCurrentLineField =
+        typeof(NAncientEventLayout).GetField("_currentDialogueLine", BindingFlags.NonPublic | BindingFlags.Instance);
 
     /// <summary>
     ///     Builds the event state from the current <see cref="NEventRoom" />.
@@ -55,7 +68,10 @@ public static class EventStateBuilder
                 Options = BuildOptions(eventModel)
             };
 
-            Logger.Info($"Built event state for '{result.EventId}' with {result.Options.Count} options");
+            // Detect Ancient layout and extract dialogue info
+            ExtractAncientDialogueInfo(eventRoom, result);
+
+            Logger.Info($"Built event state for '{result.EventId}' with {result.Options.Count} options, IsInDialogue={result.IsInDialogue}");
             return result;
         }
         catch (Exception ex)
@@ -113,5 +129,49 @@ public static class EventStateBuilder
         }
 
         return options;
+    }
+
+    /// <summary>
+    ///     Detects Ancient layout and extracts dialogue information.
+    /// </summary>
+    private static void ExtractAncientDialogueInfo(NEventRoom eventRoom, EventStateDto result)
+    {
+        try
+        {
+            // Check if layout is NAncientEventLayout
+            if (eventRoom.Layout is not NAncientEventLayout ancientLayout)
+            {
+                // Not an Ancient event, leave dialogue fields as default (false/null)
+                return;
+            }
+
+            // Access IsDialogueOnLastLine property
+            var isDialogueOnLastLineProperty = typeof(NAncientEventLayout).GetProperty("IsDialogueOnLastLine");
+            bool isDialogueOnLastLine = isDialogueOnLastLineProperty?.GetValue(ancientLayout) as bool? ?? true;
+
+            // We're in dialogue phase if not on the last line
+            result.IsInDialogue = !isDialogueOnLastLine;
+
+            if (result.IsInDialogue)
+            {
+                // Extract current line index
+                var currentLine = AncientCurrentLineField?.GetValue(ancientLayout) as int?;
+                result.CurrentDialogueLine = currentLine;
+
+                // Extract total lines count
+                var dialogue = AncientDialogueField?.GetValue(ancientLayout) as System.Collections.IList;
+                if (dialogue != null)
+                {
+                    result.TotalDialogueLines = dialogue.Count;
+                }
+
+                Logger.Info($"Ancient event dialogue: line {currentLine + 1} of {dialogue?.Count}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to extract Ancient dialogue info: {ex.Message}");
+            // Don't fail the whole state extraction, just leave dialogue fields unset
+        }
     }
 }

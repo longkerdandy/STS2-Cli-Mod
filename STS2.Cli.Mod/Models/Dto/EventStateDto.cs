@@ -38,4 +38,22 @@ public class EventStateDto
     ///     Current available options.
     /// </summary>
     public List<EventOptionDto> Options { get; set; } = [];
+
+    /// <summary>
+    ///     For Ancient events: whether we're currently in the dialogue phase.
+    ///     True when dialogue is still in progress, false when options are available.
+    /// </summary>
+    public bool IsInDialogue { get; set; }
+
+    /// <summary>
+    ///     For Ancient events: current dialogue line index (0-based).
+    ///     Null for non-Ancient events or when dialogue is finished.
+    /// </summary>
+    public int? CurrentDialogueLine { get; set; }
+
+    /// <summary>
+    ///     For Ancient events: total number of dialogue lines.
+    ///     Null for non-Ancient events or when dialogue is finished.
+    /// </summary>
+    public int? TotalDialogueLines { get; set; }
 }
