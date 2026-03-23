@@ -25,7 +25,7 @@ internal static class DeckSelectSkipCommand
             return CommandExecutor.ExecuteAsync(
                 () => new Request { Cmd = "deck_select_skip" },
                 pretty,
-                timeoutMs: 10000);
+                10000);
         });
 
         return command;

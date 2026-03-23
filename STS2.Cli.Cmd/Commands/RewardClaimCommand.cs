@@ -34,7 +34,8 @@ internal static class RewardClaimCommand
 
         var nthOption = new Option<int>("--nth")
         {
-            Description = "N-th occurrence when multiple rewards of same type exist (0-based). Optional, defaults to 0.",
+            Description =
+                "N-th occurrence when multiple rewards of same type exist (0-based). Optional, defaults to 0.",
             DefaultValueFactory = _ => 0
         };
 
@@ -53,12 +54,10 @@ internal static class RewardClaimCommand
 
             // Validate: potion, relic, special_card require --id
             if (type is "potion" or "relic" or "special_card" && string.IsNullOrEmpty(id))
-            {
                 return CommandExecutor.ExecuteErrorAsync(
                     "MISSING_ARGUMENT",
                     $"Reward type '{type}' requires --id parameter",
                     pretty);
-            }
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

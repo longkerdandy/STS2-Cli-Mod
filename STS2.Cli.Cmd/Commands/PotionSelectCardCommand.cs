@@ -9,7 +9,7 @@ namespace STS2.Cli.Cmd.Commands;
 internal static class PotionSelectCardCommand
 {
     /// <summary>
-    ///     Creates the potion_select_card command for selecting cards from potion-opened card selection screen.
+    ///     Creates the potion_select_card command for selecting cards from the potion-opened card selection screen.
     /// </summary>
     public static Command Create(Option<bool> prettyOption)
     {
@@ -50,7 +50,6 @@ internal static class PotionSelectCardCommand
             var pretty = parseResult.GetValue(prettyOption);
 
             if (skip)
-            {
                 // Skip selection
                 return CommandExecutor.ExecuteAsync(
                     () => new Request
@@ -59,16 +58,13 @@ internal static class PotionSelectCardCommand
                         Skip = true
                     },
                     pretty);
-            }
 
             if (cardIds.Length == 0)
-            {
                 // No cards specified and not skipping - error
                 return CommandExecutor.ExecuteErrorAsync(
                     "MISSING_ARGUMENT",
                     "Either specify card ID(s) or use --skip",
                     pretty);
-            }
 
             // Select specified cards
             return CommandExecutor.ExecuteAsync(

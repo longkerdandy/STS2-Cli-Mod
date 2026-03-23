@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Text;
 using STS2.Cli.Cmd.Commands;
 
 namespace STS2.Cli.Cmd;
@@ -18,7 +19,7 @@ internal static class Program
     private static int Main(string[] args)
     {
         // Force UTF-8 encoding for proper Chinese character display in WSL
-        Console.OutputEncoding = System.Text.Encoding.UTF8;
+        Console.OutputEncoding = Encoding.UTF8;
 
         var rootCommand = new RootCommand("STS2 CLI - Control Slay the Spire 2 via command line");
 
@@ -34,21 +35,25 @@ internal static class Program
         rootCommand.Subcommands.Add(SimpleCommand.Create("ping", "Test connection to the mod", prettyOption));
         rootCommand.Subcommands.Add(SimpleCommand.Create("state", "Get current game state", prettyOption));
         rootCommand.Subcommands.Add(SimpleCommand.Create("end_turn", "End the current turn", prettyOption));
-        rootCommand.Subcommands.Add(SimpleCommand.Create("reward_proceed", "Leave reward screen and proceed to map", prettyOption));
-        rootCommand.Subcommands.Add(SimpleCommand.Create("embark", "Start the game from character select", prettyOption));
+        rootCommand.Subcommands.Add(SimpleCommand.Create("reward_proceed", "Leave reward screen and proceed to map",
+            prettyOption));
+        rootCommand.Subcommands.Add(
+            SimpleCommand.Create("embark", "Start the game from character select", prettyOption));
 
-        // ID-based commands with optional target
+        // ID-based commands with an optional target
         var targetOption = IdBasedCommand.CreateTargetOption("Target enemy combat ID (for targeted cards)");
         rootCommand.Subcommands.Add(IdBasedCommand.Create(
             "play_card", "Play a card from hand",
             new Argument<string>("card_id") { Description = "Card ID (e.g., STRIKE_IRONCLAD, DEFEND_SILENT)" },
-            new Option<int>("--nth") { Description = "N-th occurrence when multiple copies exist (0-based)", DefaultValueFactory = _ => 0 },
+            new Option<int>("--nth")
+                { Description = "N-th occurrence when multiple copies exist (0-based)", DefaultValueFactory = _ => 0 },
             targetOption,
             prettyOption));
         rootCommand.Subcommands.Add(IdBasedCommand.Create(
             "use_potion", "Use a potion",
             new Argument<string>("potion_id") { Description = "Potion ID (e.g., FIRE_POTION, ENTROPIC_BREW)" },
-            new Option<int>("--nth") { Description = "N-th occurrence when multiple copies exist (0-based)", DefaultValueFactory = _ => 0 },
+            new Option<int>("--nth")
+                { Description = "N-th occurrence when multiple copies exist (0-based)", DefaultValueFactory = _ => 0 },
             targetOption,
             prettyOption));
 

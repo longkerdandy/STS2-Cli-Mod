@@ -9,7 +9,7 @@ namespace STS2.Cli.Cmd.Commands;
 internal static class IdBasedCommand
 {
     /// <summary>
-    ///     Creates an ID-based command with optional target.
+    ///     Creates an ID-based command with an optional target.
     /// </summary>
     public static Command Create(
         string name, string description,
@@ -48,9 +48,11 @@ internal static class IdBasedCommand
     /// <summary>
     ///     Creates the shared --target option for targeted commands.
     /// </summary>
-    public static Option<int?> CreateTargetOption(string description) =>
-        new("--target")
+    public static Option<int?> CreateTargetOption(string description)
+    {
+        return new Option<int?>("--target")
         {
             Description = description
         };
+    }
 }
