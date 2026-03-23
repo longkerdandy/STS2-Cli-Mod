@@ -20,17 +20,20 @@ internal static class RewardClaimCommand
                 var value = result.Tokens.Single().Value.ToLower();
                 if (value is "gold" or "potion" or "relic" or "special_card")
                     return value;
-                result.ErrorMessage = $"Invalid reward type '{value}'. Must be one of: gold, potion, relic, special_card";
+                result.ErrorMessage =
+                    $"Invalid reward type '{value}'. Must be one of: gold, potion, relic, special_card";
                 return null!;
-            });
-        typeOption.IsRequired = true;
+            })
+        {
+            IsRequired = true
+        };
 
         var idOption = new Option<string>("--id",
-            description: "Item ID (potion_id, relic_id, or card_id). Required for potion, relic, and special_card.");
+            "Item ID (potion_id, relic_id, or card_id). Required for potion, relic, and special_card.");
 
         var nthOption = new Option<int>("--nth",
             () => 0,
-            description: "N-th occurrence when multiple rewards of same type exist (0-based). Optional, defaults to 0.");
+            "N-th occurrence when multiple rewards of same type exist (0-based). Optional, defaults to 0.");
 
         var command = new Command(name, description);
         command.AddOption(typeOption);

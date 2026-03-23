@@ -9,7 +9,7 @@ namespace STS2.Cli.Cmd.Commands;
 internal static class DeckSelectCardCommand
 {
     /// <summary>
-    ///     Creates the deck_select_card command for selecting cards from deck card selection screen.
+    ///     Creates the deck_select_card command for selecting cards from the deck card selection screen.
     /// </summary>
     public static Command Create(Option<bool> prettyOption)
     {
@@ -18,11 +18,12 @@ internal static class DeckSelectCardCommand
 
         // Card IDs (one or more)
         var cardIdsArg = new Argument<string[]>("card_ids",
-            description: "Card ID(s) to select (e.g., STRIKE_IRONCLAD)") { Arity = ArgumentArity.OneOrMore };
+            "Card ID(s) to select (e.g., STRIKE_IRONCLAD)") { Arity = ArgumentArity.OneOrMore };
 
         // --nth option for specifying which copy of each card
         var nthOption = new Option<int[]>("--nth",
-            description: "N-th occurrence for each card ID (0-based). If not specified for a card, defaults to 0.") { Arity = ArgumentArity.ZeroOrMore };
+                "N-th occurrence for each card ID (0-based). If not specified for a card, defaults to 0.")
+            { Arity = ArgumentArity.ZeroOrMore };
 
         command.AddArgument(cardIdsArg);
         command.AddOption(nthOption);
@@ -41,7 +42,7 @@ internal static class DeckSelectCardCommand
                     NthValues = nthValues
                 },
                 pretty,
-                timeoutMs: 10000);
+                10000);
         });
 
         return command;

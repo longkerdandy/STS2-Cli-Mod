@@ -16,7 +16,7 @@ internal static class AdvanceDialogueCommand
         // --auto (optional - auto-advance all dialogue lines)
         var autoOption = new Option<bool>("--auto",
             () => false,
-            description: "Auto-advance all dialogue lines until options appear");
+            "Auto-advance all dialogue lines until options appear");
 
         var command = new Command(name, description);
         command.AddOption(autoOption);

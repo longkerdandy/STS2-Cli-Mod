@@ -16,12 +16,12 @@ internal static class RewardSkipCardCommand
         // --type card (only card rewards can be skipped)
         var typeOption = new Option<string>("--type",
             () => "card",
-            description: "Reward type (only 'card' is supported)");
+            "Reward type (only 'card' is supported)");
 
         // --nth (optional - which card reward if multiple)
         var nthOption = new Option<int>("--nth",
             () => 0,
-            description: "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
+            "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
 
         var command = new Command(name, description);
         command.AddOption(typeOption);

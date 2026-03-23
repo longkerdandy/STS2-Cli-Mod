@@ -1,6 +1,6 @@
 using System.Text.Json;
+using STS2.Cli.Cmd.Client;
 using STS2.Cli.Cmd.Models.Message;
-using STS2.Cli.Cmd.Services;
 using STS2.Cli.Cmd.Utils;
 
 namespace STS2.Cli.Cmd.Commands;
@@ -11,11 +11,11 @@ namespace STS2.Cli.Cmd.Commands;
 internal static class CommandExecutor
 {
     // Exit codes following CLI specification (AGENTS.md)
-    public const int ExitSuccess = 0;
-    public const int ExitConnectionError = 1;
-    public const int ExitInvalidState = 2;
-    public const int ExitInvalidParam = 3;
-    public const int ExitTimeout = 4;
+    private const int ExitSuccess = 0;
+    private const int ExitConnectionError = 1;
+    private const int ExitInvalidState = 2;
+    private const int ExitInvalidParam = 3;
+    private const int ExitTimeout = 4;
 
     /// <summary>
     ///     Executes a command with the given request factory and returns exit code.
@@ -79,43 +79,46 @@ internal static class CommandExecutor
     /// <summary>
     ///     Maps a Mod error code to a CLI exit code.
     /// </summary>
-    private static int MapErrorToExitCode(string? error) => error switch
+    private static int MapErrorToExitCode(string? error)
     {
-        // Invalid state — combat phase, creature state, or screen state prevents the action
-        "NOT_IN_COMBAT" or "COMBAT_ENDING" or "NOT_PLAYER_TURN" or
-        "ACTIONS_DISABLED" or "NO_PLAYER" or "PLAYER_DEAD" or
-        "CANNOT_PLAY_CARD" or "ACTION_CANCELLED" or
-        "POTION_ALREADY_QUEUED" or "POTION_NOT_USABLE" or
-        "NOT_ON_REWARD_SCREEN" or "POTION_BELT_FULL" or
-        "NOT_SUPPORTED" or "CLAIM_FAILED" or
-        "NOT_IN_EVENT" or "NO_EVENT_LAYOUT" or
-        "OPTION_LOCKED" or "OPTION_BUTTON_NOT_FOUND" or
-        "NOT_ANCIENT_EVENT" or "NOT_IN_DIALOGUE" or "DIALOGUE_HITBOX_NOT_FOUND" or
-        "NOT_IN_POTION_SELECTION" or "CANNOT_SKIP" or
-        "SKIP_BUTTON_NOT_FOUND" or "NO_CARDS_AVAILABLE" or
-        "NOT_IN_CHARACTER_SELECT" or "CHARACTER_LOCKED" or
-        "NO_CHARACTER_SELECTED" or "EMBARK_NOT_AVAILABLE" or
-        "NOT_IN_DECK_CARD_SELECT" => ExitInvalidState,
+        return error switch
+        {
+            // Invalid state — combat phase, creature state, or screen state prevents the action
+            "NOT_IN_COMBAT" or "COMBAT_ENDING" or "NOT_PLAYER_TURN" or
+                "ACTIONS_DISABLED" or "NO_PLAYER" or "PLAYER_DEAD" or
+                "CANNOT_PLAY_CARD" or "ACTION_CANCELLED" or
+                "POTION_ALREADY_QUEUED" or "POTION_NOT_USABLE" or
+                "NOT_ON_REWARD_SCREEN" or "POTION_BELT_FULL" or
+                "NOT_SUPPORTED" or "CLAIM_FAILED" or
+                "NOT_IN_EVENT" or "NO_EVENT_LAYOUT" or
+                "OPTION_LOCKED" or "OPTION_BUTTON_NOT_FOUND" or
+                "NOT_ANCIENT_EVENT" or "NOT_IN_DIALOGUE" or "DIALOGUE_HITBOX_NOT_FOUND" or
+                "NOT_IN_POTION_SELECTION" or "CANNOT_SKIP" or
+                "SKIP_BUTTON_NOT_FOUND" or "NO_CARDS_AVAILABLE" or
+                "NOT_IN_CHARACTER_SELECT" or "CHARACTER_LOCKED" or
+                "NO_CHARACTER_SELECTED" or "EMBARK_NOT_AVAILABLE" or
+                "NOT_IN_DECK_CARD_SELECT" => ExitInvalidState,
 
-        // Invalid parameter — caller provided wrong arguments
-        "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or
-        "INVALID_CARD_INDEX" or "INVALID_OPTION_INDEX" or
-        "TARGET_REQUIRED" or "TARGET_NOT_FOUND" or
-        "TARGET_NOT_ALLOWED" or "INVALID_POTION_SLOT" or
-        "EMPTY_POTION_SLOT" or "INVALID_REWARD_INDEX" or
-        "NOT_CARD_REWARD" or "USE_CHOOSE_CARD" or
-        "CARD_NOT_FOUND" or "POTION_NOT_FOUND" or "AMBIGUOUS_ID" or
-        "INVALID_REWARD_TYPE" or "REWARD_NOT_FOUND" or "ID_MISMATCH" or
-        "AMBIGUOUS_REWARD" or "INVALID_SELECTION_COUNT" or
-        "DUPLICATE_SELECTION" or "CHARACTER_NOT_FOUND" or
-        "INVALID_ASCENSION_LEVEL" or "UI_NOT_FOUND" => ExitInvalidParam,
+            // Invalid parameter — caller provided wrong arguments
+            "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or
+                "INVALID_CARD_INDEX" or "INVALID_OPTION_INDEX" or
+                "TARGET_REQUIRED" or "TARGET_NOT_FOUND" or
+                "TARGET_NOT_ALLOWED" or "INVALID_POTION_SLOT" or
+                "EMPTY_POTION_SLOT" or "INVALID_REWARD_INDEX" or
+                "NOT_CARD_REWARD" or "USE_CHOOSE_CARD" or
+                "CARD_NOT_FOUND" or "POTION_NOT_FOUND" or "AMBIGUOUS_ID" or
+                "INVALID_REWARD_TYPE" or "REWARD_NOT_FOUND" or "ID_MISMATCH" or
+                "AMBIGUOUS_REWARD" or "INVALID_SELECTION_COUNT" or
+                "DUPLICATE_SELECTION" or "CHARACTER_NOT_FOUND" or
+                "INVALID_ASCENSION_LEVEL" or "UI_NOT_FOUND" => ExitInvalidParam,
 
-        // Timeout
-        "TIMEOUT" or "EVENT_TIMEOUT" => ExitTimeout,
+            // Timeout
+            "TIMEOUT" or "EVENT_TIMEOUT" => ExitTimeout,
 
-        // Internal errors, state extraction failures, and unknown errors
-        _ => ExitConnectionError
-    };
+            // Internal errors, state extraction failures, and unknown errors
+            _ => ExitConnectionError
+        };
+    }
 
     private static void WriteSuccess(object? data, JsonSerializerOptions options)
     {

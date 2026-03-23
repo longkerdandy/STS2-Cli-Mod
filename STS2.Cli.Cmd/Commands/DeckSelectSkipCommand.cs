@@ -23,7 +23,7 @@ internal static class DeckSelectSkipCommand
             context.ExitCode = await CommandExecutor.ExecuteAsync(
                 () => new Request { Cmd = "deck_select_skip" },
                 pretty,
-                timeoutMs: 10000);
+                10000);
         });
 
         return command;

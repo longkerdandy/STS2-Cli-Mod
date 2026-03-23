@@ -16,17 +16,19 @@ internal static class RewardChooseCardCommand
         // --type card (only card rewards are supported)
         var typeOption = new Option<string>("--type",
             () => "card",
-            description: "Reward type (only 'card' is supported)");
+            "Reward type (only 'card' is supported)");
 
         // --card_id (required - which card to pick)
         var cardIdOption = new Option<string>("--card_id",
-            description: "Card ID to select (e.g., STRIKE_IRONCLAD)");
-        cardIdOption.IsRequired = true;
+            "Card ID to select (e.g., STRIKE_IRONCLAD)")
+        {
+            IsRequired = true
+        };
 
         // --nth (optional - which card reward if multiple)
         var nthOption = new Option<int>("--nth",
             () => 0,
-            description: "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
+            "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
 
         var command = new Command(name, description);
         command.AddOption(typeOption);

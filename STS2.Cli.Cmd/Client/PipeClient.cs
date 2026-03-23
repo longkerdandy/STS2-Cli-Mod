@@ -4,7 +4,7 @@ using System.Text.Json;
 using STS2.Cli.Cmd.Models.Message;
 using STS2.Cli.Cmd.Utils;
 
-namespace STS2.Cli.Cmd.Services;
+namespace STS2.Cli.Cmd.Client;
 
 /// <summary>
 ///     Named Pipe client for communicating with the STS2 mod.
@@ -95,7 +95,9 @@ public class PipeClient : IDisposable
             await _writer!.WriteLineAsync(requestJson);
 
             var responseJson = await _reader!.ReadLineAsync();
-            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+            return responseJson == null
+                ? null
+                : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
         }
         catch (Exception)
         {
