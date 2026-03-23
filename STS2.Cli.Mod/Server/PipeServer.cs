@@ -174,14 +174,14 @@ public static class PipeServer
                 // use_potion is async — spans multiple frames waiting for action completion
                 "use_potion" => await HandleUsePotionRequestAsync(request.Id, request.Nth, request.Target),
 
-                // claim_reward is async — uses type + id + nth for stable identification
-                "claim_reward" => await HandleClaimRewardRequestAsync(request.RewardType, request.Id, request.Nth),
+                // reward_claim is async — uses type + id + nth for stable identification
+                "reward_claim" => await HandleClaimRewardRequestAsync(request.RewardType, request.Id, request.Nth),
 
-                // choose_card is async — uses reward type + card_id + nth
-                "choose_card" => await HandleChooseCardRequestAsync(request.RewardType, request.CardId, request.Nth),
+                // reward_choose_card is async — uses reward type + card_id + nth
+                "reward_choose_card" => await HandleChooseCardRequestAsync(request.RewardType, request.CardId, request.Nth),
 
-                // skip_card is async — uses reward type + nth
-                "skip_card" => await HandleSkipCardRequestAsync(request.RewardType, request.Nth),
+                // reward_skip_card is async — uses reward type + nth
+                "reward_skip_card" => await HandleSkipCardRequestAsync(request.RewardType, request.Nth),
 
                 // choose_event is async — ForceClick option button + polling for state change
                 "choose_event" => await HandleChooseEventRequestAsync(request.Args),
@@ -189,8 +189,14 @@ public static class PipeServer
                 // advance_dialogue is async — ForceClick dialogue hitbox + polling for Ancient events
                 "advance_dialogue" => await HandleAdvanceDialogueRequestAsync(request.Args),
 
-                // proceed runs synchronously on the main thread — ForceClick is fire-and-forget
-                "proceed" => HandleProceedRequest(),
+                // reward_proceed runs synchronously on the main thread — ForceClick is fire-and-forget
+                "reward_proceed" => HandleProceedRequest(),
+
+                // potion_select_card is synchronous — runs on main thread and returns immediately
+                "potion_select_card" => HandlePotionSelectCardRequest(request.CardIds, request.NthValues),
+
+                // potion_select_skip is synchronous — runs on main thread and returns immediately
+                "potion_select_skip" => HandlePotionSelectSkipRequest(),
 
                 // Synchronous commands — single-frame game state access on the main thread
                 _ => MainThreadExecutor.RunOnMainThread(() => cmd switch
@@ -390,6 +396,36 @@ public static class PipeServer
 
         return await MainThreadExecutor.RunOnMainThreadAsync(
             () => AdvanceDialogueHandler.ExecuteAsync(auto));
+    }
+
+    /// <summary>
+    ///     Handles the 'potion_select_card' command synchronously.
+    ///     Selects cards from a potion-opened selection screen by card ID.
+    /// </summary>
+    /// <param name="cardIds">Array of card IDs to select.</param>
+    /// <param name="nthValues">Optional nth values for each card ID.</param>
+    /// <returns>Response indicating success or failure.</returns>
+    private static object HandlePotionSelectCardRequest(string[]? cardIds, int[]? nthValues)
+    {
+        if (cardIds == null || cardIds.Length == 0)
+        {
+            Logger.Warning("potion_select_card requested with no card IDs");
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "At least one card ID is required" };
+        }
+
+        Logger.Info($"Requested to select {cardIds.Length} card(s) from potion selection screen");
+        return MainThreadExecutor.RunOnMainThread(() => PotionSelectCardHandler.Execute(cardIds, nthValues));
+    }
+
+    /// <summary>
+    ///     Handles the 'potion_select_skip' command synchronously.
+    ///     Skips the current potion card selection if allowed.
+    /// </summary>
+    /// <returns>Response indicating success or failure.</returns>
+    private static object HandlePotionSelectSkipRequest()
+    {
+        Logger.Info("Requested to skip potion card selection");
+        return MainThreadExecutor.RunOnMainThread(() => PotionSelectCardHandler.ExecuteSkip());
     }
 
     /// <summary>

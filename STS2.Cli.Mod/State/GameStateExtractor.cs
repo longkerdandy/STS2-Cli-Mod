@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
@@ -38,10 +39,13 @@ public static class GameStateExtractor
             // Extract reward state if on reward screen
             if (state.Screen == "REWARD") state.Rewards = ExtractRewardState();
 
-            // Extract event state if at an event
-            if (state.Screen == "EVENT") state.Event = ExtractEventState();
+        // Extract event state if at an event
+        if (state.Screen == "EVENT") state.Event = ExtractEventState();
 
-            return state;
+        // Extract potion selection state if in potion card selection
+        if (state.Screen == "POTION_SELECTION") state.PotionSelection = ExtractPotionSelectionState();
+
+        return state;
         }
         catch (Exception ex)
         {
@@ -101,6 +105,24 @@ public static class GameStateExtractor
 
         if (overlay is NCardRewardSelectionScreen) return "CARD_REWARD";
         if (overlay is NRewardsScreen) return "REWARD";
+
+        // Check for potion card selection screen
+        // This can appear on top of other screens when using selection potions
+        if (overlay is NChooseACardSelectionScreen)
+        {
+            Logger.Info("Detected POTION_SELECTION screen");
+            return "POTION_SELECTION";
+        }
+
+        // Check children for potion selection screen (it may not be on top)
+        foreach (var child in overlayStack.GetChildren())
+        {
+            if (child is NChooseACardSelectionScreen)
+            {
+                Logger.Info("Detected POTION_SELECTION screen (in children)");
+                return "POTION_SELECTION";
+            }
+        }
 
         // TODO: Detect other screens (SHOP, EVENT, etc.)
         return "UNKNOWN";
@@ -208,5 +230,103 @@ public static class GameStateExtractor
             Logger.Error($"Failed to extract event state: {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>
+    ///     Extracts the potion card selection state from <see cref="NChooseACardSelectionScreen" />.
+    /// </summary>
+    private static PotionSelectionStateDto? ExtractPotionSelectionState()
+    {
+        try
+        {
+            var screen = PotionUtils.FindSelectionScreen();
+            if (screen == null)
+            {
+                Logger.Warning("POTION_SELECTION screen detected but no selection screen found");
+                return null;
+            }
+
+            var cardHolders = UiHelper.FindAll<NCardHolder>(screen);
+            var constraints = InferSelectionConstraints(cardHolders);
+            var cards = new List<SelectableCardDto>();
+
+            for (int i = 0; i < cardHolders.Count; i++)
+            {
+                var holder = cardHolders[i];
+                var card = holder.CardModel;
+                if (card == null) continue;
+
+                cards.Add(new SelectableCardDto
+                {
+                    Index = i,
+                    CardId = card.Id.Entry,
+                    CardName = TextUtils.StripGameTags(card.Title),
+                    CardType = card.Type.ToString(),
+                    Cost = card.EnergyCost.Canonical,
+                    Description = TextUtils.StripGameTags(card.Description.GetFormattedText())
+                });
+            }
+
+            return new PotionSelectionStateDto
+            {
+                SelectionType = InferSelectionType(cards),
+                MinSelect = constraints.MinSelect,
+                MaxSelect = constraints.MaxSelect,
+                CanSkip = constraints.CanSkip,
+                Cards = cards
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract potion selection state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Infers selection constraints from the number and type of available cards.
+    /// </summary>
+    private static (int MinSelect, int MaxSelect, bool CanSkip) InferSelectionConstraints(List<NCardHolder> cardHolders)
+    {
+        var cardCount = cardHolders.Count;
+
+        // If we have exactly 3 cards, it's likely a "choose 1 of 3" potion
+        if (cardCount == 3)
+        {
+            return (0, 1, true); // Can skip (Colorless Potion allows skip)
+        }
+
+        // If we have many cards, it's likely a hand-based selection
+        if (cardCount > 3)
+        {
+            return (0, cardCount, true);
+        }
+
+        // Default: single select, cannot skip
+        return (1, 1, false);
+    }
+
+    /// <summary>
+    ///     Infers selection type from available cards.
+    /// </summary>
+    private static string InferSelectionType(List<SelectableCardDto> cards)
+    {
+        if (cards.Count == 3)
+        {
+            // Check if all same type for pool selection
+            var types = cards.Select(c => c.CardType).Distinct().ToList();
+            if (types.Count == 1)
+            {
+                return $"choose_from_pool_{types[0]?.ToLower()}";
+            }
+            return "choose_from_pool";
+        }
+
+        if (cards.Count > 3)
+        {
+            return "choose_from_hand";
+        }
+
+        return "unknown";
     }
 }

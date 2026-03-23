@@ -38,4 +38,9 @@ public class GameStateDto
     ///     Event state if at an event room, null otherwise.
     /// </summary>
     public EventStateDto? Event { get; set; }
+
+    /// <summary>
+    ///     Potion card selection state if a potion has opened a selection screen, null otherwise.
+    /// </summary>
+    public PotionSelectionStateDto? PotionSelection { get; set; }
 }

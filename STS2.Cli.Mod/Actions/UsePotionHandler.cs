@@ -1,3 +1,4 @@
+using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -5,6 +6,10 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
+using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -111,60 +116,217 @@ public static class UsePotionHandler
                     };
             }
 
-            // --- Enqueue action and wait for completion ---
+            // --- Check if this potion requires card selection ---
 
-            // Snapshot history count before the action executes
-            var historyBefore = CombatManager.Instance.History.Entries.Count();
-
-            // Manually construct the UsePotionAction instead of calling PotionModel.EnqueueManualUse(),
-            // so we get the action reference for subscribing to AfterFinished/BeforeCancelled.
-            // Note: We skip setting PotionModel.IsQueued (private setter) — it's only used
-            // by the UI popup to prevent double-clicking; our CLI validation already guards this.
-            var action = new UsePotionAction(potion, target, CombatManager.Instance.IsInProgress);
-
-            var targetName = target?.Monster?.Title.GetFormattedText();
-            var targetMsg = targetName != null ? $" targeting {targetName}" : "";
-            Logger.Info($"UsePotionAction enqueued: '{potion.Title}' (slot {slot}){targetMsg}");
-
-            var finalState = await ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
-            if (finalState == null)
+            if (PotionUtils.RequiresCardSelection(potion.Id.Entry))
             {
-                Logger.Warning("UsePotionAction timed out waiting for completion");
-                return new { ok = false, error = "TIMEOUT", message = "Potion action did not complete in time" };
+                Logger.Info($"Potion '{potion.Title}' requires card selection, monitoring for selection screen");
+                return await HandlePotionWithCardSelectionAsync(potion, slot, target, targetCombatId);
             }
 
-            if (finalState == GameActionState.Canceled)
-            {
-                Logger.Info("UsePotionAction was cancelled by the game");
-                return new
-                {
-                    ok = false, error = "ACTION_CANCELLED",
-                    message = $"Potion '{potion.Title}' action was cancelled by the game"
-                };
-            }
+            // --- Standard potion: Enqueue action and wait for completion ---
 
-            // --- Collect results from CombatHistory ---
-
-            var results = CombatHistoryBuilder.BuildFromHistory(historyBefore);
-            Logger.Info($"UsePotionAction completed with {results.Count} result entries");
-
-            return new
-            {
-                ok = true,
-                data = new
-                {
-                    slot,
-                    potion_id = potion.Id.Entry,
-                    target = targetCombatId,
-                    results
-                }
-            };
+            return await ExecuteStandardPotionAsync(potion, slot, target, targetCombatId);
         }
         catch (Exception ex)
         {
             Logger.Error($"Failed to use potion: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
         }
+    }
+
+    /// <summary>
+    ///     Handles potions that open card selection screens.
+    ///     Enqueues the potion action and polls for the selection screen to appear.
+    /// </summary>
+    private static async Task<object> HandlePotionWithCardSelectionAsync(
+        PotionModel potion, int slot, Creature? target, int? targetCombatId)
+    {
+        // Snapshot history count before the action executes
+        var historyBefore = CombatManager.Instance.History.Entries.Count();
+
+        // Enqueue the potion action
+        var action = new UsePotionAction(potion, target, CombatManager.Instance.IsInProgress);
+
+        var targetName = target?.Monster?.Title.GetFormattedText();
+        var targetMsg = targetName != null ? $" targeting {targetName}" : "";
+        Logger.Info($"UsePotionAction enqueued (selection type): '{potion.Title}' (slot {slot}){targetMsg}");
+
+        // Start the action without awaiting completion
+        _ = ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
+
+        // Poll for selection screen to appear (max 5 seconds)
+        const int SelectionScreenTimeoutMs = 5000;
+        const int PollIntervalMs = 100;
+        var elapsedMs = 0;
+
+        while (elapsedMs < SelectionScreenTimeoutMs)
+        {
+            await Task.Delay(PollIntervalMs);
+            elapsedMs += PollIntervalMs;
+
+            // Check if selection screen appeared
+            var selectionScreen = FindCardSelectionScreen();
+            if (selectionScreen != null)
+            {
+                Logger.Info($"Card selection screen detected for potion '{potion.Title}'");
+                var cards = ExtractSelectableCards(selectionScreen);
+                var constraints = PotionUtils.GetSelectionConstraints(potion.Id.Entry);
+
+                return new
+                {
+                    ok = true,
+                    data = new
+                    {
+                        status = "selection_required",
+                        selection_type = PotionUtils.GetSelectionType(potion.Id.Entry),
+                        potion_id = potion.Id.Entry,
+                        potion_slot = slot,
+                        min_select = constraints.MinSelect,
+                        max_select = constraints.MaxSelect,
+                        can_skip = constraints.CanSkip,
+                        cards
+                    }
+                };
+            }
+
+            // Check if action completed without selection screen (shouldn't happen for these potions)
+            if (action.State != GameActionState.WaitingForExecution && action.State != GameActionState.Executing)
+            {
+                break;
+            }
+        }
+
+        // Selection screen didn't appear, wait for normal completion
+        Logger.Warning($"Selection screen did not appear for potion '{potion.Title}', waiting for normal completion");
+        return await WaitForPotionCompletionAsync(action, potion, slot, targetCombatId, historyBefore);
+    }
+
+    /// <summary>
+    ///     Executes a standard potion (without card selection) and waits for completion.
+    /// </summary>
+    private static async Task<object> ExecuteStandardPotionAsync(
+        PotionModel potion, int slot, Creature? target, int? targetCombatId)
+    {
+        // Snapshot history count before the action executes
+        var historyBefore = CombatManager.Instance.History.Entries.Count();
+
+        // Manually construct the UsePotionAction
+        var action = new UsePotionAction(potion, target, CombatManager.Instance.IsInProgress);
+
+        var targetName = target?.Monster?.Title.GetFormattedText();
+        var targetMsg = targetName != null ? $" targeting {targetName}" : "";
+        Logger.Info($"UsePotionAction enqueued: '{potion.Title}' (slot {slot}){targetMsg}");
+
+        return await WaitForPotionCompletionAsync(action, potion, slot, targetCombatId, historyBefore);
+    }
+
+    /// <summary>
+    ///     Waits for a potion action to complete and returns results.
+    /// </summary>
+    private static async Task<object> WaitForPotionCompletionAsync(
+        UsePotionAction action, PotionModel potion, int slot, int? targetCombatId, int historyBefore)
+    {
+        var finalState = await ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
+        if (finalState == null)
+        {
+            Logger.Warning("UsePotionAction timed out waiting for completion");
+            return new { ok = false, error = "TIMEOUT", message = "Potion action did not complete in time" };
+        }
+
+        if (finalState == GameActionState.Canceled)
+        {
+            Logger.Info("UsePotionAction was cancelled by the game");
+            return new
+            {
+                ok = false, error = "ACTION_CANCELLED",
+                message = $"Potion '{potion.Title}' action was cancelled by the game"
+            };
+        }
+
+        // Collect results from CombatHistory
+        var results = CombatHistoryBuilder.BuildFromHistory(historyBefore);
+        Logger.Info($"UsePotionAction completed with {results.Count} result entries");
+
+        return new
+        {
+            ok = true,
+            data = new
+            {
+                slot,
+                potion_id = potion.Id.Entry,
+                target = targetCombatId,
+                results
+            }
+        };
+    }
+
+    /// <summary>
+    ///     Finds the currently open card selection screen (NChooseACardSelectionScreen).
+    /// </summary>
+    private static NChooseACardSelectionScreen? FindCardSelectionScreen()
+    {
+        // Check overlay stack first
+        var overlayStack = NOverlayStack.Instance;
+        if (overlayStack?.Peek() is NChooseACardSelectionScreen screen)
+        {
+            return screen;
+        }
+
+        // Search in children if not on top of stack
+        if (overlayStack != null)
+        {
+            foreach (var child in overlayStack.GetChildren())
+            {
+                if (child is NChooseACardSelectionScreen childScreen)
+                {
+                    return childScreen;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Extracts selectable cards from the selection screen.
+    /// </summary>
+    private static List<SelectableCardDto> ExtractSelectableCards(NChooseACardSelectionScreen screen)
+    {
+        var cards = new List<SelectableCardDto>();
+        var cardHolders = UiHelper.FindAll<NCardHolder>(screen);
+
+        for (int i = 0; i < cardHolders.Count; i++)
+        {
+            var holder = cardHolders[i];
+            var card = holder.CardModel;
+            if (card == null) continue;
+
+            cards.Add(new SelectableCardDto
+            {
+                Index = i,
+                CardId = card.Id.Entry,
+                CardName = TextUtils.StripGameTags(card.Title),
+                CardType = card.Type.ToString(),
+                Cost = card.EnergyCost?.Canonical,
+                Description = TextUtils.StripGameTags(card.Description?.GetFormattedText() ?? "")
+            });
+        }
+
+        return cards;
+    }
+
+    /// <summary>
+    ///     DTO for selectable cards in potion selection screens.
+    /// </summary>
+    public class SelectableCardDto
+    {
+        public int Index { get; set; }
+        public required string CardId { get; set; }
+        public required string CardName { get; set; }
+        public string? CardType { get; set; }
+        public int? Cost { get; set; }
+        public string? Description { get; set; }
     }
 
     /// <summary>

@@ -53,4 +53,22 @@ public class Request
     /// </summary>
     [JsonPropertyName("card_id")]
     public string? CardId { get; set; }
+
+    /// <summary>
+    /// Card IDs for potion_select_card command (multiple cards to select).
+    /// </summary>
+    [JsonPropertyName("card_ids")]
+    public string[]? CardIds { get; set; }
+
+    /// <summary>
+    /// N-th values for each card in CardIds (for potion_select_card).
+    /// </summary>
+    [JsonPropertyName("nth_values")]
+    public int[]? NthValues { get; set; }
+
+    /// <summary>
+    /// Skip flag for potion_select_card command.
+    /// </summary>
+    [JsonPropertyName("skip")]
+    public bool? Skip { get; set; }
 }

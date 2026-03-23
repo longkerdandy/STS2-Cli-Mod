@@ -54,19 +54,19 @@ internal static class Program
             CreateTargetOption("Target enemy combat ID (for targeted potions)"),
             prettyOption));
 
-        // sts2 claim_reward --type <type> [--id <id>] [--nth <n>] — claim a non-card reward
+        // sts2 reward_claim --type <type> [--id <id>] [--nth <n>] — claim a non-card reward
         rootCommand.AddCommand(CreateRewardCommand(
-            "claim_reward", "Claim a reward by type (gold, potion, relic, special_card)",
+            "reward_claim", "Claim a reward by type (gold, potion, relic, special_card)",
             prettyOption));
 
-        // sts2 choose_card --type card [--nth <n>] --card_id <card_id> — pick a card from a card reward
+        // sts2 reward_choose_card --type card [--nth <n>] --card_id <card_id> — pick a card from a card reward
         rootCommand.AddCommand(CreateChooseCardCommand(
-            "choose_card", "Pick a card from a card reward",
+            "reward_choose_card", "Pick a card from a card reward",
             prettyOption));
 
-        // sts2 skip_card --type card [--nth <n>] — skip a card reward
+        // sts2 reward_skip_card --type card [--nth <n>] — skip a card reward
         rootCommand.AddCommand(CreateSkipCardCommand(
-            "skip_card", "Skip a card reward",
+            "reward_skip_card", "Skip a card reward",
             prettyOption));
 
         // sts2 choose_event <index> — choose an option in an event
@@ -80,8 +80,11 @@ internal static class Program
             "advance_dialogue", "Advance dialogue in an Ancient event",
             prettyOption));
 
-        // sts2 proceed — leave the reward screen and proceed to the map
-        rootCommand.AddCommand(CreateSimpleCommand("proceed", "Leave reward screen and proceed to map", prettyOption));
+        // sts2 reward_proceed — leave the reward screen and proceed to the map
+        rootCommand.AddCommand(CreateSimpleCommand("reward_proceed", "Leave reward screen and proceed to map", prettyOption));
+
+        // sts2 potion_select_card <card_id> [<card_id>...] [--nth <n>...] [--skip] — select cards from potion selection screen
+        rootCommand.AddCommand(CreatePotionSelectCardCommand(prettyOption));
 
         return await rootCommand.InvokeAsync(args);
 
@@ -317,6 +320,61 @@ internal static class Program
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
 
             context.ExitCode = await CommandRunner.ExecuteAdvanceDialogueAsync(auto, pretty);
+        });
+
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates the potion_select_card command for selecting cards from potion selection screens.
+    /// </summary>
+    private static Command CreatePotionSelectCardCommand(Option<bool> prettyOption)
+    {
+        var command = new Command("potion_select_card",
+            "Select cards from a potion-opened card selection screen");
+
+        // Card IDs (one or more)
+        var cardIdsArg = new Argument<string[]>("card_ids",
+            description: "Card ID(s) to select (e.g., STRIKE_IRONCLAD)") { Arity = ArgumentArity.ZeroOrMore };
+
+        // --nth option for specifying which copy of each card
+        var nthOption = new Option<int[]>("--nth",
+            description: "N-th occurrence for each card ID (0-based). If not specified for a card, defaults to 0.") { Arity = ArgumentArity.ZeroOrMore };
+
+        // --skip flag
+        var skipOption = new Option<bool>("--skip",
+            () => false,
+            description: "Skip this selection (if allowed by the potion)");
+
+        command.AddArgument(cardIdsArg);
+        command.AddOption(nthOption);
+        command.AddOption(skipOption);
+
+        command.SetHandler(async context =>
+        {
+            var cardIds = context.ParseResult.GetValueForArgument(cardIdsArg);
+            var nthValues = context.ParseResult.GetValueForOption(nthOption);
+            var skip = context.ParseResult.GetValueForOption(skipOption);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+
+            if (skip)
+            {
+                // Skip selection
+                context.ExitCode = await CommandRunner.ExecutePotionSelectSkipAsync(pretty);
+            }
+            else if (cardIds.Length == 0)
+            {
+                // No cards specified and not skipping - error
+                context.ExitCode = await CommandRunner.ExecuteAsync("potion_select_card",
+                    error: "MISSING_ARGUMENT",
+                    message: "Either specify card ID(s) or use --skip",
+                    pretty: pretty);
+            }
+            else
+            {
+                // Select specified cards
+                context.ExitCode = await CommandRunner.ExecutePotionSelectCardAsync(cardIds, nthValues, pretty);
+            }
         });
 
         return command;
