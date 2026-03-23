@@ -1,0 +1,103 @@
+using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
+using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using STS2.Cli.Mod.Utils;
+
+namespace STS2.Cli.Mod.Actions;
+
+/// <summary>
+///     Handles clicking the Embark button to start the game from character select.
+/// </summary>
+public static class EmbarkHandler
+{
+    private static readonly ModLogger Logger = new("EmbarkHandler");
+
+    /// <summary>
+    ///     Clicks the Embark button to start the game.
+    /// </summary>
+    /// <returns>Response object indicating success or failure.</returns>
+    public static object Execute()
+    {
+        return MainThreadExecutor.RunOnMainThread<object>(() =>
+        {
+            // Guard: Must be on character select screen
+            var screen = NCharacterSelectScreen.Instance;
+            if (screen == null || !screen.IsInsideTree())
+            {
+                Logger.Warning("Embark requested but not on character select screen");
+                return new
+                {
+                    ok = false,
+                    error = "NOT_IN_CHARACTER_SELECT",
+                    message = "Not on character select screen"
+                };
+            }
+
+            // Check if a character is selected
+            var selectedBtn = GetSelectedButton(screen);
+            if (selectedBtn == null)
+            {
+                Logger.Warning("Embark requested but no character selected");
+                return new
+                {
+                    ok = false,
+                    error = "NO_CHARACTER_SELECTED",
+                    message = "No character selected"
+                };
+            }
+
+            // Find embark button
+            var embarkBtn = screen.GetNodeOrNull<NConfirmButton>("ConfirmButton");
+            if (embarkBtn == null)
+            {
+                Logger.Error("Embark button not found");
+                return new
+                {
+                    ok = false,
+                    error = "EMBARK_BUTTON_NOT_FOUND",
+                    message = "Embark button not found"
+                };
+            }
+
+            // Check if button is enabled
+            if (!embarkBtn.IsEnabled)
+            {
+                Logger.Warning("Embark button is disabled");
+                return new
+                {
+                    ok = false,
+                    error = "EMBARK_NOT_AVAILABLE",
+                    message = "Embark button is not available"
+                };
+            }
+
+            // Click embark
+            Logger.Info("Clicking embark button");
+            embarkBtn.ForceClick();
+
+            return new
+            {
+                ok = true,
+                data = new { embarked = true }
+            };
+        });
+    }
+
+    /// <summary>
+    ///     Gets the selected character button from the screen via reflection.
+    /// </summary>
+    private static MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect.NCharacterSelectButton? GetSelectedButton(
+        MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect.NCharacterSelectScreen screen)
+    {
+        try
+        {
+            var field = typeof(MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect.NCharacterSelectScreen).GetField("_selectedButton",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            return field?.GetValue(screen) as MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect.NCharacterSelectButton;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get selected button: {ex.Message}");
+            return null;
+        }
+    }
+}

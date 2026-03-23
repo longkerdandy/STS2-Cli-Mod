@@ -43,4 +43,9 @@ public class GameStateDto
     ///     Potion card selection state if a potion has opened a selection screen, null otherwise.
     /// </summary>
     public PotionSelectionStateDto? PotionSelection { get; set; }
+
+    /// <summary>
+    ///     Character selection state if on character select screen, null otherwise.
+    /// </summary>
+    public CharacterSelectStateDto? CharacterSelect { get; set; }
 }

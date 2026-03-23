@@ -86,6 +86,15 @@ internal static class Program
         // sts2 potion_select_card <card_id> [<card_id>...] [--nth <n>...] [--skip] — select cards from potion selection screen
         rootCommand.AddCommand(CreatePotionSelectCardCommand(prettyOption));
 
+        // sts2 select_character <character_id> — select a character
+        rootCommand.AddCommand(CreateSelectCharacterCommand(prettyOption));
+
+        // sts2 set_ascension <level> — set ascension level
+        rootCommand.AddCommand(CreateSetAscensionCommand(prettyOption));
+
+        // sts2 embark — start the game
+        rootCommand.AddCommand(CreateSimpleCommand("embark", "Start the game from character select", prettyOption));
+
         return await rootCommand.InvokeAsync(args);
 
         // Shared --target option factory for targeted commands
@@ -375,6 +384,44 @@ internal static class Program
                 // Select specified cards
                 context.ExitCode = await CommandRunner.ExecutePotionSelectCardAsync(cardIds, nthValues, pretty);
             }
+        });
+
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates the select_character command.
+    /// </summary>
+    private static Command CreateSelectCharacterCommand(Option<bool> prettyOption)
+    {
+        var command = new Command("select_character", "Select a character on the character select screen");
+        var characterIdArg = new Argument<string>("character_id", "Character identifier (e.g., ironclad, silent)");
+        command.AddArgument(characterIdArg);
+
+        command.SetHandler(async context =>
+        {
+            var characterId = context.ParseResult.GetValueForArgument(characterIdArg);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            context.ExitCode = await CommandRunner.ExecuteSelectCharacterAsync(characterId, pretty);
+        });
+
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates the set_ascension command.
+    /// </summary>
+    private static Command CreateSetAscensionCommand(Option<bool> prettyOption)
+    {
+        var command = new Command("set_ascension", "Set ascension level on the character select screen");
+        var levelArg = new Argument<int>("level", "Ascension level (0-20)");
+        command.AddArgument(levelArg);
+
+        command.SetHandler(async context =>
+        {
+            var level = context.ParseResult.GetValueForArgument(levelArg);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            context.ExitCode = await CommandRunner.ExecuteSetAscensionAsync(level, pretty);
         });
 
         return command;

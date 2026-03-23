@@ -341,6 +341,110 @@ public static class CommandRunner
     }
 
     /// <summary>
+    ///     Executes a select_character command.
+    /// </summary>
+    public static async Task<int> ExecuteSelectCharacterAsync(
+        string characterId,
+        bool pretty = false,
+        int timeoutMs = 5000)
+    {
+        using var client = new PipeClient();
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+
+        if (!await client.ConnectAsync(timeoutMs))
+        {
+            WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        var response = await client.SendSelectCharacterCommandAsync(characterId);
+
+        if (response == null)
+        {
+            WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        if (response.Ok)
+        {
+            WriteSuccess(response.Data, jsonOptions);
+            return ExitSuccess;
+        }
+
+        WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
+        return MapErrorToExitCode(response.Error);
+    }
+
+    /// <summary>
+    ///     Executes a set_ascension command.
+    /// </summary>
+    public static async Task<int> ExecuteSetAscensionAsync(
+        int level,
+        bool pretty = false,
+        int timeoutMs = 5000)
+    {
+        using var client = new PipeClient();
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+
+        if (!await client.ConnectAsync(timeoutMs))
+        {
+            WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        var response = await client.SendSetAscensionCommandAsync(level);
+
+        if (response == null)
+        {
+            WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        if (response.Ok)
+        {
+            WriteSuccess(response.Data, jsonOptions);
+            return ExitSuccess;
+        }
+
+        WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
+        return MapErrorToExitCode(response.Error);
+    }
+
+    /// <summary>
+    ///     Executes an embark command.
+    /// </summary>
+    public static async Task<int> ExecuteEmbarkAsync(
+        bool pretty = false,
+        int timeoutMs = 5000)
+    {
+        using var client = new PipeClient();
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+
+        if (!await client.ConnectAsync(timeoutMs))
+        {
+            WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        var response = await client.SendEmbarkCommandAsync();
+
+        if (response == null)
+        {
+            WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        if (response.Ok)
+        {
+            WriteSuccess(response.Data, jsonOptions);
+            return ExitSuccess;
+        }
+
+        WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
+        return MapErrorToExitCode(response.Error);
+    }
+
+    /// <summary>
     ///     Maps a Mod error code to a CLI exit code.
     /// </summary>
     private static int MapErrorToExitCode(string? error) => error switch
@@ -355,8 +459,10 @@ public static class CommandRunner
 "NOT_IN_EVENT" or "NO_EVENT_LAYOUT" or
 "OPTION_LOCKED" or "OPTION_BUTTON_NOT_FOUND" or
 "NOT_ANCIENT_EVENT" or "NOT_IN_DIALOGUE" or "DIALOGUE_HITBOX_NOT_FOUND" or
-"NOT_IN_POTION_SELECTION" or "CANNOT_SKIP" or
-"SKIP_BUTTON_NOT_FOUND" or "NO_CARDS_AVAILABLE" => ExitInvalidState,
+            "NOT_IN_POTION_SELECTION" or "CANNOT_SKIP" or
+            "SKIP_BUTTON_NOT_FOUND" or "NO_CARDS_AVAILABLE" or
+            "NOT_IN_CHARACTER_SELECT" or "CHARACTER_LOCKED" or
+            "NO_CHARACTER_SELECTED" or "EMBARK_NOT_AVAILABLE" => ExitInvalidState,
 
         // Invalid parameter — caller provided wrong arguments
         "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or
@@ -367,8 +473,9 @@ public static class CommandRunner
         "NOT_CARD_REWARD" or "USE_CHOOSE_CARD" or
         "CARD_NOT_FOUND" or "POTION_NOT_FOUND" or "AMBIGUOUS_ID" or
         "INVALID_REWARD_TYPE" or "REWARD_NOT_FOUND" or "ID_MISMATCH" or
-        "AMBIGUOUS_REWARD" or "INVALID_SELECTION_COUNT" or
-        "DUPLICATE_SELECTION" => ExitInvalidParam,
+            "AMBIGUOUS_REWARD" or "INVALID_SELECTION_COUNT" or
+            "DUPLICATE_SELECTION" or "CHARACTER_NOT_FOUND" or
+            "INVALID_ASCENSION_LEVEL" or "UI_NOT_FOUND" => ExitInvalidParam,
 
         // Timeout
         "TIMEOUT" or "EVENT_TIMEOUT" => ExitTimeout,

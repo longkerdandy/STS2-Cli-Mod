@@ -198,6 +198,15 @@ public static class PipeServer
                 // potion_select_skip is synchronous — runs on main thread and returns immediately
                 "potion_select_skip" => HandlePotionSelectSkipRequest(),
 
+                // select_character is synchronous — runs on main thread and returns immediately
+                "select_character" => HandleSelectCharacterRequest(request.Id),
+
+                // set_ascension is synchronous — runs on main thread and returns immediately
+                "set_ascension" => HandleSetAscensionRequest(request.Args?[0] ?? 0),
+
+                // embark is synchronous — runs on main thread and returns immediately
+                "embark" => HandleEmbarkRequest(),
+
                 // Synchronous commands — single-frame game state access on the main thread
                 _ => MainThreadExecutor.RunOnMainThread(() => cmd switch
                 {
@@ -426,6 +435,47 @@ public static class PipeServer
     {
         Logger.Info("Requested to skip potion card selection");
         return MainThreadExecutor.RunOnMainThread(() => PotionSelectCardHandler.ExecuteSkip());
+    }
+
+    /// <summary>
+    ///     Handles the 'select_character' command synchronously.
+    ///     Selects a character on the character select screen.
+    /// </summary>
+    /// <param name="characterId">Character ID to select.</param>
+    /// <returns>Response indicating success or failure.</returns>
+    private static object HandleSelectCharacterRequest(string? characterId)
+    {
+        if (string.IsNullOrEmpty(characterId))
+        {
+            Logger.Warning("select_character requested with no character ID");
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Character ID is required" };
+        }
+
+        Logger.Info($"Requested to select character: {characterId}");
+        return MainThreadExecutor.RunOnMainThread(() => SelectCharacterHandler.Execute(characterId));
+    }
+
+    /// <summary>
+    ///     Handles the 'set_ascension' command synchronously.
+    ///     Sets the ascension level on the character select screen.
+    /// </summary>
+    /// <param name="level">Ascension level to set.</param>
+    /// <returns>Response indicating success or failure.</returns>
+    private static object HandleSetAscensionRequest(int level)
+    {
+        Logger.Info($"Requested to set ascension level: {level}");
+        return MainThreadExecutor.RunOnMainThread(() => SetAscensionHandler.Execute(level));
+    }
+
+    /// <summary>
+    ///     Handles the 'embark' command synchronously.
+    ///     Clicks the embark button to start the game.
+    /// </summary>
+    /// <returns>Response indicating success or failure.</returns>
+    private static object HandleEmbarkRequest()
+    {
+        Logger.Info("Requested to embark");
+        return MainThreadExecutor.RunOnMainThread(() => EmbarkHandler.Execute());
     }
 
     /// <summary>

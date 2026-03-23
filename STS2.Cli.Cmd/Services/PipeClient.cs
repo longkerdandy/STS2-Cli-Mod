@@ -331,4 +331,84 @@ public class PipeClient : IDisposable
             return null;
         }
     }
+
+    /// <summary>
+    ///     Sends a select_character command to the mod and returns the response.
+    /// </summary>
+    public async Task<Response?> SendSelectCharacterCommandAsync(string characterId)
+    {
+        if (_pipe is not { IsConnected: true }) return null;
+
+        try
+        {
+            var request = new Request
+            {
+                Cmd = "select_character",
+                Id = characterId
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
+            await _writer!.WriteLineAsync(requestJson);
+
+            var responseJson = await _reader!.ReadLineAsync();
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Sends a set_ascension command to the mod and returns the response.
+    /// </summary>
+    public async Task<Response?> SendSetAscensionCommandAsync(int level)
+    {
+        if (_pipe is not { IsConnected: true }) return null;
+
+        try
+        {
+            var request = new Request
+            {
+                Cmd = "set_ascension",
+                Args = new[] { level }
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
+            await _writer!.WriteLineAsync(requestJson);
+
+            var responseJson = await _reader!.ReadLineAsync();
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Sends an embark command to the mod and returns the response.
+    /// </summary>
+    public async Task<Response?> SendEmbarkCommandAsync()
+    {
+        if (_pipe is not { IsConnected: true }) return null;
+
+        try
+        {
+            var request = new Request
+            {
+                Cmd = "embark"
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
+            await _writer!.WriteLineAsync(requestJson);
+
+            var responseJson = await _reader!.ReadLineAsync();
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 }

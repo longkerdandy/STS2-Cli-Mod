@@ -61,6 +61,9 @@ Verify the mod works by:
 11. `sts2.exe advance_dialogue [--auto]` - confirms Ancient event dialogue advancement (use --auto to skip to options)
 12. `sts2.exe potion_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from potion-opened selection screen
 13. `sts2.exe potion_select_skip` - confirms skipping a potion card selection (if allowed)
+14. `sts2.exe select_character <character_id>` - confirms character selection on character select screen
+15. `sts2.exe set_ascension <level>` - confirms ascension level setting
+16. `sts2.exe embark` - confirms game start from character select screen
 
 ## Code Style Guidelines
 

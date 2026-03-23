@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
@@ -45,6 +46,9 @@ public static class GameStateExtractor
         // Extract potion selection state if in potion card selection
         if (state.Screen == "POTION_SELECTION") state.PotionSelection = ExtractPotionSelectionState();
 
+        // Extract character select state if on character select screen
+        if (state.Screen == "CHARACTER_SELECT") state.CharacterSelect = ExtractCharacterSelectState();
+
         return state;
         }
         catch (Exception ex)
@@ -56,11 +60,19 @@ public static class GameStateExtractor
 
     /// <summary>
     ///     Detects which screen the player is currently on.
-    ///     Priority order: MENU → COMBAT → MAP (takes precedence over stale overlays)
+    ///     Priority order: CHARACTER_SELECT → COMBAT → MAP (takes precedence over stale overlays)
     ///     → EVENT → CARD_REWARD → REWARD → UNKNOWN.
     /// </summary>
     private static string DetectScreen()
     {
+        // Check Character Select screen FIRST (before checking IsInProgress)
+        // Character select screen is valid even when RunManager.IsInProgress is false
+        if (NCharacterSelectScreen.Instance?.IsInsideTree() == true)
+        {
+            Logger.Info("Detected CHARACTER_SELECT screen");
+            return "CHARACTER_SELECT";
+        }
+
         // Check if a run is in progress
         if (!RunManager.Instance.IsInProgress) return "MENU";
 
@@ -328,5 +340,174 @@ public static class GameStateExtractor
         }
 
         return "unknown";
+    }
+
+    /// <summary>
+    ///     Extracts the character selection state from NCharacterSelectScreen.
+    /// </summary>
+    private static CharacterSelectStateDto? ExtractCharacterSelectState()
+    {
+        try
+        {
+            var screen = NCharacterSelectScreen.Instance;
+            if (screen == null || !screen.IsInsideTree())
+            {
+                Logger.Warning("CHARACTER_SELECT screen detected but NCharacterSelectScreen not found");
+                return null;
+            }
+
+            // Get character buttons from the button container
+            var buttonContainer = screen.GetNodeOrNull<Control>("CharSelectButtons/ButtonContainer");
+            if (buttonContainer == null)
+            {
+                Logger.Warning("Character button container not found");
+                return null;
+            }
+
+            var buttons = UiHelper.FindAll<NCharacterSelectButton>(buttonContainer);
+            var characters = new List<CharacterOptionDto>();
+            string? selectedCharacter = null;
+
+            // Get the currently selected button via reflection
+            var selectedButton = GetSelectedButton(screen);
+
+            foreach (var btn in buttons)
+            {
+                // Get character model via reflection
+                var characterModel = GetCharacterModel(btn);
+                if (characterModel == null) continue;
+
+                var isSelected = (btn == selectedButton);
+                if (isSelected)
+                    selectedCharacter = characterModel.Id.Entry;
+
+                characters.Add(new CharacterOptionDto
+                {
+                    CharacterId = characterModel.Id.Entry,
+                    CharacterName = characterModel.Name,
+                    IsLocked = GetIsLocked(btn),
+                    IsSelected = isSelected
+                });
+            }
+
+            // Get ascension info
+            var ascensionPanel = screen.GetNodeOrNull<NAscensionPanel>("%AscensionPanel");
+            var (currentAsc, maxAsc) = GetAscensionInfo(ascensionPanel);
+
+            return new CharacterSelectStateDto
+            {
+                AvailableCharacters = characters,
+                SelectedCharacter = selectedCharacter,
+                CurrentAscension = currentAsc,
+                MaxAscension = maxAsc,
+                CanEmbark = selectedCharacter != null
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract character select state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the selected character button from the screen via reflection.
+    /// </summary>
+    private static NCharacterSelectButton? GetSelectedButton(NCharacterSelectScreen screen)
+    {
+        try
+        {
+            var field = typeof(NCharacterSelectScreen).GetField("_selectedButton",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            return field?.GetValue(screen) as NCharacterSelectButton;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get selected button: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the CharacterModel from a character select button via reflection.
+    /// </summary>
+    private static MegaCrit.Sts2.Core.Models.Characters.CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
+    {
+        try
+        {
+            // Try to find CharacterModel field or property
+            var field = typeof(NCharacterSelectButton).GetField("_characterModel",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (field != null)
+                return field.GetValue(btn) as MegaCrit.Sts2.Core.Models.Characters.CharacterModel;
+
+            // Try property
+            var prop = typeof(NCharacterSelectButton).GetProperty("CharacterModel");
+            if (prop != null)
+                return prop.GetValue(btn) as MegaCrit.Sts2.Core.Models.Characters.CharacterModel;
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get character model: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the locked status from a character select button.
+    /// </summary>
+    private static bool GetIsLocked(NCharacterSelectButton btn)
+    {
+        try
+        {
+            var field = typeof(NCharacterSelectButton).GetField("_isLocked",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (field != null)
+                return (bool)(field.GetValue(btn) ?? false);
+
+            // Try property
+            var prop = typeof(NCharacterSelectButton).GetProperty("IsLocked");
+            if (prop != null)
+                return (bool)(prop.GetValue(btn) ?? false);
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get locked status: {ex.Message}");
+            return false;
+        }
+    }
+
+    /// <summary>
+    ///     Gets ascension information from the ascension panel.
+    /// </summary>
+    private static (int Current, int Max) GetAscensionInfo(NAscensionPanel? panel)
+    {
+        if (panel == null) return (0, 20);
+
+        try
+        {
+            // Try to get current ascension level
+            var currentProp = typeof(NAscensionPanel).GetProperty("CurrentLevel");
+            int current = 0;
+            if (currentProp != null)
+                current = (int)(currentProp.GetValue(panel) ?? 0);
+
+            // Try to get max ascension level
+            var maxProp = typeof(NAscensionPanel).GetProperty("MaxLevel");
+            int max = 20;
+            if (maxProp != null)
+                max = (int)(maxProp.GetValue(panel) ?? 20);
+
+            return (current, max);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get ascension info: {ex.Message}");
+            return (0, 20);
+        }
     }
 }
