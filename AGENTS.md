@@ -50,15 +50,17 @@ Verify the mod works by:
 
 1. `sts2.exe ping` - confirms pipe connection
 2. `sts2.exe state` - confirms state extraction (returns full game state as JSON)
-3. `sts2.exe play_card <index> [--target <combat_id>]` - confirms card play with execution results (damage, block, powers)
+3. `sts2.exe play_card <card_id> [--nth <n>] [--target <combat_id>]` - confirms card play with execution results (damage, block, powers)
 4. `sts2.exe end_turn` - confirms end turn action with execution results (enemy turn damage, block, powers)
-5. `sts2.exe use_potion <slot> [--target <combat_id>]` - confirms potion use with execution results (damage, block, powers)
+5. `sts2.exe use_potion <potion_id> [--nth <n>] [--target <combat_id>]` - confirms potion use with execution results (damage, block, powers)
 6. `sts2.exe reward_claim --type <type> [--id <id>] [--nth <n>]` - confirms reward claim (gold, potion, relic)
 7. `sts2.exe reward_choose_card --type card --card_id <card_id> [--nth <n>]` - confirms card choice from card reward
 8. `sts2.exe reward_skip_card --type card [--nth <n>]` - confirms skipping a card reward
 9. `sts2.exe reward_proceed` - confirms leaving reward screen and proceeding to map
 10. `sts2.exe choose_event <index>` - confirms event option selection with updated event state
 11. `sts2.exe advance_dialogue [--auto]` - confirms Ancient event dialogue advancement (use --auto to skip to options)
+12. `sts2.exe potion_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from potion-opened selection screen
+13. `sts2.exe potion_select_skip` - confirms skipping a potion card selection (if allowed)
 
 ## Code Style Guidelines
 
