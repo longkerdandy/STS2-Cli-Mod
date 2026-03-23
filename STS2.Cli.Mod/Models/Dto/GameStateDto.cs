@@ -48,4 +48,10 @@ public class GameStateDto
     ///     Character selection state if on character select screen, null otherwise.
     /// </summary>
     public CharacterSelectStateDto? CharacterSelect { get; set; }
+
+    /// <summary>
+    ///     Deck card selection state if on a grid-based card selection screen
+    ///     (remove, upgrade, transform, enchant), null otherwise.
+    /// </summary>
+    public DeckCardSelectStateDto? DeckCardSelect { get; set; }
 }

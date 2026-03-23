@@ -50,6 +50,9 @@ public static class GameStateExtractor
         // Extract character select state if on character select screen
         if (state.Screen == "CHARACTER_SELECT") state.CharacterSelect = ExtractCharacterSelectState();
 
+        // Extract deck card selection state if on a grid-based card selection screen
+        if (state.Screen == "DECK_CARD_SELECT") state.DeckCardSelect = ExtractDeckCardSelectState();
+
         return state;
         }
         catch (Exception ex)
@@ -127,6 +130,13 @@ public static class GameStateExtractor
             return "POTION_SELECTION";
         }
 
+        // Check for grid-based card selection screens (remove, upgrade, transform, enchant, generic)
+        if (overlay is NCardGridSelectionScreen)
+        {
+            Logger.Info($"Detected DECK_CARD_SELECT screen ({overlay.GetType().Name})");
+            return "DECK_CARD_SELECT";
+        }
+
         // Check children for potion selection screen (it may not be on top)
         foreach (var child in overlayStack.GetChildren())
         {
@@ -134,6 +144,12 @@ public static class GameStateExtractor
             {
                 Logger.Info("Detected POTION_SELECTION screen (in children)");
                 return "POTION_SELECTION";
+            }
+
+            if (child is NCardGridSelectionScreen)
+            {
+                Logger.Info($"Detected DECK_CARD_SELECT screen in children ({child.GetType().Name})");
+                return "DECK_CARD_SELECT";
             }
         }
 
@@ -344,6 +360,53 @@ public static class GameStateExtractor
     }
 
     /// <summary>
+    ///     Extracts the deck card selection state from a <see cref="NCardGridSelectionScreen" />.
+    ///     Checks the overlay stack for any grid-based card selection screen subtype.
+    /// </summary>
+    private static DeckCardSelectStateDto? ExtractDeckCardSelectState()
+    {
+        try
+        {
+            var screen = FindGridSelectionScreen();
+            if (screen == null)
+            {
+                Logger.Warning("DECK_CARD_SELECT screen detected but no grid selection screen found");
+                return null;
+            }
+
+            return DeckCardSelectStateBuilder.Build(screen);
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract deck card select state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Finds a <see cref="NCardGridSelectionScreen" /> in the overlay stack.
+    /// </summary>
+    private static NCardGridSelectionScreen? FindGridSelectionScreen()
+    {
+        var overlayStack = NOverlayStack.Instance;
+        if (overlayStack == null) return null;
+
+        // Check the top of the stack first
+        var overlay = overlayStack.Peek();
+        if (overlay is NCardGridSelectionScreen gridScreen)
+            return gridScreen;
+
+        // Check children
+        foreach (var child in overlayStack.GetChildren())
+        {
+            if (child is NCardGridSelectionScreen childScreen)
+                return childScreen;
+        }
+
+        return null;
+    }
+
+    /// <summary>
     ///     Extracts the character selection state from NCharacterSelectScreen.
     /// </summary>
     private static CharacterSelectStateDto? ExtractCharacterSelectState()
@@ -374,7 +437,7 @@ public static class GameStateExtractor
 
             foreach (var btn in buttons)
             {
-                // Get character model via reflection
+                // Get character model from public Character property
                 var characterModel = GetCharacterModel(btn);
                 if (characterModel == null) continue;
 
@@ -420,17 +483,15 @@ public static class GameStateExtractor
 
         try
         {
-            // Try to get current ascension level
-            var currentProp = typeof(NAscensionPanel).GetProperty("CurrentLevel");
-            int current = 0;
-            if (currentProp != null)
-                current = (int)(currentProp.GetValue(panel) ?? 0);
+            // Ascension is a public property on NAscensionPanel
+            int current = panel.Ascension;
 
-            // Try to get max ascension level
-            var maxProp = typeof(NAscensionPanel).GetProperty("MaxLevel");
+            // _maxAscension is a private field
             int max = 20;
-            if (maxProp != null)
-                max = (int)(maxProp.GetValue(panel) ?? 20);
+            var maxField = typeof(NAscensionPanel).GetField("_maxAscension",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (maxField != null)
+                max = (int)(maxField.GetValue(panel) ?? 20);
 
             return (current, max);
         }
@@ -458,7 +519,7 @@ public static class GameStateExtractor
     }
 
     /// <summary>
-    ///     Gets the CharacterModel from a character select button via reflection.
+    ///     Gets the CharacterModel from a character select button's public Character property.
     /// </summary>
     private static MegaCrit.Sts2.Core.Models.CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
     {

@@ -445,6 +445,76 @@ public static class CommandRunner
     }
 
     /// <summary>
+    ///     Executes a deck_select_card command with card IDs and optional nth values.
+    /// </summary>
+    public static async Task<int> ExecuteDeckSelectCardAsync(
+        string[] cardIds,
+        int[]? nthValues,
+        bool pretty = false,
+        int timeoutMs = 10000)
+    {
+        using var client = new PipeClient();
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+
+        if (!await client.ConnectAsync(timeoutMs))
+        {
+            WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        var response = await client.SendDeckSelectCardCommandAsync(cardIds, nthValues);
+
+        if (response == null)
+        {
+            WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        if (response.Ok)
+        {
+            WriteSuccess(response.Data, jsonOptions);
+            return ExitSuccess;
+        }
+
+        WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
+        return MapErrorToExitCode(response.Error);
+    }
+
+    /// <summary>
+    ///     Executes a deck_select_skip command.
+    /// </summary>
+    public static async Task<int> ExecuteDeckSelectSkipAsync(
+        bool pretty = false,
+        int timeoutMs = 10000)
+    {
+        using var client = new PipeClient();
+        var jsonOptions = pretty ? JsonOptions.Pretty : JsonOptions.Default;
+
+        if (!await client.ConnectAsync(timeoutMs))
+        {
+            WriteError("CONNECTION_ERROR", "Game not running or mod not loaded", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        var response = await client.SendDeckSelectSkipCommandAsync();
+
+        if (response == null)
+        {
+            WriteError("CONNECTION_ERROR", "Failed to communicate with mod", jsonOptions);
+            return ExitConnectionError;
+        }
+
+        if (response.Ok)
+        {
+            WriteSuccess(response.Data, jsonOptions);
+            return ExitSuccess;
+        }
+
+        WriteError(response.Error ?? "UNKNOWN_ERROR", response.Message ?? "Unknown error", jsonOptions);
+        return MapErrorToExitCode(response.Error);
+    }
+
+    /// <summary>
     ///     Maps a Mod error code to a CLI exit code.
     /// </summary>
     private static int MapErrorToExitCode(string? error) => error switch
@@ -462,7 +532,8 @@ public static class CommandRunner
             "NOT_IN_POTION_SELECTION" or "CANNOT_SKIP" or
             "SKIP_BUTTON_NOT_FOUND" or "NO_CARDS_AVAILABLE" or
             "NOT_IN_CHARACTER_SELECT" or "CHARACTER_LOCKED" or
-            "NO_CHARACTER_SELECTED" or "EMBARK_NOT_AVAILABLE" => ExitInvalidState,
+            "NO_CHARACTER_SELECTED" or "EMBARK_NOT_AVAILABLE" or
+            "NOT_IN_DECK_CARD_SELECT" => ExitInvalidState,
 
         // Invalid parameter — caller provided wrong arguments
         "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or

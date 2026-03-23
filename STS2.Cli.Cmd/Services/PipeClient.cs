@@ -411,4 +411,60 @@ public class PipeClient : IDisposable
             return null;
         }
     }
+
+    /// <summary>
+    ///     Sends a deck_select_card command to the mod and returns the response.
+    /// </summary>
+    public async Task<Response?> SendDeckSelectCardCommandAsync(
+        string[] cardIds,
+        int[]? nthValues)
+    {
+        if (_pipe is not { IsConnected: true }) return null;
+
+        try
+        {
+            var request = new Request
+            {
+                Cmd = "deck_select_card",
+                CardIds = cardIds,
+                NthValues = nthValues
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
+            await _writer!.WriteLineAsync(requestJson);
+
+            var responseJson = await _reader!.ReadLineAsync();
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Sends a deck_select_skip command to the mod and returns the response.
+    /// </summary>
+    public async Task<Response?> SendDeckSelectSkipCommandAsync()
+    {
+        if (_pipe is not { IsConnected: true }) return null;
+
+        try
+        {
+            var request = new Request
+            {
+                Cmd = "deck_select_skip"
+            };
+
+            var requestJson = JsonSerializer.Serialize(request, JsonOptions.Default);
+            await _writer!.WriteLineAsync(requestJson);
+
+            var responseJson = await _reader!.ReadLineAsync();
+            return responseJson == null ? null : JsonSerializer.Deserialize<Response>(responseJson, JsonOptions.Default);
+        }
+        catch (Exception)
+        {
+            return null;
+        }
+    }
 }

@@ -198,6 +198,12 @@ public static class PipeServer
                 // potion_select_skip is synchronous — runs on main thread and returns immediately
                 "potion_select_skip" => HandlePotionSelectSkipRequest(),
 
+                // deck_select_card is async — multi-step: select cards, preview, confirm, poll for removal
+                "deck_select_card" => await HandleDeckSelectCardRequestAsync(request.CardIds, request.NthValues),
+
+                // deck_select_skip is async — click close button, poll for removal
+                "deck_select_skip" => await HandleDeckSelectSkipRequestAsync(),
+
                 // select_character is synchronous — runs on main thread and returns immediately
                 "select_character" => HandleSelectCharacterRequest(request.Id),
 
@@ -476,6 +482,37 @@ public static class PipeServer
     {
         Logger.Info("Requested to embark");
         return MainThreadExecutor.RunOnMainThread(() => EmbarkHandler.Execute());
+    }
+
+    /// <summary>
+    ///     Handles the 'deck_select_card' command asynchronously.
+    ///     Selects cards from a grid-based card selection screen by card ID.
+    /// </summary>
+    /// <param name="cardIds">Array of card IDs to select.</param>
+    /// <param name="nthValues">Optional nth values for each card ID.</param>
+    /// <returns>Response indicating success or failure.</returns>
+    private static async Task<object> HandleDeckSelectCardRequestAsync(string[]? cardIds, int[]? nthValues)
+    {
+        if (cardIds == null || cardIds.Length == 0)
+        {
+            Logger.Warning("deck_select_card requested with no card IDs");
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "At least one card ID is required" };
+        }
+
+        Logger.Info($"Requested to select {cardIds.Length} card(s) from deck card selection screen");
+        return await MainThreadExecutor.RunOnMainThreadAsync(
+            () => DeckSelectCardHandler.ExecuteAsync(cardIds, nthValues));
+    }
+
+    /// <summary>
+    ///     Handles the 'deck_select_skip' command asynchronously.
+    ///     Cancels/skips the current deck card selection if allowed.
+    /// </summary>
+    /// <returns>Response indicating success or failure.</returns>
+    private static async Task<object> HandleDeckSelectSkipRequestAsync()
+    {
+        Logger.Info("Requested to skip deck card selection");
+        return await MainThreadExecutor.RunOnMainThreadAsync(DeckSelectCardHandler.ExecuteSkipAsync);
     }
 
     /// <summary>

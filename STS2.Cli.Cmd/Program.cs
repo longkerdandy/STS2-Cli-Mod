@@ -86,6 +86,12 @@ internal static class Program
         // sts2 potion_select_card <card_id> [<card_id>...] [--nth <n>...] [--skip] — select cards from potion selection screen
         rootCommand.AddCommand(CreatePotionSelectCardCommand(prettyOption));
 
+        // sts2 deck_select_card <card_id> [<card_id>...] [--nth <n>...] — select cards from deck card selection screen
+        rootCommand.AddCommand(CreateDeckSelectCardCommand(prettyOption));
+
+        // sts2 deck_select_skip — cancel/skip a deck card selection (if allowed)
+        rootCommand.AddCommand(CreateDeckSelectSkipCommand(prettyOption));
+
         // sts2 select_character <character_id> — select a character
         rootCommand.AddCommand(CreateSelectCharacterCommand(prettyOption));
 
@@ -403,6 +409,54 @@ internal static class Program
             var characterId = context.ParseResult.GetValueForArgument(characterIdArg);
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
             context.ExitCode = await CommandRunner.ExecuteSelectCharacterAsync(characterId, pretty);
+        });
+
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates the deck_select_card command for selecting cards from deck grid selection screens.
+    /// </summary>
+    private static Command CreateDeckSelectCardCommand(Option<bool> prettyOption)
+    {
+        var command = new Command("deck_select_card",
+            "Select cards from a deck card selection screen (remove, upgrade, transform, enchant)");
+
+        // Card IDs (one or more)
+        var cardIdsArg = new Argument<string[]>("card_ids",
+            description: "Card ID(s) to select (e.g., STRIKE_IRONCLAD)") { Arity = ArgumentArity.OneOrMore };
+
+        // --nth option for specifying which copy of each card
+        var nthOption = new Option<int[]>("--nth",
+            description: "N-th occurrence for each card ID (0-based). If not specified for a card, defaults to 0.") { Arity = ArgumentArity.ZeroOrMore };
+
+        command.AddArgument(cardIdsArg);
+        command.AddOption(nthOption);
+
+        command.SetHandler(async context =>
+        {
+            var cardIds = context.ParseResult.GetValueForArgument(cardIdsArg);
+            var nthValues = context.ParseResult.GetValueForOption(nthOption);
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+
+            context.ExitCode = await CommandRunner.ExecuteDeckSelectCardAsync(cardIds, nthValues, pretty);
+        });
+
+        return command;
+    }
+
+    /// <summary>
+    ///     Creates the deck_select_skip command for cancelling a deck card selection.
+    /// </summary>
+    private static Command CreateDeckSelectSkipCommand(Option<bool> prettyOption)
+    {
+        var command = new Command("deck_select_skip",
+            "Cancel/skip a deck card selection (if allowed)");
+
+        command.SetHandler(async context =>
+        {
+            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            context.ExitCode = await CommandRunner.ExecuteDeckSelectSkipAsync(pretty);
         });
 
         return command;
