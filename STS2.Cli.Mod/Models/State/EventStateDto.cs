@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace STS2.Cli.Mod.Models.Dto;
+namespace STS2.Cli.Mod.State;
 
 /// <summary>
 ///     Event state DTO representing the current event room state.

@@ -1,5 +1,5 @@
 using MegaCrit.Sts2.Core.Entities.Creatures;
-using STS2.Cli.Mod.Models.Dto;
+using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 using static STS2.Cli.Mod.Utils.TextUtils;
 

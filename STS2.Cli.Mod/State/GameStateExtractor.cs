@@ -9,7 +9,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Actions;
-using STS2.Cli.Mod.Models.Dto;
+using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
 
