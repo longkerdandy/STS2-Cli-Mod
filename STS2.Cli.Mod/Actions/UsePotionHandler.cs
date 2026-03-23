@@ -10,6 +10,7 @@ using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Models.Message;
+using STS2.Cli.Mod.Models.Actions;
 using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
 
@@ -330,19 +331,6 @@ public static class UsePotionHandler
         }
 
         return cards;
-    }
-
-    /// <summary>
-    ///     DTO for selectable cards in potion selection screens.
-    /// </summary>
-    public class SelectableCardDto
-    {
-        public int Index { get; set; }
-        public required string CardId { get; set; }
-        public required string CardName { get; set; }
-        public string? CardType { get; set; }
-        public int? Cost { get; set; }
-        public string? Description { get; set; }
     }
 
     /// <summary>
