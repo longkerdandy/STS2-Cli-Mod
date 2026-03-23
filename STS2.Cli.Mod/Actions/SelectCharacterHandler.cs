@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -9,6 +10,22 @@ namespace STS2.Cli.Mod.Actions;
 public static class SelectCharacterHandler
 {
     private static readonly ModLogger Logger = new("SelectCharacterHandler");
+
+    /// <summary>
+    ///     Handles the select_character request.
+    ///     Validates parameters and delegates to Execute.
+    /// </summary>
+    public static object HandleRequest(Request request)
+    {
+        if (string.IsNullOrEmpty(request.Id))
+        {
+            Logger.Warning("select_character requested with no character ID");
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Character ID is required" };
+        }
+
+        Logger.Info($"Requested to select character: {request.Id}");
+        return Execute(request.Id);
+    }
 
     /// <summary>
     ///     Selects a character by calling its Select() method.

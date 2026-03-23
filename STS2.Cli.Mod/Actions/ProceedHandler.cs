@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -14,6 +15,15 @@ namespace STS2.Cli.Mod.Actions;
 public static class ProceedHandler
 {
     private static readonly ModLogger Logger = new("ProceedAction");
+
+    /// <summary>
+    ///     Handles the reward_proceed request.
+    /// </summary>
+    public static object HandleRequest(Request request)
+    {
+        Logger.Info("Requested to proceed from reward screen");
+        return Execute();
+    }
 
     /// <summary>
     ///     Leaves the reward screen and proceeds to the map.

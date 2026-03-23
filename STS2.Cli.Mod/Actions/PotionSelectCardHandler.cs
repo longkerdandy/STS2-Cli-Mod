@@ -2,6 +2,7 @@ using Godot;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -12,6 +13,31 @@ namespace STS2.Cli.Mod.Actions;
 public static class PotionSelectCardHandler
 {
     private static readonly ModLogger Logger = new("PotionSelectCardHandler");
+
+    /// <summary>
+    ///     Handles the potion_select_card request.
+    ///     Validates parameters and delegates to Execute.
+    /// </summary>
+    public static object HandleRequest(Request request)
+    {
+        if (request.CardIds == null || request.CardIds.Length == 0)
+        {
+            Logger.Warning("potion_select_card requested with no card IDs");
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "At least one card ID is required" };
+        }
+
+        Logger.Info($"Requested to select {request.CardIds.Length} card(s) from potion selection screen");
+        return Execute(request.CardIds, request.NthValues);
+    }
+
+    /// <summary>
+    ///     Handles the potion_select_skip request.
+    /// </summary>
+    public static object HandleSkipRequest(Request request)
+    {
+        Logger.Info("Requested to skip potion card selection");
+        return ExecuteSkip();
+    }
 
     /// <summary>
     ///     Selects cards from a potion-opened selection screen by card ID.

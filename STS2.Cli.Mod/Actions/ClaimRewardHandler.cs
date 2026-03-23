@@ -6,6 +6,7 @@ using MegaCrit.Sts2.Core.Nodes.Rewards;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Rewards;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -29,6 +30,21 @@ public static class ClaimRewardHandler
     ///     Polling interval when waiting for the reward button removal.
     /// </summary>
     private const int PollIntervalMs = 100;
+
+    /// <summary>
+    ///     Handles the claim_reward request.
+    ///     Validates parameters and delegates to ExecuteAsync.
+    /// </summary>
+    public static async Task<object> HandleRequestAsync(Request request)
+    {
+        if (string.IsNullOrEmpty(request.RewardType))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward type required (--type)" };
+
+        var nthValue = request.Nth ?? 0;
+        Logger.Info($"Requested to claim reward: type={request.RewardType}, id={request.Id ?? "null"}, nth={nthValue}");
+
+        return await ExecuteAsync(request.RewardType, request.Id, nthValue);
+    }
 
     /// <summary>
     ///     Claims a reward by type and optional ID.

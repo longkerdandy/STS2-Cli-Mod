@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Rewards;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 using static STS2.Cli.Mod.Utils.TextUtils;
 
@@ -34,6 +35,45 @@ public static class ChooseCardHandler
     ///     Polling interval when waiting for UI transitions.
     /// </summary>
     private const int PollIntervalMs = 100;
+
+    /// <summary>
+    ///     Handles the choose_card request.
+    ///     Validates parameters and delegates to ExecuteAsync.
+    /// </summary>
+    public static async Task<object> HandleRequestAsync(Request request)
+    {
+        if (string.IsNullOrEmpty(request.RewardType))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward type required (--type)" };
+
+        if (string.IsNullOrEmpty(request.CardId))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Card ID required (--card_id)" };
+
+        if (request.RewardType != "card")
+            return new { ok = false, error = "INVALID_REWARD_TYPE", message = "choose_card only supports --type card" };
+
+        var nthValue = request.Nth ?? 0;
+        Logger.Info($"Requested to choose card: type={request.RewardType}, card_id={request.CardId}, nth={nthValue}");
+
+        return await ExecuteAsync(request.RewardType, request.CardId, nthValue);
+    }
+
+    /// <summary>
+    ///     Handles the skip_card request.
+    ///     Validates parameters and delegates to ExecuteSkipAsync.
+    /// </summary>
+    public static async Task<object> HandleSkipRequestAsync(Request request)
+    {
+        if (string.IsNullOrEmpty(request.RewardType))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward type required (--type)" };
+
+        if (request.RewardType != "card")
+            return new { ok = false, error = "INVALID_REWARD_TYPE", message = "skip_card only supports --type card" };
+
+        var nthValue = request.Nth ?? 0;
+        Logger.Info($"Requested to skip card reward: type={request.RewardType}, nth={nthValue}");
+
+        return await ExecuteSkipAsync(request.RewardType, nthValue);
+    }
 
     /// <summary>
     ///     Picks a card from a card reward using card ID.

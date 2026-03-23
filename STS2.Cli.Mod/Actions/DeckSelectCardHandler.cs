@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using Godot;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -39,6 +40,31 @@ public static class DeckSelectCardHandler
     ///     Polling interval when waiting for UI transitions.
     /// </summary>
     private const int PollIntervalMs = 100;
+
+    /// <summary>
+    ///     Handles the deck_select_card request.
+    ///     Validates parameters and delegates to ExecuteAsync.
+    /// </summary>
+    public static async Task<object> HandleRequestAsync(Request request)
+    {
+        if (request.CardIds == null || request.CardIds.Length == 0)
+        {
+            Logger.Warning("deck_select_card requested with no card IDs");
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "At least one card ID is required" };
+        }
+
+        Logger.Info($"Requested to select {request.CardIds.Length} card(s) from deck card selection screen");
+        return await ExecuteAsync(request.CardIds, request.NthValues);
+    }
+
+    /// <summary>
+    ///     Handles the deck_select_skip request.
+    /// </summary>
+    public static async Task<object> HandleSkipRequestAsync(Request request)
+    {
+        Logger.Info("Requested to skip deck card selection");
+        return await ExecuteSkipAsync();
+    }
 
     /// <summary>
     ///     Selects cards from a grid-based card selection screen by card ID.

@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -9,6 +10,17 @@ namespace STS2.Cli.Mod.Actions;
 public static class SetAscensionHandler
 {
     private static readonly ModLogger Logger = new("SetAscensionHandler");
+
+    /// <summary>
+    ///     Handles the set_ascension request.
+    ///     Validates parameters and delegates to Execute.
+    /// </summary>
+    public static object HandleRequest(Request request)
+    {
+        var level = request.Args?[0] ?? 0;
+        Logger.Info($"Requested to set ascension level: {level}");
+        return Execute(level);
+    }
 
     /// <summary>
     ///     Sets the ascension level.

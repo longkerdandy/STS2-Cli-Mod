@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
 
@@ -39,6 +40,19 @@ public static class AdvanceDialogueHandler
     ///     Maximum number of dialogue lines to auto-advance (safety limit).
     /// </summary>
     private const int MaxAutoAdvanceLines = 50;
+
+    /// <summary>
+    ///     Handles the advance_dialogue request.
+    ///     Validates parameters and delegates to ExecuteAsync.
+    /// </summary>
+    public static async Task<object> HandleRequestAsync(Request request)
+    {
+        // args[0] = 1 for auto mode, 0 or not present for single advance
+        var auto = request.Args is { Length: > 0 } && request.Args[0] == 1;
+        Logger.Info($"Requested to advance dialogue (auto={auto})");
+
+        return await ExecuteAsync(auto);
+    }
 
     /// <summary>
     ///     Executes the advance_dialogue command.

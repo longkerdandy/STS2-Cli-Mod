@@ -9,6 +9,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
 
@@ -29,6 +30,21 @@ public static class UsePotionHandler
     ///     Covers potion throw animation and triggered effects.
     /// </summary>
     private const int ActionTimeoutMs = 10000;
+
+    /// <summary>
+    ///     Handles the use_potion request.
+    ///     Validates parameters and delegates to ExecuteAsync.
+    /// </summary>
+    public static async Task<object> HandleRequestAsync(Request request)
+    {
+        if (string.IsNullOrEmpty(request.Id))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Potion ID required (e.g., FIRE_POTION)" };
+
+        var nthValue = request.Nth ?? 0;
+        Logger.Info($"Requested to use potion {request.Id}, nth={nthValue}, target={request.Target?.ToString() ?? "none"}");
+
+        return await ExecuteAsync(request.Id, nthValue, request.Target);
+    }
 
     /// <summary>
     ///     Uses a potion from the player's potion belt by ID and returns the execution results.

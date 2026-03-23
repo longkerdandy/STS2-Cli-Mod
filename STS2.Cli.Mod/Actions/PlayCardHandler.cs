@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -22,6 +23,21 @@ public static class PlayCardHandler
     ///     Covers animation time for multi-hit attacks and triggered effects.
     /// </summary>
     private const int ActionTimeoutMs = 10000;
+
+    /// <summary>
+    ///     Handles the play_card request.
+    ///     Validates parameters and delegates to ExecuteAsync.
+    /// </summary>
+    public static async Task<object> HandleRequestAsync(Request request)
+    {
+        if (string.IsNullOrEmpty(request.Id))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Card ID required (e.g., STRIKE_IRONCLAD)" };
+
+        var nthValue = request.Nth ?? 0;
+        Logger.Info($"Requested to play card {request.Id}, nth={nthValue}, target={request.Target?.ToString() ?? "none"}");
+
+        return await ExecuteAsync(request.Id, nthValue, request.Target);
+    }
 
     /// <summary>
     ///     Plays a card from the player's hand by ID and returns the execution results.

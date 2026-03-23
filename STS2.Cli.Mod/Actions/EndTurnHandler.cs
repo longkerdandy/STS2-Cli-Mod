@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Rooms;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -19,6 +20,15 @@ public static class EndTurnHandler
     ///     Covers all enemy animations, triggered effects, and transitions.
     /// </summary>
     private const int TurnTimeoutMs = 30000;
+
+    /// <summary>
+    ///     Handles the end_turn request.
+    /// </summary>
+    public static async Task<object> HandleRequestAsync(Request request)
+    {
+        Logger.Info("Requested to end turn");
+        return await ExecuteAsync();
+    }
 
     /// <summary>
     ///     Ends the player's turn, waits for the enemy turn to complete, and returns execution results.

@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
 
@@ -34,6 +35,21 @@ public static class ChooseEventHandler
     ///     Maximum time to wait for event state to change after clicking an option.
     /// </summary>
     private const int MaxWaitTimeMs = 5000;
+
+    /// <summary>
+    ///     Handles the choose_event request.
+    ///     Validates parameters and delegates to ExecuteAsync.
+    /// </summary>
+    public static async Task<object> HandleRequestAsync(Request request)
+    {
+        if (request.Args == null || request.Args.Length == 0)
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Option index required" };
+
+        var optionIndex = request.Args[0];
+        Logger.Info($"Requested to choose event option at index {optionIndex}");
+
+        return await ExecuteAsync(optionIndex);
+    }
 
     /// <summary>
     ///     Executes the choose_event command.
