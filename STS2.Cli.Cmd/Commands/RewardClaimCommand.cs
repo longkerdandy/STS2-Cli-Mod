@@ -1,5 +1,5 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Services;
+using STS2.Cli.Cmd.Models.Message;
 
 namespace STS2.Cli.Cmd.Commands;
 
@@ -20,20 +20,17 @@ internal static class RewardClaimCommand
                 var value = result.Tokens.Single().Value.ToLower();
                 if (value is "gold" or "potion" or "relic" or "special_card")
                     return value;
-                result.ErrorMessage =
-                    $"Invalid reward type '{value}'. Must be one of: gold, potion, relic, special_card";
+                result.ErrorMessage = $"Invalid reward type '{value}'. Must be one of: gold, potion, relic, special_card";
                 return null!;
-            })
-        {
-            IsRequired = true
-        };
+            });
+        typeOption.IsRequired = true;
 
         var idOption = new Option<string>("--id",
-            "Item ID (potion_id, relic_id, or card_id). Required for potion, relic, and special_card.");
+            description: "Item ID (potion_id, relic_id, or card_id). Required for potion, relic, and special_card.");
 
         var nthOption = new Option<int>("--nth",
             () => 0,
-            "N-th occurrence when multiple rewards of same type exist (0-based). Optional, defaults to 0.");
+            description: "N-th occurrence when multiple rewards of same type exist (0-based). Optional, defaults to 0.");
 
         var command = new Command(name, description);
         command.AddOption(typeOption);
@@ -50,14 +47,22 @@ internal static class RewardClaimCommand
             // Validate: potion, relic, special_card require --id
             if (type is "potion" or "relic" or "special_card" && string.IsNullOrEmpty(id))
             {
-                context.ExitCode = await CommandRunner.ExecuteAsync(name,
+                context.ExitCode = await CommandExecutor.ExecuteErrorAsync(
                     "MISSING_ARGUMENT",
                     $"Reward type '{type}' requires --id parameter",
                     pretty);
                 return;
             }
 
-            context.ExitCode = await CommandRunner.ExecuteRewardAsync(name, type!, id, nth, pretty);
+            context.ExitCode = await CommandExecutor.ExecuteAsync(
+                () => new Request
+                {
+                    Cmd = name,
+                    RewardType = type,
+                    Id = id,
+                    Nth = nth
+                },
+                pretty);
         });
 
         return command;

@@ -1,5 +1,5 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Services;
+using STS2.Cli.Cmd.Models.Message;
 
 namespace STS2.Cli.Cmd.Commands;
 
@@ -16,12 +16,12 @@ internal static class RewardSkipCardCommand
         // --type card (only card rewards can be skipped)
         var typeOption = new Option<string>("--type",
             () => "card",
-            "Reward type (only 'card' is supported)");
+            description: "Reward type (only 'card' is supported)");
 
         // --nth (optional - which card reward if multiple)
         var nthOption = new Option<int>("--nth",
             () => 0,
-            "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
+            description: "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
 
         var command = new Command(name, description);
         command.AddOption(typeOption);
@@ -33,7 +33,14 @@ internal static class RewardSkipCardCommand
             var nth = context.ParseResult.GetValueForOption(nthOption);
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
 
-            context.ExitCode = await CommandRunner.ExecuteSkipCardAsync(type!, nth, pretty);
+            context.ExitCode = await CommandExecutor.ExecuteAsync(
+                () => new Request
+                {
+                    Cmd = "skip_card",
+                    RewardType = type,
+                    Nth = nth
+                },
+                pretty);
         });
 
         return command;

@@ -1,5 +1,5 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Services;
+using STS2.Cli.Cmd.Models.Message;
 
 namespace STS2.Cli.Cmd.Commands;
 
@@ -21,7 +21,14 @@ internal static class SelectCharacterCommand
         {
             var characterId = context.ParseResult.GetValueForArgument(characterIdArg);
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            context.ExitCode = await CommandRunner.ExecuteSelectCharacterAsync(characterId, pretty);
+
+            context.ExitCode = await CommandExecutor.ExecuteAsync(
+                () => new Request
+                {
+                    Cmd = "select_character",
+                    Id = characterId
+                },
+                pretty);
         });
 
         return command;

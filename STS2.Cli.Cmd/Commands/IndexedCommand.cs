@@ -1,5 +1,5 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Services;
+using STS2.Cli.Cmd.Models.Message;
 
 namespace STS2.Cli.Cmd.Commands;
 
@@ -22,7 +22,14 @@ internal static class IndexedCommand
         {
             var index = context.ParseResult.GetValueForArgument(indexArg);
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            context.ExitCode = await CommandRunner.ExecuteAsync(name, [index], pretty: pretty);
+
+            context.ExitCode = await CommandExecutor.ExecuteAsync(
+                () => new Request
+                {
+                    Cmd = name,
+                    Args = [index]
+                },
+                pretty);
         });
         return command;
     }

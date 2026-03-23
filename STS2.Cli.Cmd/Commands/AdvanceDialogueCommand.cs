@@ -1,5 +1,5 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Services;
+using STS2.Cli.Cmd.Models.Message;
 
 namespace STS2.Cli.Cmd.Commands;
 
@@ -16,7 +16,7 @@ internal static class AdvanceDialogueCommand
         // --auto (optional - auto-advance all dialogue lines)
         var autoOption = new Option<bool>("--auto",
             () => false,
-            "Auto-advance all dialogue lines until options appear");
+            description: "Auto-advance all dialogue lines until options appear");
 
         var command = new Command(name, description);
         command.AddOption(autoOption);
@@ -26,7 +26,13 @@ internal static class AdvanceDialogueCommand
             var auto = context.ParseResult.GetValueForOption(autoOption);
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
 
-            context.ExitCode = await CommandRunner.ExecuteAdvanceDialogueAsync(auto, pretty);
+            context.ExitCode = await CommandExecutor.ExecuteAsync(
+                () => new Request
+                {
+                    Cmd = name,
+                    Args = [auto ? 1 : 0]
+                },
+                pretty);
         });
 
         return command;

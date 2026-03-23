@@ -1,5 +1,5 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Services;
+using STS2.Cli.Cmd.Models.Message;
 
 namespace STS2.Cli.Cmd.Commands;
 
@@ -19,7 +19,11 @@ internal static class DeckSelectSkipCommand
         command.SetHandler(async context =>
         {
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            context.ExitCode = await CommandRunner.ExecuteDeckSelectSkipAsync(pretty);
+
+            context.ExitCode = await CommandExecutor.ExecuteAsync(
+                () => new Request { Cmd = "deck_select_skip" },
+                pretty,
+                timeoutMs: 10000);
         });
 
         return command;

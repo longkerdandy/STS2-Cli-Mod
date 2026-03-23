@@ -1,5 +1,5 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Services;
+using STS2.Cli.Cmd.Models.Message;
 
 namespace STS2.Cli.Cmd.Commands;
 
@@ -9,7 +9,7 @@ namespace STS2.Cli.Cmd.Commands;
 internal static class IdBasedCommand
 {
     /// <summary>
-    ///     Creates an ID-based command with an optional target.
+    ///     Creates an ID-based command with optional target.
     /// </summary>
     public static Command Create(
         string name, string description,
@@ -28,7 +28,16 @@ internal static class IdBasedCommand
             var nth = context.ParseResult.GetValueForOption(nthOption);
             var target = context.ParseResult.GetValueForOption(targetOption);
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            context.ExitCode = await CommandRunner.ExecuteAsync(name, id, nth, target, pretty);
+
+            context.ExitCode = await CommandExecutor.ExecuteAsync(
+                () => new Request
+                {
+                    Cmd = name,
+                    Id = id,
+                    Nth = nth,
+                    Target = target
+                },
+                pretty);
         });
         return command;
     }
@@ -36,8 +45,6 @@ internal static class IdBasedCommand
     /// <summary>
     ///     Creates the shared --target option for targeted commands.
     /// </summary>
-    public static Option<int?> CreateTargetOption(string description)
-    {
-        return new Option<int?>("--target", description);
-    }
+    public static Option<int?> CreateTargetOption(string description) =>
+        new("--target", description);
 }

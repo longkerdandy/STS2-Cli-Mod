@@ -1,5 +1,5 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Services;
+using STS2.Cli.Cmd.Models.Message;
 
 namespace STS2.Cli.Cmd.Commands;
 
@@ -21,7 +21,14 @@ internal static class SetAscensionCommand
         {
             var level = context.ParseResult.GetValueForArgument(levelArg);
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            context.ExitCode = await CommandRunner.ExecuteSetAscensionAsync(level, pretty);
+
+            context.ExitCode = await CommandExecutor.ExecuteAsync(
+                () => new Request
+                {
+                    Cmd = "set_ascension",
+                    Args = [level]
+                },
+                pretty);
         });
 
         return command;

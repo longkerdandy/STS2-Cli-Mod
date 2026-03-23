@@ -1,5 +1,5 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Services;
+using STS2.Cli.Cmd.Models.Message;
 
 namespace STS2.Cli.Cmd.Commands;
 
@@ -16,19 +16,17 @@ internal static class RewardChooseCardCommand
         // --type card (only card rewards are supported)
         var typeOption = new Option<string>("--type",
             () => "card",
-            "Reward type (only 'card' is supported)");
+            description: "Reward type (only 'card' is supported)");
 
         // --card_id (required - which card to pick)
         var cardIdOption = new Option<string>("--card_id",
-            "Card ID to select (e.g., STRIKE_IRONCLAD)")
-        {
-            IsRequired = true
-        };
+            description: "Card ID to select (e.g., STRIKE_IRONCLAD)");
+        cardIdOption.IsRequired = true;
 
         // --nth (optional - which card reward if multiple)
         var nthOption = new Option<int>("--nth",
             () => 0,
-            "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
+            description: "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
 
         var command = new Command(name, description);
         command.AddOption(typeOption);
@@ -42,7 +40,15 @@ internal static class RewardChooseCardCommand
             var nth = context.ParseResult.GetValueForOption(nthOption);
             var pretty = context.ParseResult.GetValueForOption(prettyOption);
 
-            context.ExitCode = await CommandRunner.ExecuteChooseCardAsync(type!, cardId!, nth, pretty);
+            context.ExitCode = await CommandExecutor.ExecuteAsync(
+                () => new Request
+                {
+                    Cmd = "choose_card",
+                    RewardType = type,
+                    CardId = cardId,
+                    Nth = nth
+                },
+                pretty);
         });
 
         return command;
