@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
+using STS2.Cli.Mod.Actions;
 using STS2.Cli.Mod.Models.Dto;
 using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
@@ -67,7 +68,7 @@ public static class GameStateExtractor
     {
         // Check Character Select screen FIRST (before checking IsInProgress)
         // Character select screen is valid even when RunManager.IsInProgress is false
-        if (NCharacterSelectScreen.Instance?.IsInsideTree() == true)
+        if (FindCharacterSelectScreen() != null)
         {
             Logger.Info("Detected CHARACTER_SELECT screen");
             return "CHARACTER_SELECT";
@@ -349,15 +350,15 @@ public static class GameStateExtractor
     {
         try
         {
-            var screen = NCharacterSelectScreen.Instance;
-            if (screen == null || !screen.IsInsideTree())
+            var screen = FindCharacterSelectScreen();
+            if (screen == null)
             {
                 Logger.Warning("CHARACTER_SELECT screen detected but NCharacterSelectScreen not found");
                 return null;
             }
 
             // Get character buttons from the button container
-            var buttonContainer = screen.GetNodeOrNull<Control>("CharSelectButtons/ButtonContainer");
+            var buttonContainer = screen.GetNodeOrNull<Godot.Control>("CharSelectButtons/ButtonContainer");
             if (buttonContainer == null)
             {
                 Logger.Warning("Character button container not found");
@@ -384,7 +385,7 @@ public static class GameStateExtractor
                 characters.Add(new CharacterOptionDto
                 {
                     CharacterId = characterModel.Id.Entry,
-                    CharacterName = characterModel.Name,
+                    CharacterName = TextUtils.StripGameTags(characterModel.Title.GetFormattedText()),
                     IsLocked = GetIsLocked(btn),
                     IsSelected = isSelected
                 });
@@ -407,77 +408,6 @@ public static class GameStateExtractor
         {
             Logger.Error($"Failed to extract character select state: {ex.Message}");
             return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets the selected character button from the screen via reflection.
-    /// </summary>
-    private static NCharacterSelectButton? GetSelectedButton(NCharacterSelectScreen screen)
-    {
-        try
-        {
-            var field = typeof(NCharacterSelectScreen).GetField("_selectedButton",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            return field?.GetValue(screen) as NCharacterSelectButton;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get selected button: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets the CharacterModel from a character select button via reflection.
-    /// </summary>
-    private static MegaCrit.Sts2.Core.Models.Characters.CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
-    {
-        try
-        {
-            // Try to find CharacterModel field or property
-            var field = typeof(NCharacterSelectButton).GetField("_characterModel",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null)
-                return field.GetValue(btn) as MegaCrit.Sts2.Core.Models.Characters.CharacterModel;
-
-            // Try property
-            var prop = typeof(NCharacterSelectButton).GetProperty("CharacterModel");
-            if (prop != null)
-                return prop.GetValue(btn) as MegaCrit.Sts2.Core.Models.Characters.CharacterModel;
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get character model: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets the locked status from a character select button.
-    /// </summary>
-    private static bool GetIsLocked(NCharacterSelectButton btn)
-    {
-        try
-        {
-            var field = typeof(NCharacterSelectButton).GetField("_isLocked",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null)
-                return (bool)(field.GetValue(btn) ?? false);
-
-            // Try property
-            var prop = typeof(NCharacterSelectButton).GetProperty("IsLocked");
-            if (prop != null)
-                return (bool)(prop.GetValue(btn) ?? false);
-
-            return false;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get locked status: {ex.Message}");
-            return false;
         }
     }
 
@@ -509,5 +439,37 @@ public static class GameStateExtractor
             Logger.Warning($"Failed to get ascension info: {ex.Message}");
             return (0, 20);
         }
+    }
+
+    /// <summary>
+    ///     Finds the Character Select screen in the scene tree.
+    /// </summary>
+    private static NCharacterSelectScreen? FindCharacterSelectScreen()
+    {
+        return CharacterSelectHelper.FindScreen();
+    }
+
+    /// <summary>
+    ///     Gets the selected character button from the screen via reflection.
+    /// </summary>
+    private static NCharacterSelectButton? GetSelectedButton(NCharacterSelectScreen screen)
+    {
+        return CharacterSelectHelper.GetSelectedButton(screen);
+    }
+
+    /// <summary>
+    ///     Gets the CharacterModel from a character select button via reflection.
+    /// </summary>
+    private static MegaCrit.Sts2.Core.Models.CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
+    {
+        return CharacterSelectHelper.GetCharacterModel(btn);
+    }
+
+    /// <summary>
+    ///     Gets the locked status from a character select button.
+    /// </summary>
+    private static bool GetIsLocked(NCharacterSelectButton btn)
+    {
+        return CharacterSelectHelper.GetIsLocked(btn);
     }
 }

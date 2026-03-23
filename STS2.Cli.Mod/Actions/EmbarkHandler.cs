@@ -1,4 +1,4 @@
-using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using STS2.Cli.Mod.Utils;
 
@@ -20,8 +20,8 @@ public static class EmbarkHandler
         return MainThreadExecutor.RunOnMainThread<object>(() =>
         {
             // Guard: Must be on character select screen
-            var screen = NCharacterSelectScreen.Instance;
-            if (screen == null || !screen.IsInsideTree())
+            var screen = CharacterSelectHelper.FindScreen();
+            if (screen == null)
             {
                 Logger.Warning("Embark requested but not on character select screen");
                 return new
@@ -33,7 +33,7 @@ public static class EmbarkHandler
             }
 
             // Check if a character is selected
-            var selectedBtn = GetSelectedButton(screen);
+            var selectedBtn = CharacterSelectHelper.GetSelectedButton(screen);
             if (selectedBtn == null)
             {
                 Logger.Warning("Embark requested but no character selected");
@@ -80,24 +80,5 @@ public static class EmbarkHandler
                 data = new { embarked = true }
             };
         });
-    }
-
-    /// <summary>
-    ///     Gets the selected character button from the screen via reflection.
-    /// </summary>
-    private static MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect.NCharacterSelectButton? GetSelectedButton(
-        MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect.NCharacterSelectScreen screen)
-    {
-        try
-        {
-            var field = typeof(MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect.NCharacterSelectScreen).GetField("_selectedButton",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            return field?.GetValue(screen) as MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect.NCharacterSelectButton;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get selected button: {ex.Message}");
-            return null;
-        }
     }
 }

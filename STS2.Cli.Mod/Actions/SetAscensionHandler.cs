@@ -20,8 +20,8 @@ public static class SetAscensionHandler
         return MainThreadExecutor.RunOnMainThread<object>(() =>
         {
             // Guard: Must be on character select screen
-            var screen = NCharacterSelectScreen.Instance;
-            if (screen == null || !screen.IsInsideTree())
+            var screen = CharacterSelectHelper.FindScreen();
+            if (screen == null)
             {
                 Logger.Warning("SetAscension requested but not on character select screen");
                 return new
@@ -47,8 +47,7 @@ public static class SetAscensionHandler
 
             // Get max ascension
             var maxAscension = GetMaxAscension(ascensionPanel);
-
-            // Validate level
+            
             if (level < 0 || level > maxAscension)
             {
                 Logger.Warning($"Invalid ascension level: {level} (max: {maxAscension})");

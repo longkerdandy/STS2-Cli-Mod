@@ -20,8 +20,8 @@ public static class SelectCharacterHandler
         return MainThreadExecutor.RunOnMainThread<object>(() =>
         {
             // Guard: Must be on character select screen
-            var screen = NCharacterSelectScreen.Instance;
-            if (screen == null || !screen.IsInsideTree())
+            var screen = CharacterSelectHelper.FindScreen();
+            if (screen == null)
             {
                 Logger.Warning("SelectCharacter requested but not on character select screen");
                 return new
@@ -52,7 +52,7 @@ public static class SelectCharacterHandler
             NCharacterSelectButton? targetBtn = null;
             foreach (var btn in buttons)
             {
-                var model = GetCharacterModel(btn);
+                var model = CharacterSelectHelper.GetCharacterModel(btn);
                 if (model?.Id.Entry.Equals(characterId, StringComparison.OrdinalIgnoreCase) == true)
                 {
                     targetBtn = btn;
@@ -72,7 +72,7 @@ public static class SelectCharacterHandler
             }
 
             // Check if character is locked
-            if (GetIsLocked(targetBtn))
+            if (CharacterSelectHelper.GetIsLocked(targetBtn))
             {
                 Logger.Warning($"Character '{characterId}' is locked");
                 return new
@@ -93,58 +93,5 @@ public static class SelectCharacterHandler
                 data = new { character_id = characterId }
             };
         });
-    }
-
-    /// <summary>
-    ///     Gets the CharacterModel from a character select button via reflection.
-    /// </summary>
-    private static MegaCrit.Sts2.Core.Models.Characters.CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
-    {
-        try
-        {
-            // Try field first
-            var field = typeof(NCharacterSelectButton).GetField("_characterModel",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null)
-                return field.GetValue(btn) as MegaCrit.Sts2.Core.Models.Characters.CharacterModel;
-
-            // Try property
-            var prop = typeof(NCharacterSelectButton).GetProperty("CharacterModel");
-            if (prop != null)
-                return prop.GetValue(btn) as MegaCrit.Sts2.Core.Models.Characters.CharacterModel;
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get character model: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets the locked status from a character select button.
-    /// </summary>
-    private static bool GetIsLocked(NCharacterSelectButton btn)
-    {
-        try
-        {
-            var field = typeof(NCharacterSelectButton).GetField("_isLocked",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null)
-                return (bool)(field.GetValue(btn) ?? false);
-
-            // Try IsLocked property
-            var prop = typeof(NCharacterSelectButton).GetProperty("IsLocked");
-            if (prop != null)
-                return (bool)(prop.GetValue(btn) ?? false);
-
-            return false;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get locked status: {ex.Message}");
-            return false;
-        }
     }
 }
