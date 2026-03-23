@@ -59,6 +59,37 @@ public static class ChooseEventHandler
             if (eventModel == null)
                 return new { ok = false, error = "INTERNAL_ERROR", message = "Failed to access event model" };
 
+            // --- Handle finished event (proceed to map) ---
+            if (eventModel.IsFinished)
+            {
+                if (optionIndex != 0)
+                    return new
+                    {
+                        ok = false,
+                        error = "INVALID_OPTION_INDEX",
+                        message = "Event is finished, only option index 0 (proceed) is available"
+                    };
+
+                Logger.Info("Event is finished, calling NEventRoom.Proceed()");
+                await NEventRoom.Proceed();
+
+                // Wait for map to open
+                var proceeded = await WaitForProceed(eventRoom);
+                if (!proceeded)
+                    Logger.Warning("Timed out waiting for proceed transition");
+
+                return new
+                {
+                    ok = true,
+                    data = new
+                    {
+                        option_index = 0,
+                        is_proceed = true,
+                        proceeded = proceeded
+                    }
+                };
+            }
+
             var currentOptions = eventModel.CurrentOptions;
             if (optionIndex < 0 || optionIndex >= currentOptions.Count)
                 return new
@@ -273,9 +304,16 @@ public static class ChooseEventHandler
         public EventStateSnapshot(EventModel eventModel)
         {
             OptionCount = eventModel.CurrentOptions.Count;
-            FirstOptionTitle = OptionCount > 0
-                ? eventModel.CurrentOptions[0].Title.GetFormattedText()
-                : null;
+            try
+            {
+                FirstOptionTitle = OptionCount > 0
+                    ? eventModel.CurrentOptions[0].Title.GetFormattedText()
+                    : null;
+            }
+            catch
+            {
+                FirstOptionTitle = null;
+            }
             IsFinished = eventModel.IsFinished;
         }
     }

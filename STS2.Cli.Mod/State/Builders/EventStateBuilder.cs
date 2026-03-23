@@ -1,6 +1,7 @@
 using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Events;
+using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -58,14 +59,29 @@ public static class EventStateBuilder
                 return null;
             }
 
+            var options = BuildOptions(eventModel);
+
+            // When event is finished, the game UI injects a synthetic "proceed" option
+            // via NEventRoom.SetOptions() that is NOT reflected in CurrentOptions.
+            // We mirror this behavior so AI agents see a proceed option they can select.
+            if (eventModel.IsFinished && options.Count == 0)
+            {
+                options.Add(new EventOptionDto
+                {
+                    Index = 0,
+                    Title = "Proceed",
+                    IsProceed = true
+                });
+            }
+
             var result = new EventStateDto
             {
                 EventId = eventModel.Id.Entry,
-                Title = StripGameTags(eventModel.Title.GetFormattedText()),
-                Description = eventModel.Description != null ? StripGameTags(eventModel.Description.GetFormattedText()) : null,
+                Title = SafeGetText(eventModel.Title) ?? eventModel.Id.Entry,
+                Description = SafeGetText(eventModel.Description),
                 LayoutType = eventModel.LayoutType.ToString(),
                 IsFinished = eventModel.IsFinished,
-                Options = BuildOptions(eventModel)
+                Options = options
             };
 
             // Detect Ancient layout and extract dialogue info
@@ -103,8 +119,8 @@ public static class EventStateBuilder
                 var optionDto = new EventOptionDto
                 {
                     Index = index,
-                    Title = StripGameTags(option.Title.GetFormattedText()),
-                    Description = StripGameTags(option.Description.GetFormattedText()),
+                    Title = SafeGetText(option.Title) ?? option.TextKey ?? $"Option {index}",
+                    Description = SafeGetText(option.Description),
                     TextKey = option.TextKey,
                     IsLocked = option.IsLocked,
                     IsProceed = option.IsProceed,
@@ -115,7 +131,7 @@ public static class EventStateBuilder
                 if (option.Relic != null)
                 {
                     optionDto.RelicId = option.Relic.Id.Entry;
-                    optionDto.RelicName = StripGameTags(option.Relic.Title.GetFormattedText());
+                    optionDto.RelicName = SafeGetText(option.Relic.Title);
                 }
 
                 options.Add(optionDto);
@@ -172,6 +188,33 @@ public static class EventStateBuilder
         {
             Logger.Warning($"Failed to extract Ancient dialogue info: {ex.Message}");
             // Don't fail the whole state extraction, just leave dialogue fields unset
+        }
+    }
+
+    /// <summary>
+    ///     Safely resolves a <see cref="LocString" /> to its formatted text.
+    ///     Returns null if the <see cref="LocString" /> is null or its localization key does not exist in the table.
+    ///     This prevents <c>LocException</c> from being thrown for missing keys (e.g., Neow event).
+    /// </summary>
+    private static string? SafeGetText(LocString? locString)
+    {
+        if (locString == null)
+            return null;
+
+        try
+        {
+            if (!locString.Exists())
+            {
+                Logger.Warning($"LocString key not found: table={locString.LocTable}, key={locString.LocEntryKey}");
+                return null;
+            }
+
+            return StripGameTags(locString.GetFormattedText());
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to resolve LocString: {ex.Message}");
+            return null;
         }
     }
 }

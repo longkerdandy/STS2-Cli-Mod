@@ -1,4 +1,4 @@
-using Godot;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using STS2.Cli.Mod.Utils;
@@ -49,24 +49,14 @@ public static class CharacterSelectHelper
     }
 
     /// <summary>
-    ///     Gets the CharacterModel from a character select button via reflection.
+    ///     Gets the CharacterModel from a character select button.
+    ///     NCharacterSelectButton.Character is a public property.
     /// </summary>
-    public static MegaCrit.Sts2.Core.Models.CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
+    public static CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
     {
         try
         {
-            // Try field first
-            var field = typeof(NCharacterSelectButton).GetField("_characterModel",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null)
-                return field.GetValue(btn) as MegaCrit.Sts2.Core.Models.CharacterModel;
-
-            // Try property
-            var prop = typeof(NCharacterSelectButton).GetProperty("CharacterModel");
-            if (prop != null)
-                return prop.GetValue(btn) as MegaCrit.Sts2.Core.Models.CharacterModel;
-
-            return null;
+            return btn.Character;
         }
         catch (Exception ex)
         {
@@ -77,22 +67,13 @@ public static class CharacterSelectHelper
 
     /// <summary>
     ///     Gets the locked status from a character select button.
+    ///     NCharacterSelectButton.IsLocked is a public property.
     /// </summary>
     public static bool GetIsLocked(NCharacterSelectButton btn)
     {
         try
         {
-            var field = typeof(NCharacterSelectButton).GetField("_isLocked",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field != null)
-                return (bool)(field.GetValue(btn) ?? false);
-
-            // Try IsLocked property
-            var prop = typeof(NCharacterSelectButton).GetProperty("IsLocked");
-            if (prop != null)
-                return (bool)(prop.GetValue(btn) ?? false);
-
-            return false;
+            return btn.IsLocked;
         }
         catch (Exception ex)
         {
@@ -103,6 +84,7 @@ public static class CharacterSelectHelper
 
     /// <summary>
     ///     Gets the selected character button from the screen via reflection.
+    ///     NCharacterSelectScreen._selectedButton is a private field.
     /// </summary>
     public static NCharacterSelectButton? GetSelectedButton(NCharacterSelectScreen screen)
     {
