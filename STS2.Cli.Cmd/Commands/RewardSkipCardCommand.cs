@@ -14,26 +14,31 @@ internal static class RewardSkipCardCommand
     public static Command Create(string name, string description, Option<bool> prettyOption)
     {
         // --type card (only card rewards can be skipped)
-        var typeOption = new Option<string>("--type",
-            () => "card",
-            "Reward type (only 'card' is supported)");
+        var typeOption = new Option<string>("--type")
+        {
+            Description = "Reward type (only 'card' is supported)",
+            DefaultValueFactory = _ => "card"
+        };
 
         // --nth (optional - which card reward if multiple)
-        var nthOption = new Option<int>("--nth",
-            () => 0,
-            "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
+        var nthOption = new Option<int>("--nth")
+        {
+            Description = "N-th card reward when multiple exist (0-based). Optional, defaults to 0.",
+            DefaultValueFactory = _ => 0
+        };
 
         var command = new Command(name, description);
-        command.AddOption(typeOption);
-        command.AddOption(nthOption);
+        command.Options.Add(typeOption);
+        command.Options.Add(nthOption);
+        command.Options.Add(prettyOption);
 
-        command.SetHandler(async context =>
+        command.SetAction(parseResult =>
         {
-            var type = context.ParseResult.GetValueForOption(typeOption);
-            var nth = context.ParseResult.GetValueForOption(nthOption);
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            var type = parseResult.GetValue(typeOption)!;
+            var nth = parseResult.GetValue(nthOption);
+            var pretty = parseResult.GetValue(prettyOption);
 
-            context.ExitCode = await CommandExecutor.ExecuteAsync(
+            return CommandExecutor.ExecuteAsync(
                 () => new Request
                 {
                     Cmd = "skip_card",

@@ -14,13 +14,16 @@ internal static class SimpleCommand
     public static Command Create(string name, string description, Option<bool> prettyOption)
     {
         var command = new Command(name, description);
-        command.SetHandler(async context =>
+        command.Options.Add(prettyOption);
+
+        command.SetAction(parseResult =>
         {
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
-            context.ExitCode = await CommandExecutor.ExecuteAsync(
+            var pretty = parseResult.GetValue(prettyOption);
+            return CommandExecutor.ExecuteAsync(
                 () => new Request { Cmd = name },
                 pretty);
         });
+
         return command;
     }
 }

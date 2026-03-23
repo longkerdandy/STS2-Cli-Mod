@@ -16,14 +16,16 @@ internal static class DeckSelectSkipCommand
         var command = new Command("deck_select_skip",
             "Cancel/skip a deck card selection (if allowed)");
 
-        command.SetHandler(async context =>
-        {
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+        command.Options.Add(prettyOption);
 
-            context.ExitCode = await CommandExecutor.ExecuteAsync(
+        command.SetAction(parseResult =>
+        {
+            var pretty = parseResult.GetValue(prettyOption);
+
+            return CommandExecutor.ExecuteAsync(
                 () => new Request { Cmd = "deck_select_skip" },
                 pretty,
-                10000);
+                timeoutMs: 10000);
         });
 
         return command;

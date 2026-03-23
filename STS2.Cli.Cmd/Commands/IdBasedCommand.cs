@@ -9,7 +9,7 @@ namespace STS2.Cli.Cmd.Commands;
 internal static class IdBasedCommand
 {
     /// <summary>
-    ///     Creates an ID-based command with an optional target.
+    ///     Creates an ID-based command with optional target.
     /// </summary>
     public static Command Create(
         string name, string description,
@@ -19,17 +19,19 @@ internal static class IdBasedCommand
         Option<bool> prettyOption)
     {
         var command = new Command(name, description);
-        command.AddArgument(idArg);
-        command.AddOption(nthOption);
-        command.AddOption(targetOption);
-        command.SetHandler(async context =>
-        {
-            var id = context.ParseResult.GetValueForArgument(idArg);
-            var nth = context.ParseResult.GetValueForOption(nthOption);
-            var target = context.ParseResult.GetValueForOption(targetOption);
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+        command.Arguments.Add(idArg);
+        command.Options.Add(nthOption);
+        command.Options.Add(targetOption);
+        command.Options.Add(prettyOption);
 
-            context.ExitCode = await CommandExecutor.ExecuteAsync(
+        command.SetAction(parseResult =>
+        {
+            var id = parseResult.GetValue(idArg)!;
+            var nth = parseResult.GetValue(nthOption);
+            var target = parseResult.GetValue(targetOption);
+            var pretty = parseResult.GetValue(prettyOption);
+
+            return CommandExecutor.ExecuteAsync(
                 () => new Request
                 {
                     Cmd = name,
@@ -39,14 +41,16 @@ internal static class IdBasedCommand
                 },
                 pretty);
         });
+
         return command;
     }
 
     /// <summary>
     ///     Creates the shared --target option for targeted commands.
     /// </summary>
-    public static Option<int?> CreateTargetOption(string description)
-    {
-        return new Option<int?>("--target", description);
-    }
+    public static Option<int?> CreateTargetOption(string description) =>
+        new("--target")
+        {
+            Description = description
+        };
 }

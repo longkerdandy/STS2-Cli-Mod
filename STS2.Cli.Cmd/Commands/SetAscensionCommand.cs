@@ -14,15 +14,19 @@ internal static class SetAscensionCommand
     public static Command Create(Option<bool> prettyOption)
     {
         var command = new Command("set_ascension", "Set ascension level on the character select screen");
-        var levelArg = new Argument<int>("level", "Ascension level (0-20)");
-        command.AddArgument(levelArg);
-
-        command.SetHandler(async context =>
+        var levelArg = new Argument<int>("level")
         {
-            var level = context.ParseResult.GetValueForArgument(levelArg);
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            Description = "Ascension level (0-20)"
+        };
+        command.Arguments.Add(levelArg);
+        command.Options.Add(prettyOption);
 
-            context.ExitCode = await CommandExecutor.ExecuteAsync(
+        command.SetAction(parseResult =>
+        {
+            var level = parseResult.GetValue(levelArg);
+            var pretty = parseResult.GetValue(prettyOption);
+
+            return CommandExecutor.ExecuteAsync(
                 () => new Request
                 {
                     Cmd = "set_ascension",

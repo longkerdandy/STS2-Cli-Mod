@@ -14,19 +14,22 @@ internal static class AdvanceDialogueCommand
     public static Command Create(string name, string description, Option<bool> prettyOption)
     {
         // --auto (optional - auto-advance all dialogue lines)
-        var autoOption = new Option<bool>("--auto",
-            () => false,
-            "Auto-advance all dialogue lines until options appear");
+        var autoOption = new Option<bool>("--auto")
+        {
+            Description = "Auto-advance all dialogue lines until options appear",
+            DefaultValueFactory = _ => false
+        };
 
         var command = new Command(name, description);
-        command.AddOption(autoOption);
+        command.Options.Add(autoOption);
+        command.Options.Add(prettyOption);
 
-        command.SetHandler(async context =>
+        command.SetAction(parseResult =>
         {
-            var auto = context.ParseResult.GetValueForOption(autoOption);
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            var auto = parseResult.GetValue(autoOption);
+            var pretty = parseResult.GetValue(prettyOption);
 
-            context.ExitCode = await CommandExecutor.ExecuteAsync(
+            return CommandExecutor.ExecuteAsync(
                 () => new Request
                 {
                     Cmd = name,

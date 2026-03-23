@@ -17,13 +17,15 @@ internal static class IndexedCommand
         Option<bool> prettyOption)
     {
         var command = new Command(name, description);
-        command.AddArgument(indexArg);
-        command.SetHandler(async context =>
-        {
-            var index = context.ParseResult.GetValueForArgument(indexArg);
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+        command.Arguments.Add(indexArg);
+        command.Options.Add(prettyOption);
 
-            context.ExitCode = await CommandExecutor.ExecuteAsync(
+        command.SetAction(parseResult =>
+        {
+            var index = parseResult.GetValue(indexArg);
+            var pretty = parseResult.GetValue(prettyOption);
+
+            return CommandExecutor.ExecuteAsync(
                 () => new Request
                 {
                     Cmd = name,
@@ -31,6 +33,7 @@ internal static class IndexedCommand
                 },
                 pretty);
         });
+
         return command;
     }
 }

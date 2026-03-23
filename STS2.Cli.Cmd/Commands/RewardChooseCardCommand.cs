@@ -14,35 +14,40 @@ internal static class RewardChooseCardCommand
     public static Command Create(string name, string description, Option<bool> prettyOption)
     {
         // --type card (only card rewards are supported)
-        var typeOption = new Option<string>("--type",
-            () => "card",
-            "Reward type (only 'card' is supported)");
+        var typeOption = new Option<string>("--type")
+        {
+            Description = "Reward type (only 'card' is supported)",
+            DefaultValueFactory = _ => "card"
+        };
 
         // --card_id (required - which card to pick)
-        var cardIdOption = new Option<string>("--card_id",
-            "Card ID to select (e.g., STRIKE_IRONCLAD)")
+        var cardIdOption = new Option<string>("--card_id")
         {
-            IsRequired = true
+            Description = "Card ID to select (e.g., STRIKE_IRONCLAD)",
+            Required = true
         };
 
         // --nth (optional - which card reward if multiple)
-        var nthOption = new Option<int>("--nth",
-            () => 0,
-            "N-th card reward when multiple exist (0-based). Optional, defaults to 0.");
+        var nthOption = new Option<int>("--nth")
+        {
+            Description = "N-th card reward when multiple exist (0-based). Optional, defaults to 0.",
+            DefaultValueFactory = _ => 0
+        };
 
         var command = new Command(name, description);
-        command.AddOption(typeOption);
-        command.AddOption(cardIdOption);
-        command.AddOption(nthOption);
+        command.Options.Add(typeOption);
+        command.Options.Add(cardIdOption);
+        command.Options.Add(nthOption);
+        command.Options.Add(prettyOption);
 
-        command.SetHandler(async context =>
+        command.SetAction(parseResult =>
         {
-            var type = context.ParseResult.GetValueForOption(typeOption);
-            var cardId = context.ParseResult.GetValueForOption(cardIdOption);
-            var nth = context.ParseResult.GetValueForOption(nthOption);
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            var type = parseResult.GetValue(typeOption)!;
+            var cardId = parseResult.GetValue(cardIdOption)!;
+            var nth = parseResult.GetValue(nthOption);
+            var pretty = parseResult.GetValue(prettyOption);
 
-            context.ExitCode = await CommandExecutor.ExecuteAsync(
+            return CommandExecutor.ExecuteAsync(
                 () => new Request
                 {
                     Cmd = "choose_card",

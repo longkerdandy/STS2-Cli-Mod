@@ -13,51 +13,54 @@ internal static class RewardClaimCommand
     /// </summary>
     public static Command Create(string name, string description, Option<bool> prettyOption)
     {
-        var typeOption = new Option<string>("--type",
-            description: "Reward type: gold, potion, relic, special_card",
-            parseArgument: result =>
+        var typeOption = new Option<string>("--type")
+        {
+            Description = "Reward type: gold, potion, relic, special_card",
+            Required = true,
+            CustomParser = result =>
             {
                 var value = result.Tokens.Single().Value.ToLower();
                 if (value is "gold" or "potion" or "relic" or "special_card")
                     return value;
-                result.ErrorMessage =
-                    $"Invalid reward type '{value}'. Must be one of: gold, potion, relic, special_card";
+                result.AddError($"Invalid reward type '{value}'. Must be one of: gold, potion, relic, special_card");
                 return null!;
-            })
-        {
-            IsRequired = true
+            }
         };
 
-        var idOption = new Option<string>("--id",
-            "Item ID (potion_id, relic_id, or card_id). Required for potion, relic, and special_card.");
+        var idOption = new Option<string>("--id")
+        {
+            Description = "Item ID (potion_id, relic_id, or card_id). Required for potion, relic, and special_card."
+        };
 
-        var nthOption = new Option<int>("--nth",
-            () => 0,
-            "N-th occurrence when multiple rewards of same type exist (0-based). Optional, defaults to 0.");
+        var nthOption = new Option<int>("--nth")
+        {
+            Description = "N-th occurrence when multiple rewards of same type exist (0-based). Optional, defaults to 0.",
+            DefaultValueFactory = _ => 0
+        };
 
         var command = new Command(name, description);
-        command.AddOption(typeOption);
-        command.AddOption(idOption);
-        command.AddOption(nthOption);
+        command.Options.Add(typeOption);
+        command.Options.Add(idOption);
+        command.Options.Add(nthOption);
+        command.Options.Add(prettyOption);
 
-        command.SetHandler(async context =>
+        command.SetAction(parseResult =>
         {
-            var type = context.ParseResult.GetValueForOption(typeOption);
-            var id = context.ParseResult.GetValueForOption(idOption);
-            var nth = context.ParseResult.GetValueForOption(nthOption);
-            var pretty = context.ParseResult.GetValueForOption(prettyOption);
+            var type = parseResult.GetValue(typeOption)!;
+            var id = parseResult.GetValue(idOption);
+            var nth = parseResult.GetValue(nthOption);
+            var pretty = parseResult.GetValue(prettyOption);
 
             // Validate: potion, relic, special_card require --id
             if (type is "potion" or "relic" or "special_card" && string.IsNullOrEmpty(id))
             {
-                context.ExitCode = await CommandExecutor.ExecuteErrorAsync(
+                return CommandExecutor.ExecuteErrorAsync(
                     "MISSING_ARGUMENT",
                     $"Reward type '{type}' requires --id parameter",
                     pretty);
-                return;
             }
 
-            context.ExitCode = await CommandExecutor.ExecuteAsync(
+            return CommandExecutor.ExecuteAsync(
                 () => new Request
                 {
                     Cmd = name,
