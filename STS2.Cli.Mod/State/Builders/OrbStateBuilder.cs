@@ -20,7 +20,6 @@ public static class OrbStateBuilder
         var result = new List<OrbStateDto>();
 
         foreach (var orb in orbQueue.Orbs)
-        {
             try
             {
                 result.Add(new OrbStateDto
@@ -35,7 +34,6 @@ public static class OrbStateBuilder
             {
                 Logger.Warning($"Failed to build orb state: {ex.Message}");
             }
-        }
 
         return result;
     }

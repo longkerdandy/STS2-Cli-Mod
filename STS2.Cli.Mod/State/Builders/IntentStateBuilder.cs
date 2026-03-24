@@ -24,7 +24,6 @@ public static class IntentStateBuilder
         var intents = new List<IntentStateDto>();
 
         foreach (var intent in moveState.Intents)
-        {
             try
             {
                 var label = intent.GetIntentLabel(targets, creature);
@@ -37,7 +36,6 @@ public static class IntentStateBuilder
 
                 // Extract damage info for attack intents
                 if (intent is AttackIntent attackIntent)
-                {
                     try
                     {
                         intentDto.Damage = attackIntent.GetSingleDamage(targets, creature);
@@ -47,7 +45,6 @@ public static class IntentStateBuilder
                     {
                         Logger.Warning($"Failed to extract attack damage: {ex.Message}");
                     }
-                }
 
                 intents.Add(intentDto);
             }
@@ -55,7 +52,6 @@ public static class IntentStateBuilder
             {
                 Logger.Warning($"Failed to build intent state: {ex.Message}");
             }
-        }
 
         return intents;
     }

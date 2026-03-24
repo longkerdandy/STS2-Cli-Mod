@@ -21,7 +21,6 @@ public static class PowerStateBuilder
         var result = new List<PowerStateDto>();
 
         foreach (var power in powers)
-        {
             try
             {
                 if (!power.IsVisible) continue;
@@ -40,7 +39,6 @@ public static class PowerStateBuilder
             {
                 Logger.Warning($"Failed to build power state: {ex.Message}");
             }
-        }
 
         return result;
     }

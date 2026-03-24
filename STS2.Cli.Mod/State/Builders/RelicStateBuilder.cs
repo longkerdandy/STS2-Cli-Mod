@@ -20,7 +20,6 @@ public static class RelicStateBuilder
         var result = new List<RelicStateDto>();
 
         foreach (var relic in relics)
-        {
             try
             {
                 result.Add(new RelicStateDto
@@ -37,7 +36,6 @@ public static class RelicStateBuilder
             {
                 Logger.Warning($"Failed to build relic state: {ex.Message}");
             }
-        }
 
         return result;
     }

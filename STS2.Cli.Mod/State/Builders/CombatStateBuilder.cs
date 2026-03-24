@@ -24,7 +24,6 @@ public static class CombatStateBuilder
 
         var cards = playerCombatState.Hand.Cards;
         for (var i = 0; i < cards.Count; i++)
-        {
             try
             {
                 hand.Add(CardStateBuilder.Build(cards[i], i));
@@ -33,7 +32,6 @@ public static class CombatStateBuilder
             {
                 Logger.Warning($"Failed to build card state for hand index {i}: {ex.Message}");
             }
-        }
 
         return hand;
     }
@@ -47,7 +45,6 @@ public static class CombatStateBuilder
         var enemies = new List<EnemyStateDto>();
 
         foreach (var creature in combatState.Enemies)
-        {
             try
             {
                 enemies.Add(EnemyStateBuilder.Build(creature, combatState));
@@ -56,7 +53,6 @@ public static class CombatStateBuilder
             {
                 Logger.Warning($"Failed to build enemy state for {creature.Monster?.Id}: {ex.Message}");
             }
-        }
 
         return enemies;
     }

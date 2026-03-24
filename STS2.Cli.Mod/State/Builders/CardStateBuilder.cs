@@ -65,10 +65,8 @@ public static class CardStateBuilder
         try
         {
             foreach (var keyword in card.Keywords)
-            {
                 if (keyword != CardKeyword.None)
                     state.Keywords.Add(keyword.ToString());
-            }
         }
         catch (Exception ex)
         {
@@ -79,10 +77,8 @@ public static class CardStateBuilder
         try
         {
             foreach (var tag in card.Tags)
-            {
                 if (tag != CardTag.None)
                     state.Tags.Add(tag.ToString());
-            }
         }
         catch (Exception ex)
         {

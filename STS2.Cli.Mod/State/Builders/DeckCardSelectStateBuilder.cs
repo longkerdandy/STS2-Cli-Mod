@@ -1,8 +1,6 @@
 using System.Reflection;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Nodes.Cards;
-using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
@@ -39,16 +37,12 @@ public static class DeckCardSelectStateBuilder
             // Get CardSelectorPrefs from the private _prefs field on the concrete subclass
             var prefs = GetPrefs(screen);
 
-            // Get card holders from the grid for index info
-            var grid = GetGrid(screen);
-
             // Determine selection type from the screen type
             var selectionType = InferSelectionType(screen);
 
             // Get prompt text
             string? prompt = null;
             if (prefs.HasValue)
-            {
                 try
                 {
                     prompt = TextUtils.StripGameTags(prefs.Value.Prompt.GetFormattedText());
@@ -58,11 +52,10 @@ public static class DeckCardSelectStateBuilder
                     // LocString may fail if key doesn't exist
                     Logger.Warning("Failed to get prompt text from CardSelectorPrefs");
                 }
-            }
 
             // Build card DTOs
             var cardDtos = new List<SelectableCardDto>();
-            for (int i = 0; i < cards.Count; i++)
+            for (var i = 0; i < cards.Count; i++)
             {
                 var card = cards[i];
                 try
@@ -147,24 +140,6 @@ public static class DeckCardSelectStateBuilder
         catch (Exception ex)
         {
             Logger.Warning($"Failed to get _prefs via reflection: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets the <see cref="NCardGrid" /> from the protected <c>_grid</c> field on the base class.
-    /// </summary>
-    private static NCardGrid? GetGrid(NCardGridSelectionScreen screen)
-    {
-        try
-        {
-            var field = typeof(NCardGridSelectionScreen).GetField("_grid",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(screen) as NCardGrid;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get _grid via reflection: {ex.Message}");
             return null;
         }
     }

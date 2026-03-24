@@ -1,6 +1,5 @@
+using System.Collections;
 using System.Reflection;
-using Godot;
-using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Events;
@@ -52,8 +51,7 @@ public static class EventStateBuilder
             }
 
             // Access private _event field via reflection
-            var eventModel = EventRoomEventField?.GetValue(eventRoom) as EventModel;
-            if (eventModel == null)
+            if (EventRoomEventField?.GetValue(eventRoom) is not EventModel eventModel)
             {
                 Logger.Warning("Failed to access EventModel from NEventRoom");
                 return null;
@@ -65,14 +63,12 @@ public static class EventStateBuilder
             // via NEventRoom.SetOptions() that is NOT reflected in CurrentOptions.
             // We mirror this behavior so AI agents see a proceed option they can select.
             if (eventModel.IsFinished && options.Count == 0)
-            {
                 options.Add(new EventOptionDto
                 {
                     Index = 0,
                     Title = "Proceed",
                     IsProceed = true
                 });
-            }
 
             var result = new EventStateDto
             {
@@ -87,7 +83,8 @@ public static class EventStateBuilder
             // Detect Ancient layout and extract dialogue info
             ExtractAncientDialogueInfo(eventRoom, result);
 
-            Logger.Info($"Built event state for '{result.EventId}' with {result.Options.Count} options, IsInDialogue={result.IsInDialogue}");
+            Logger.Info(
+                $"Built event state for '{result.EventId}' with {result.Options.Count} options, IsInDialogue={result.IsInDialogue}");
             return result;
         }
         catch (Exception ex)
@@ -105,21 +102,14 @@ public static class EventStateBuilder
         var options = new List<EventOptionDto>();
         var currentOptions = eventModel.CurrentOptions;
 
-        if (currentOptions == null)
-        {
-            Logger.Warning("EventModel.CurrentOptions is null");
-            return options;
-        }
-
         var index = 0;
         foreach (var option in currentOptions)
-        {
             try
             {
                 var optionDto = new EventOptionDto
                 {
                     Index = index,
-                    Title = SafeGetText(option.Title) ?? option.TextKey ?? $"Option {index}",
+                    Title = SafeGetText(option.Title) ?? option.TextKey,
                     Description = SafeGetText(option.Description),
                     TextKey = option.TextKey,
                     IsLocked = option.IsLocked,
@@ -142,7 +132,6 @@ public static class EventStateBuilder
                 Logger.Warning($"Failed to build option at index {index}: {ex.Message}");
                 index++;
             }
-        }
 
         return options;
     }
@@ -156,14 +145,12 @@ public static class EventStateBuilder
         {
             // Check if layout is NAncientEventLayout
             if (eventRoom.Layout is not NAncientEventLayout ancientLayout)
-            {
                 // Not an Ancient event, leave dialogue fields as default (false/null)
                 return;
-            }
 
             // Access IsDialogueOnLastLine property
             var isDialogueOnLastLineProperty = typeof(NAncientEventLayout).GetProperty("IsDialogueOnLastLine");
-            bool isDialogueOnLastLine = isDialogueOnLastLineProperty?.GetValue(ancientLayout) as bool? ?? true;
+            var isDialogueOnLastLine = isDialogueOnLastLineProperty?.GetValue(ancientLayout) as bool? ?? true;
 
             // We're in dialogue phase if not on the last line
             result.IsInDialogue = !isDialogueOnLastLine;
@@ -175,11 +162,8 @@ public static class EventStateBuilder
                 result.CurrentDialogueLine = currentLine;
 
                 // Extract total lines count
-                var dialogue = AncientDialogueField?.GetValue(ancientLayout) as System.Collections.IList;
-                if (dialogue != null)
-                {
-                    result.TotalDialogueLines = dialogue.Count;
-                }
+                var dialogue = AncientDialogueField?.GetValue(ancientLayout) as IList;
+                if (dialogue != null) result.TotalDialogueLines = dialogue.Count;
 
                 Logger.Info($"Ancient event dialogue: line {currentLine + 1} of {dialogue?.Count}");
             }

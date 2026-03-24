@@ -72,30 +72,23 @@ public static class RewardStateBuilder
         // Iterate reward button children (same pattern as NRewardsScreen.AfterOverlayClosed)
         var index = 0;
         foreach (var child in rewardsContainer.GetChildren())
-        {
             if (child is NRewardButton rewardButton)
-            {
                 try
                 {
                     var reward = rewardButton.Reward;
                     if (reward == null) continue;
 
                     var item = BuildRewardItem(reward, index);
-                    if (item != null)
-                    {
-                        result.Rewards.Add(item);
-                        index++;
-                    }
+                    result.Rewards.Add(item);
+                    index++;
                 }
                 catch (Exception ex)
                 {
                     Logger.Warning($"Failed to build reward item at index {index}: {ex.Message}");
                     index++;
                 }
-            }
-            // TODO: Handle NLinkedRewardSet children if needed
-        }
 
+        // TODO: Handle NLinkedRewardSet children if needed
         return result;
     }
 
@@ -116,10 +109,8 @@ public static class RewardStateBuilder
 
         // Slow path: search children (card selection may be on top of rewards)
         foreach (var child in overlayStack.GetChildren())
-        {
             if (child is NRewardsScreen found)
                 return found;
-        }
 
         return null;
     }
@@ -128,7 +119,7 @@ public static class RewardStateBuilder
     ///     Builds a single <see cref="RewardItemDto" /> from a <see cref="Reward" /> object
     ///     using pattern matching to extract type-specific fields.
     /// </summary>
-    private static RewardItemDto? BuildRewardItem(Reward reward, int index)
+    private static RewardItemDto BuildRewardItem(Reward reward, int index)
     {
         var item = new RewardItemDto
         {
@@ -174,16 +165,19 @@ public static class RewardStateBuilder
     /// <summary>
     ///     Gets the reward type name string for the JSON output.
     /// </summary>
-    private static string GetRewardTypeName(Reward reward) => reward switch
+    private static string GetRewardTypeName(Reward reward)
     {
-        GoldReward => "Gold",
-        PotionReward => "Potion",
-        RelicReward => "Relic",
-        CardReward => "Card",
-        SpecialCardReward => "SpecialCard",
-        CardRemovalReward => "CardRemoval",
-        _ => reward.GetType().Name
-    };
+        return reward switch
+        {
+            GoldReward => "Gold",
+            PotionReward => "Potion",
+            RelicReward => "Relic",
+            CardReward => "Card",
+            SpecialCardReward => "SpecialCard",
+            CardRemovalReward => "CardRemoval",
+            _ => reward.GetType().Name
+        };
+    }
 
     /// <summary>
     ///     Safely reads the localized description from a reward.
@@ -246,13 +240,8 @@ public static class RewardStateBuilder
         try
         {
             // _relic is private — use reflection
-            var relic = RelicField?.GetValue(relicReward) as RelicModel;
-            if (relic == null)
-            {
-                // Fallback: try ClaimedRelic (set after claim)
-                relic = relicReward.ClaimedRelic;
-            }
-
+            // Fallback: try ClaimedRelic (set after claim)
+            var relic = RelicField?.GetValue(relicReward) as RelicModel ?? relicReward.ClaimedRelic;
             if (relic == null) return;
 
             item.RelicId = relic.Id.Entry;
@@ -275,7 +264,6 @@ public static class RewardStateBuilder
         try
         {
             var cards = cardReward.Cards;
-            if (cards == null) return;
 
             item.CardChoices = [];
             var cardIndex = 0;
@@ -307,8 +295,7 @@ public static class RewardStateBuilder
     {
         try
         {
-            var card = SpecialCardField?.GetValue(specialCardReward) as CardModel;
-            if (card == null) return;
+            if (SpecialCardField?.GetValue(specialCardReward) is not CardModel card) return;
 
             item.CardId = card.Id.Entry;
             item.CardName = StripGameTags(card.Title);

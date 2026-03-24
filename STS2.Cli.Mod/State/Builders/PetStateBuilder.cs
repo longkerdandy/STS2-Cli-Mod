@@ -20,7 +20,6 @@ public static class PetStateBuilder
         var result = new List<PetStateDto>();
 
         foreach (var pet in pets)
-        {
             try
             {
                 result.Add(new PetStateDto
@@ -39,7 +38,6 @@ public static class PetStateBuilder
             {
                 Logger.Warning($"Failed to build pet state: {ex.Message}");
             }
-        }
 
         return result;
     }

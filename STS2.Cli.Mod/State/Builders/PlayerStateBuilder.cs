@@ -41,7 +41,6 @@ public static class PlayerStateBuilder
 
         // PlayerCombatState (combat-scoped)
         if (playerCombatState != null)
-        {
             try
             {
                 // Pets
@@ -75,7 +74,6 @@ public static class PlayerStateBuilder
             {
                 Logger.Warning($"Failed to read combat state fields: {ex.Message}");
             }
-        }
 
         return state;
     }
