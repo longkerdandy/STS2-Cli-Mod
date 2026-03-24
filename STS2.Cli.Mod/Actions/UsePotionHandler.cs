@@ -1,4 +1,3 @@
-using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -11,7 +10,6 @@ using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Models.Actions;
-using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -54,7 +52,7 @@ public static class UsePotionHandler
     /// <param name="potionId">Potion ID to use (e.g., "FIRE_POTION").</param>
     /// <param name="nth">N-th occurrence when multiple copies exist (0-based).</param>
     /// <param name="targetCombatId">Optional target combat ID for targeted potions.</param>
-    public static async Task<object> ExecuteAsync(string potionId, int nth = 0, int? targetCombatId = null)
+    private static async Task<object> ExecuteAsync(string potionId, int nth = 0, int? targetCombatId = null)
     {
         try
         {
@@ -173,14 +171,14 @@ public static class UsePotionHandler
         _ = ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
 
         // Poll for selection screen to appear (max 5 seconds)
-        const int SelectionScreenTimeoutMs = 5000;
-        const int PollIntervalMs = 100;
+        const int selectionScreenTimeoutMs = 5000;
+        const int pollIntervalMs = 100;
         var elapsedMs = 0;
 
-        while (elapsedMs < SelectionScreenTimeoutMs)
+        while (elapsedMs < selectionScreenTimeoutMs)
         {
-            await Task.Delay(PollIntervalMs);
-            elapsedMs += PollIntervalMs;
+            await Task.Delay(pollIntervalMs);
+            elapsedMs += pollIntervalMs;
 
             // Check if selection screen appeared
             var selectionScreen = FindCardSelectionScreen();
@@ -313,7 +311,7 @@ public static class UsePotionHandler
         var cards = new List<SelectableCardDto>();
         var cardHolders = UiHelper.FindAll<NCardHolder>(screen);
 
-        for (int i = 0; i < cardHolders.Count; i++)
+        for (var i = 0; i < cardHolders.Count; i++)
         {
             var holder = cardHolders[i];
             var card = holder.CardModel;
@@ -325,8 +323,8 @@ public static class UsePotionHandler
                 CardId = card.Id.Entry,
                 CardName = TextUtils.StripGameTags(card.Title),
                 CardType = card.Type.ToString(),
-                Cost = card.EnergyCost?.Canonical,
-                Description = TextUtils.StripGameTags(card.Description?.GetFormattedText() ?? "")
+                Cost = card.EnergyCost.Canonical,
+                Description = TextUtils.StripGameTags(card.Description.GetFormattedText())
             });
         }
 
