@@ -56,7 +56,7 @@ Verify the mod works by:
 6. `sts2.exe reward_claim --type <type> [--id <id>] [--nth <n>]` - confirms reward claim (gold, potion, relic)
 7. `sts2.exe reward_choose_card --type card --card_id <card_id> [--nth <n>]` - confirms card choice from card reward
 8. `sts2.exe reward_skip_card --type card [--nth <n>]` - confirms skipping a card reward
-9. `sts2.exe reward_proceed` - confirms leaving reward screen and proceeding to map
+9. `sts2.exe proceed` - confirms leaving reward screen or FakeMerchant event and proceeding to map
 10. `sts2.exe choose_event <index>` - confirms event option selection with updated event state
 11. `sts2.exe advance_dialogue [--auto]` - confirms Ancient event dialogue advancement (use --auto to skip to options)
 12. `sts2.exe potion_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from potion-opened selection screen
@@ -190,7 +190,7 @@ Access game state through singletons: `CombatManager.Instance`, `RunManager.Inst
 
 ## STS2 Reverse Engineering
 
-A sibling project at `~/STS2-Reverse-Engineering` contains:
+A sibling project at `../STS2-Reverse-Engineering` contains:
 
 - **`decompiled/sts2/`**: Full ILSpy decompilation of `sts2.dll`, organized by namespace (e.g. `MegaCrit.Sts2.Core.Combat`, `MegaCrit.Sts2.Core.Cards`). Use this to look up game class internals, method signatures, and data structures.
 - **`doc/`**: Analysis documents summarizing game internals:

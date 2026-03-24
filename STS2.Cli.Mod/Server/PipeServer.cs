@@ -190,7 +190,7 @@ public static class PipeServer
                 "advance_dialogue" => await MainThreadExecutor.RunOnMainThreadAsync(() => AdvanceDialogueHandler.HandleRequestAsync(request)),
 
                 // reward_proceed runs synchronously on the main thread — ForceClick is fire-and-forget
-                "reward_proceed" => MainThreadExecutor.RunOnMainThread(() => ProceedHandler.HandleRequest(request)),
+                "proceed" => MainThreadExecutor.RunOnMainThread(() => ProceedHandler.HandleRequest(request)),
 
                 // potion_select_card is synchronous — runs on main thread and returns immediately
                 "potion_select_card" => MainThreadExecutor.RunOnMainThread(() => PotionSelectCardHandler.HandleRequest(request)),

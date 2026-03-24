@@ -109,7 +109,7 @@ public static class UsePotionHandler
             }
             else if (potion.TargetType == TargetType.Self)
             {
-                // Self-targeting: target is always the player's creature
+                // Self-targeting: the target is always the player's creature
                 target = player.Creature;
 
                 if (targetCombatId != null)
@@ -121,7 +121,7 @@ public static class UsePotionHandler
             }
             else if (potion.TargetType == TargetType.AnyPlayer)
             {
-                // AnyPlayer: can target player or pet
+                // AnyPlayer: can target the player or pet
                 if (targetCombatId == null)
                 {
                     // Default to player if no target specified
@@ -129,7 +129,7 @@ public static class UsePotionHandler
                 }
                 else
                 {
-                    // Try to resolve as player or pet
+                    // Try to resolve as the player or pet
                     target = ActionUtils.ResolveAllyTarget(player, (uint)targetCombatId.Value);
                     if (target == null)
                         return new

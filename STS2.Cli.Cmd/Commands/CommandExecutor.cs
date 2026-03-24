@@ -88,7 +88,7 @@ internal static class CommandExecutor
                 "ACTIONS_DISABLED" or "NO_PLAYER" or "PLAYER_DEAD" or
                 "CANNOT_PLAY_CARD" or "ACTION_CANCELLED" or
                 "POTION_ALREADY_QUEUED" or "POTION_NOT_USABLE" or
-                "NOT_ON_REWARD_SCREEN" or "POTION_BELT_FULL" or
+                "NO_PROCEED_AVAILABLE" or "UNSUPPORTED_EVENT" or "PROCEED_BUTTON_NOT_FOUND" or "PROCEED_NOT_VISIBLE" or "PROCEED_NOT_ENABLED" or "POTION_BELT_FULL" or
                 "NOT_SUPPORTED" or "CLAIM_FAILED" or
                 "NOT_IN_EVENT" or "NO_EVENT_LAYOUT" or
                 "OPTION_LOCKED" or "OPTION_BUTTON_NOT_FOUND" or

@@ -27,17 +27,15 @@ public static class RewardUiHelper
         var overlayStack = NOverlayStack.Instance;
         if (overlayStack == null) return null;
 
-        // Fast path: top overlay is the rewards screen
+        // Fast path: the top overlay is the rewards screen
         var top = overlayStack.Peek();
         if (top is NRewardsScreen rewardsScreen)
             return rewardsScreen;
 
         // Slow path: search children (card selection may be on top)
         foreach (var child in overlayStack.GetChildren())
-        {
             if (child is NRewardsScreen found)
                 return found;
-        }
 
         return null;
     }
@@ -55,10 +53,8 @@ public static class RewardUiHelper
             if (rewardsContainer == null) return buttons;
 
             foreach (var child in rewardsContainer.GetChildren())
-            {
                 if (child is NRewardButton button)
                     buttons.Add(button);
-            }
         }
         catch (Exception ex)
         {
@@ -96,7 +92,7 @@ public static class RewardUiHelper
 
     /// <summary>
     ///     Finds all <see cref="NCardHolder" /> instances in a <see cref="NCardRewardSelectionScreen" />.
-    ///     Card holders are children of the <c>%CardRow</c> node.
+    ///     Cardholders are children of the <c>%CardRow</c> node.
     /// </summary>
     public static List<NCardHolder> FindCardHolders(NCardRewardSelectionScreen screen)
     {
@@ -108,10 +104,8 @@ public static class RewardUiHelper
             if (cardRow == null) return holders;
 
             foreach (var child in cardRow.GetChildren())
-            {
                 if (child is NCardHolder holder)
                     holders.Add(holder);
-            }
         }
         catch (Exception ex)
         {
@@ -135,10 +129,8 @@ public static class RewardUiHelper
             if (container == null) return buttons;
 
             foreach (var child in container.GetChildren())
-            {
                 if (child is NCardRewardAlternativeButton button)
                     buttons.Add(button);
-            }
         }
         catch (Exception ex)
         {

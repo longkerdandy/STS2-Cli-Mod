@@ -1,3 +1,4 @@
+using System.Reflection;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
@@ -30,9 +31,9 @@ public static class SetAscensionHandler
     /// <remarks>
     ///     Must be called on the Godot main thread (PipeServer handles dispatching).
     /// </remarks>
-    public static object Execute(int level)
+    private static object Execute(int level)
     {
-        // Guard: Must be on character select screen
+        // Guard: Must be on the character select screen
         var screen = CharacterSelectHelper.FindScreen();
         if (screen == null)
         {
@@ -60,7 +61,7 @@ public static class SetAscensionHandler
 
         // Get max ascension from private field _maxAscension
         var maxAscension = GetMaxAscension(ascensionPanel);
-        
+
         if (level < 0 || level > maxAscension)
         {
             Logger.Warning($"Invalid ascension level: {level} (max: {maxAscension})");
@@ -91,7 +92,7 @@ public static class SetAscensionHandler
         try
         {
             var field = typeof(NAscensionPanel).GetField("_maxAscension",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
             if (field != null)
                 return (int)(field.GetValue(panel) ?? 20);
 

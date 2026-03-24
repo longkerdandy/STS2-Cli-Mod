@@ -35,7 +35,7 @@ internal static class Program
         rootCommand.Subcommands.Add(SimpleCommand.Create("ping", "Test connection to the mod", prettyOption));
         rootCommand.Subcommands.Add(SimpleCommand.Create("state", "Get current game state", prettyOption));
         rootCommand.Subcommands.Add(SimpleCommand.Create("end_turn", "End the current turn", prettyOption));
-        rootCommand.Subcommands.Add(SimpleCommand.Create("reward_proceed", "Leave reward screen and proceed to map",
+        rootCommand.Subcommands.Add(SimpleCommand.Create("proceed", "Leave current screen and proceed to map (reward screen or FakeMerchant event)",
             prettyOption));
         rootCommand.Subcommands.Add(
             SimpleCommand.Create("embark", "Start the game from character select", prettyOption));

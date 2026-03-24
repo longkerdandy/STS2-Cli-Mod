@@ -1,7 +1,5 @@
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
-using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
-using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
@@ -49,9 +47,9 @@ public static class PotionSelectCardHandler
     /// <remarks>
     ///     Must be called on the Godot main thread (PipeServer handles dispatching).
     /// </remarks>
-    public static object Execute(string[] cardIds, int[]? nthValues = null)
+    private static object Execute(string[] cardIds, int[]? nthValues = null)
     {
-        // Guard: Must be in POTION_SELECTION screen
+        // Guard: Must be in the POTION_SELECTION screen
         var selectionScreen = PotionUtils.FindSelectionScreen();
         if (selectionScreen == null)
         {
@@ -63,7 +61,7 @@ public static class PotionSelectCardHandler
             };
         }
 
-        // Get selection constraints from screen (detect from available cards or use defaults)
+        // Get selection constraints from the screen (detect from available cards or use defaults)
         var cardHolders = UiHelper.FindAll<NCardHolder>(selectionScreen);
         var constraints = InferSelectionConstraints(cardHolders);
 
@@ -80,7 +78,7 @@ public static class PotionSelectCardHandler
 
         // Validate no duplicates
         var uniqueIds = new HashSet<string>();
-        for (int i = 0; i < cardIds.Length; i++)
+        for (var i = 0; i < cardIds.Length; i++)
         {
             var key = $"{cardIds[i]}_{nthValues?[i] ?? 0}";
             if (!uniqueIds.Add(key))
@@ -97,7 +95,7 @@ public static class PotionSelectCardHandler
         // Find and select each card by ID
         var selectedCards = new List<SelectedCardInfo>();
         
-        for (int i = 0; i < cardIds.Length; i++)
+        for (var i = 0; i < cardIds.Length; i++)
         {
             var cardId = cardIds[i];
             var nth = nthValues?[i] ?? 0;
@@ -151,9 +149,9 @@ public static class PotionSelectCardHandler
     /// <remarks>
     ///     Must be called on the Godot main thread (PipeServer handles dispatching).
     /// </remarks>
-    public static object ExecuteSkip()
+    private static object ExecuteSkip()
     {
-        // Guard: Must be in POTION_SELECTION screen
+        // Guard: Must be in the POTION_SELECTION screen
         var selectionScreen = PotionUtils.FindSelectionScreen();
         if (selectionScreen == null)
         {
@@ -179,7 +177,7 @@ public static class PotionSelectCardHandler
             };
         }
 
-        // Find and click skip button
+        // Find and click the skip button
         var skipButton = PotionUtils.FindSkipButton(selectionScreen);
         if (skipButton == null)
         {
@@ -218,7 +216,7 @@ public static class PotionSelectCardHandler
         // If we have many cards, it's likely a hand-based selection (Gambler's Brew, Ashwater, etc.)
         if (cardCount > 3)
         {
-            return new SelectionConstraints(0, cardCount, true); // Multi-select with skip option
+            return new SelectionConstraints(0, cardCount, true); // Multi-select with the skip option
         }
 
         // Default: single select, cannot skip

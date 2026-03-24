@@ -1,3 +1,4 @@
+using Godot;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
@@ -35,9 +36,9 @@ public static class SelectCharacterHandler
     /// <remarks>
     ///     Must be called on the Godot main thread (PipeServer handles dispatching).
     /// </remarks>
-    public static object Execute(string characterId)
+    private static object Execute(string characterId)
     {
-        // Guard: Must be on character select screen
+        // Guard: Must be on the character select screen
         var screen = CharacterSelectHelper.FindScreen();
         if (screen == null)
         {
@@ -50,8 +51,8 @@ public static class SelectCharacterHandler
             };
         }
 
-        // Find character button container
-        var buttonContainer = screen.GetNodeOrNull<Godot.Control>("CharSelectButtons/ButtonContainer");
+        // Find the character button container
+        var buttonContainer = screen.GetNodeOrNull<Control>("CharSelectButtons/ButtonContainer");
         if (buttonContainer == null)
         {
             Logger.Error("Character button container not found");
@@ -65,7 +66,7 @@ public static class SelectCharacterHandler
 
         // Find all character buttons
         var buttons = UiHelper.FindAll<NCharacterSelectButton>(buttonContainer);
-        
+
         // Find the target button
         NCharacterSelectButton? targetBtn = null;
         foreach (var btn in buttons)
@@ -89,7 +90,7 @@ public static class SelectCharacterHandler
             };
         }
 
-        // Check if character is locked
+        // Check if the character is locked
         if (CharacterSelectHelper.GetIsLocked(targetBtn))
         {
             Logger.Warning($"Character '{characterId}' is locked");
