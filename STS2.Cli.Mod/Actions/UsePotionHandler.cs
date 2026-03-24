@@ -321,7 +321,7 @@ public static class UsePotionHandler
     /// </summary>
     private static NChooseACardSelectionScreen? FindCardSelectionScreen()
     {
-        return UiHelper.FindScreenInOverlay<NChooseACardSelectionScreen>();
+        return UiUtils.FindScreenInOverlay<NChooseACardSelectionScreen>();
     }
 
     /// <summary>
@@ -330,7 +330,7 @@ public static class UsePotionHandler
     private static List<SelectableCardDto> ExtractSelectableCards(NChooseACardSelectionScreen screen)
     {
         var cards = new List<SelectableCardDto>();
-        var cardHolders = UiHelper.FindAll<NCardHolder>(screen);
+        var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
 
         for (var i = 0; i < cardHolders.Count; i++)
         {

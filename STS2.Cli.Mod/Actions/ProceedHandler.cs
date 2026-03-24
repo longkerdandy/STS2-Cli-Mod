@@ -53,7 +53,7 @@ public static class ProceedHandler
             var eventRoom = NEventRoom.Instance;
             if (eventRoom != null && eventRoom.IsInsideTree())
             {
-                var fakeMerchant = UiHelper.FindFirst<NFakeMerchant>(eventRoom);
+                var fakeMerchant = UiUtils.FindFirst<NFakeMerchant>(eventRoom);
                 if (fakeMerchant != null)
                 {
                     Logger.Info("Detected FakeMerchant event context");
@@ -90,7 +90,7 @@ public static class ProceedHandler
     /// </summary>
     private static object ExecuteRewardProceed(NRewardsScreen screen)
     {
-        var proceedButton = UiHelper.FindFirst<NProceedButton>(screen);
+        var proceedButton = UiUtils.FindFirst<NProceedButton>(screen);
         if (proceedButton == null)
         {
             Logger.Warning("NProceedButton not found in NRewardsScreen");

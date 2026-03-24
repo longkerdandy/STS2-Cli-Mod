@@ -30,7 +30,7 @@ public static class EmbarkHandler
     private static object Execute()
     {
         // Guard: Must be on the character select screen
-        var screen = CharacterSelectHelper.FindScreen();
+        var screen = CharacterSelectUtils.FindScreen();
         if (screen == null)
         {
             Logger.Warning("Embark requested but not on character select screen");
@@ -43,7 +43,7 @@ public static class EmbarkHandler
         }
 
         // Check if a character is selected
-        var selectedBtn = CharacterSelectHelper.GetSelectedButton(screen);
+        var selectedBtn = CharacterSelectUtils.GetSelectedButton(screen);
         if (selectedBtn == null)
         {
             Logger.Warning("Embark requested but no character selected");

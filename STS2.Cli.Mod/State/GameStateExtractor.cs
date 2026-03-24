@@ -274,7 +274,7 @@ public static class GameStateExtractor
                 return null;
             }
 
-            var cardHolders = UiHelper.FindAll<NCardHolder>(screen);
+            var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
             var constraints = InferSelectionConstraints(cardHolders);
             var cards = new List<SelectableCardDto>();
 
@@ -427,7 +427,7 @@ public static class GameStateExtractor
                 return null;
             }
 
-            var buttons = UiHelper.FindAll<NCharacterSelectButton>(buttonContainer);
+            var buttons = UiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
             var characters = new List<CharacterOptionDto>();
             string? selectedCharacter = null;
 
@@ -506,7 +506,7 @@ public static class GameStateExtractor
     /// </summary>
     private static NCharacterSelectScreen? FindCharacterSelectScreen()
     {
-        return CharacterSelectHelper.FindScreen();
+        return CharacterSelectUtils.FindScreen();
     }
 
     /// <summary>
@@ -514,7 +514,7 @@ public static class GameStateExtractor
     /// </summary>
     private static NCharacterSelectButton? GetSelectedButton(NCharacterSelectScreen screen)
     {
-        return CharacterSelectHelper.GetSelectedButton(screen);
+        return CharacterSelectUtils.GetSelectedButton(screen);
     }
 
     /// <summary>
@@ -522,7 +522,7 @@ public static class GameStateExtractor
     /// </summary>
     private static MegaCrit.Sts2.Core.Models.CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
     {
-        return CharacterSelectHelper.GetCharacterModel(btn);
+        return CharacterSelectUtils.GetCharacterModel(btn);
     }
 
     /// <summary>
@@ -530,6 +530,6 @@ public static class GameStateExtractor
     /// </summary>
     private static bool GetIsLocked(NCharacterSelectButton btn)
     {
-        return CharacterSelectHelper.GetIsLocked(btn);
+        return CharacterSelectUtils.GetIsLocked(btn);
     }
 }

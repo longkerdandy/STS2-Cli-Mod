@@ -39,7 +39,7 @@ public static class SelectCharacterHandler
     private static object Execute(string characterId)
     {
         // Guard: Must be on the character select screen
-        var screen = CharacterSelectHelper.FindScreen();
+        var screen = CharacterSelectUtils.FindScreen();
         if (screen == null)
         {
             Logger.Warning("SelectCharacter requested but not on character select screen");
@@ -65,13 +65,13 @@ public static class SelectCharacterHandler
         }
 
         // Find all character buttons
-        var buttons = UiHelper.FindAll<NCharacterSelectButton>(buttonContainer);
+        var buttons = UiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
 
         // Find the target button
         NCharacterSelectButton? targetBtn = null;
         foreach (var btn in buttons)
         {
-            var model = CharacterSelectHelper.GetCharacterModel(btn);
+            var model = CharacterSelectUtils.GetCharacterModel(btn);
             if (model?.Id.Entry.Equals(characterId, StringComparison.OrdinalIgnoreCase) == true)
             {
                 targetBtn = btn;
@@ -91,7 +91,7 @@ public static class SelectCharacterHandler
         }
 
         // Check if the character is locked
-        if (CharacterSelectHelper.GetIsLocked(targetBtn))
+        if (CharacterSelectUtils.GetIsLocked(targetBtn))
         {
             Logger.Warning($"Character '{characterId}' is locked");
             return new

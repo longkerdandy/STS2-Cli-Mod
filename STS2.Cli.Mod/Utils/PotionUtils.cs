@@ -1,8 +1,6 @@
-using Godot;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
-using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Utils;
 
@@ -100,7 +98,7 @@ public static class PotionUtils
     /// <returns>The selection screen if found, null otherwise.</returns>
     public static NChooseACardSelectionScreen? FindSelectionScreen()
     {
-        return UiHelper.FindScreenInOverlay<NChooseACardSelectionScreen>();
+        return UiUtils.FindScreenInOverlay<NChooseACardSelectionScreen>();
     }
 
     /// <summary>
@@ -112,7 +110,7 @@ public static class PotionUtils
     /// <returns>The card holder if found, null otherwise.</returns>
     public static NCardHolder? FindCardHolderById(NChooseACardSelectionScreen screen, string cardId, int nth)
     {
-        var cardHolders = UiHelper.FindAll<NCardHolder>(screen);
+        var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
         var matchingHolders = new List<NCardHolder>();
 
         foreach (var holder in cardHolders)

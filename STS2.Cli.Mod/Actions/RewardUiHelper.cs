@@ -19,11 +19,11 @@ public static class RewardUiHelper
 
     /// <summary>
     ///     Finds the <see cref="NRewardsScreen" /> in the overlay stack.
-    ///     Delegates to <see cref="UiHelper.FindScreenInOverlay{T}" />.
+    ///     Delegates to <see cref="UiUtils.FindScreenInOverlay{T}" />.
     /// </summary>
     public static NRewardsScreen? FindRewardsScreen()
     {
-        return UiHelper.FindScreenInOverlay<NRewardsScreen>();
+        return UiUtils.FindScreenInOverlay<NRewardsScreen>();
     }
 
     /// <summary>
@@ -65,7 +65,7 @@ public static class RewardUiHelper
 
         await ActionUtils.PollUntilAsync(() =>
         {
-            var cardScreen = UiHelper.FindScreenInOverlay<NCardRewardSelectionScreen>();
+            var cardScreen = UiUtils.FindScreenInOverlay<NCardRewardSelectionScreen>();
             if (cardScreen != null)
             {
                 result = cardScreen;

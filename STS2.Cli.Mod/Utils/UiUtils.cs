@@ -6,7 +6,7 @@ namespace STS2.Cli.Mod.Utils;
 /// <summary>
 ///     Utility class for finding UI nodes in the scene tree.
 /// </summary>
-public static class UiHelper
+public static class UiUtils
 {
     /// <summary>
     ///     Finds all nodes of type T within the specified parent node.
