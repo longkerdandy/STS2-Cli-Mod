@@ -3,7 +3,7 @@ using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using STS2.Cli.Mod.Utils;
 
-namespace STS2.Cli.Mod.Actions;
+namespace STS2.Cli.Mod.Utils;
 
 /// <summary>
 ///     Helper methods for character select screen operations.

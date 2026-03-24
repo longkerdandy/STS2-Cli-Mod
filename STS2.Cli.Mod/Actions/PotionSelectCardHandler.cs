@@ -1,5 +1,7 @@
+using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
+using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Models.Actions;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
@@ -60,9 +62,9 @@ public static class PotionSelectCardHandler
                 message = "Not in potion card selection screen. Use 'sts2 state' to check current screen."
             };
 
-        // Get selection constraints from the screen (detect from available cards or use defaults)
+        // Get selection constraints from the screen's _canSkip field
         var cardHolders = UiHelper.FindAll<NCardHolder>(selectionScreen);
-        var constraints = InferSelectionConstraints(cardHolders);
+        var constraints = GetScreenConstraints(selectionScreen);
 
         // Validate selection count
         if (cardIds.Length < constraints.MinSelect || cardIds.Length > constraints.MaxSelect)
@@ -153,8 +155,7 @@ public static class PotionSelectCardHandler
             };
 
         // Infer constraints to check if skip is allowed
-        var cardHolders = UiHelper.FindAll<NCardHolder>(selectionScreen);
-        var constraints = InferSelectionConstraints(cardHolders);
+        var constraints = GetScreenConstraints(selectionScreen);
 
         if (!constraints.CanSkip)
             return new
@@ -185,20 +186,24 @@ public static class PotionSelectCardHandler
     }
 
     /// <summary>
-    ///     Infers selection constraints from the current selection screen.
-    ///     This is a heuristic based on the number of cards and typical potion patterns.
+    ///     Reads selection constraints directly from the <see cref="NChooseACardSelectionScreen" />.
+    ///     The screen's <c>_canSkip</c> field determines whether selection can be skipped.
+    ///     The screen always selects exactly 1 card (MinSelect=0 or 1, MaxSelect=1).
     /// </summary>
-    private static SelectionConstraints InferSelectionConstraints(List<NCardHolder> cardHolders)
+    private static SelectionConstraints GetScreenConstraints(NChooseACardSelectionScreen screen)
     {
-        var cardCount = cardHolders.Count;
-
-        // If we have 3 cards, it's likely a "choose 1 of 3" potion (Attack/Skill/Power/Colorless)
-        if (cardCount == 3) return new SelectionConstraints(0, 1, true); // Can skip (e.g., Colorless Potion)
-
-        // If we have many cards, it's likely a hand-based selection (Gambler's Brew, Ashwater, etc.)
-        if (cardCount > 3) return new SelectionConstraints(0, cardCount, true); // Multi-select with the skip option
-
-        // Default: single select, cannot skip
-        return new SelectionConstraints(1, 1, false);
+        try
+        {
+            var field = typeof(NChooseACardSelectionScreen).GetField("_canSkip",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var canSkip = field?.GetValue(screen) as bool? ?? false;
+            return new SelectionConstraints(canSkip ? 0 : 1, 1, canSkip);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to read _canSkip from screen: {ex.Message}");
+            // Fallback: single select, cannot skip
+            return new SelectionConstraints(1, 1, false);
+        }
     }
 }

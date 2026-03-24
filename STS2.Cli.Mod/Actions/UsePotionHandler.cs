@@ -7,7 +7,6 @@ using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
-using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Models.Actions;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
@@ -187,8 +186,8 @@ public static class UsePotionHandler
         var targetMsg = targetName != null ? $" targeting {targetName}" : "";
         Logger.Info($"UsePotionAction enqueued (selection type): '{potion.Title}' (slot {slot}){targetMsg}");
 
-        // Start the action without awaiting completion
-        _ = ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
+        // Start the action and keep the Task reference for later
+        var enqueueTask = ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
 
         // Poll for the selection screen to appear (max 5 seconds)
         const int selectionScreenTimeoutMs = 5000;
@@ -229,9 +228,41 @@ public static class UsePotionHandler
             if (action.State != GameActionState.WaitingForExecution && action.State != GameActionState.Executing) break;
         }
 
-        // Selection screen didn't appear, wait for normal completion
+        // Selection screen didn't appear — await the original enqueue Task (no double-enqueue)
         Logger.Warning($"Selection screen did not appear for potion '{potion.Title}', waiting for normal completion");
-        return await WaitForPotionCompletionAsync(action, potion, slot, targetCombatId, historyBefore);
+
+        var finalState = await enqueueTask;
+        if (finalState == null)
+        {
+            Logger.Warning("UsePotionAction timed out waiting for completion");
+            return new { ok = false, error = "TIMEOUT", message = "Potion action did not complete in time" };
+        }
+
+        if (finalState == GameActionState.Canceled)
+        {
+            Logger.Info("UsePotionAction was cancelled by the game");
+            return new
+            {
+                ok = false, error = "ACTION_CANCELLED",
+                message = $"Potion '{potion.Title}' action was cancelled by the game"
+            };
+        }
+
+        // Collect results from CombatHistory
+        var results = CombatHistoryBuilder.BuildFromHistory(historyBefore);
+        Logger.Info($"UsePotionAction completed with {results.Count} result entries");
+
+        return new
+        {
+            ok = true,
+            data = new
+            {
+                slot,
+                potion_id = potion.Id.Entry,
+                target = targetCombatId,
+                results
+            }
+        };
     }
 
     /// <summary>
@@ -298,17 +329,7 @@ public static class UsePotionHandler
     /// </summary>
     private static NChooseACardSelectionScreen? FindCardSelectionScreen()
     {
-        // Check the overlay stack first
-        var overlayStack = NOverlayStack.Instance;
-        if (overlayStack?.Peek() is NChooseACardSelectionScreen screen) return screen;
-
-        // Search in children if not on top of the stack
-        if (overlayStack != null)
-            foreach (var child in overlayStack.GetChildren())
-                if (child is NChooseACardSelectionScreen childScreen)
-                    return childScreen;
-
-        return null;
+        return UiHelper.FindScreenInOverlay<NChooseACardSelectionScreen>();
     }
 
     /// <summary>

@@ -6,7 +6,6 @@ using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
-using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
@@ -278,18 +277,7 @@ public static class DeckSelectCardHandler
     /// </summary>
     private static NCardGridSelectionScreen? FindGridSelectionScreen()
     {
-        var overlayStack = NOverlayStack.Instance;
-        if (overlayStack == null) return null;
-
-        var overlay = overlayStack.Peek();
-        if (overlay is NCardGridSelectionScreen gridScreen)
-            return gridScreen;
-
-        foreach (var child in overlayStack.GetChildren())
-            if (child is NCardGridSelectionScreen childScreen)
-                return childScreen;
-
-        return null;
+        return UiHelper.FindScreenInOverlay<NCardGridSelectionScreen>();
     }
 
     /// <summary>
@@ -485,16 +473,8 @@ public static class DeckSelectCardHandler
     /// </summary>
     private static async Task<bool> WaitForScreenRemoval(NCardGridSelectionScreen screen)
     {
-        var elapsed = 0;
-        while (elapsed < CompletionTimeoutMs)
-        {
-            await Task.Delay(PollIntervalMs);
-            elapsed += PollIntervalMs;
-
-            if (!GodotObject.IsInstanceValid(screen) || !screen.IsInsideTree())
-                return true;
-        }
-
-        return false;
+        return await ActionUtils.PollUntilAsync(
+            () => !GodotObject.IsInstanceValid(screen) || !screen.IsInsideTree(),
+            CompletionTimeoutMs, PollIntervalMs);
     }
 }

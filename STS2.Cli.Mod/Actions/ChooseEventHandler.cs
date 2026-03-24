@@ -222,26 +222,11 @@ public static class ChooseEventHandler
     /// </summary>
     private static async Task<bool> WaitForProceed(NEventRoom originalEventRoom)
     {
-        var elapsed = 0;
-        while (elapsed < MaxWaitTimeMs)
-        {
-            await Task.Delay(PollIntervalMs);
-            elapsed += PollIntervalMs;
-
-            // Check if the map opened
-            if (NMapScreen.Instance is { IsOpen: true })
-                return true;
-
-            // Check if event room left the tree
-            if (!GodotObject.IsInstanceValid(originalEventRoom) || !originalEventRoom.IsInsideTree())
-                return true;
-
-            // Check if a new overlay appeared (combat event)
-            if (NOverlayStack.Instance?.Peek() is not null)
-                return true;
-        }
-
-        return false;
+        return await ActionUtils.PollUntilAsync(() =>
+            NMapScreen.Instance is { IsOpen: true } ||
+            !GodotObject.IsInstanceValid(originalEventRoom) || !originalEventRoom.IsInsideTree() ||
+            NOverlayStack.Instance?.Peek() is not null,
+            MaxWaitTimeMs, PollIntervalMs);
     }
 
     /// <summary>
@@ -249,34 +234,17 @@ public static class ChooseEventHandler
     /// </summary>
     private static async Task<bool> WaitForEventStateChange(NEventRoom eventRoom, EventStateSnapshot snapshot)
     {
-        var elapsed = 0;
-        while (elapsed < MaxWaitTimeMs)
+        return await ActionUtils.PollUntilAsync(() =>
         {
-            await Task.Delay(PollIntervalMs);
-            elapsed += PollIntervalMs;
+            if (!eventRoom.IsInsideTree()) return true;
+            if (NOverlayStack.Instance?.Peek() is not null) return true;
+            if (NMapScreen.Instance is { IsOpen: true }) return true;
 
-            // Check if the screen changed (combat started)
-            if (!eventRoom.IsInsideTree())
-                return true;
-
-            var overlay = NOverlayStack.Instance?.Peek();
-            if (overlay is not null)
-                return true;
-
-            // Check if the map opened (event finished)
-            if (NMapScreen.Instance is { IsOpen: true })
-                return true;
-
-            // Check event state change
             var eventModel = GetEventModel(eventRoom);
-            if (eventModel == null)
-                return true;
+            if (eventModel == null) return true;
 
-            if (HasEventStateChanged(eventModel, snapshot))
-                return true;
-        }
-
-        return false;
+            return HasEventStateChanged(eventModel, snapshot);
+        }, MaxWaitTimeMs, PollIntervalMs);
     }
 
     /// <summary>

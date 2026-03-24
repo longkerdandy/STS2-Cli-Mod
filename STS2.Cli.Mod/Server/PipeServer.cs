@@ -189,8 +189,8 @@ public static class PipeServer
                 // advance_dialogue is async — ForceClick dialogue hitbox + polling for Ancient events
                 "advance_dialogue" => await MainThreadExecutor.RunOnMainThreadAsync(() => AdvanceDialogueHandler.HandleRequestAsync(request)),
 
-                // reward_proceed runs synchronously on the main thread — ForceClick is fire-and-forget
-                "proceed" => MainThreadExecutor.RunOnMainThread(() => ProceedHandler.HandleRequest(request)),
+                // proceed is async — FakeMerchant path needs to wait for map to open
+                "proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() => ProceedHandler.HandleRequestAsync(request)),
 
                 // potion_select_card is synchronous — runs on main thread and returns immediately
                 "potion_select_card" => MainThreadExecutor.RunOnMainThread(() => PotionSelectCardHandler.HandleRequest(request)),

@@ -2,7 +2,6 @@ using Godot;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
-using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Utils;
@@ -101,26 +100,7 @@ public static class PotionUtils
     /// <returns>The selection screen if found, null otherwise.</returns>
     public static NChooseACardSelectionScreen? FindSelectionScreen()
     {
-        // Check overlay stack
-        var overlayStack = NOverlayStack.Instance;
-        if (overlayStack?.Peek() is NChooseACardSelectionScreen screen)
-        {
-            return screen;
-        }
-
-        // Search in children
-        if (overlayStack != null)
-        {
-            foreach (var child in overlayStack.GetChildren())
-            {
-                if (child is NChooseACardSelectionScreen childScreen)
-                {
-                    return childScreen;
-                }
-            }
-        }
-
-        return null;
+        return UiHelper.FindScreenInOverlay<NChooseACardSelectionScreen>();
     }
 
     /// <summary>

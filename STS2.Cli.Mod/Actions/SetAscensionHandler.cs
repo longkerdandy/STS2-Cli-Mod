@@ -18,7 +18,18 @@ public static class SetAscensionHandler
     /// </summary>
     public static object HandleRequest(Request request)
     {
-        var level = request.Args?[0] ?? 0;
+        if (request.Args == null || request.Args.Length == 0)
+        {
+            Logger.Warning("set_ascension requested with no arguments");
+            return new
+            {
+                ok = false,
+                error = "MISSING_ARGUMENT",
+                message = "Ascension level is required (e.g., 'sts2 set_ascension 10')"
+            };
+        }
+
+        var level = request.Args[0];
         Logger.Info($"Requested to set ascension level: {level}");
         return Execute(level);
     }

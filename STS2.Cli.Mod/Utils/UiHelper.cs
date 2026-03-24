@@ -1,4 +1,5 @@
 using Godot;
+using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 
 namespace STS2.Cli.Mod.Utils;
 
@@ -41,6 +42,29 @@ public static class UiHelper
                 return result;
             }
         }
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Finds a screen of type <typeparamref name="T" /> in the <see cref="NOverlayStack" />.
+    ///     Checks the top overlay first (fast path), then iterates all children (slow path).
+    /// </summary>
+    /// <typeparam name="T">The screen type to find (must extend <see cref="Node" />).</typeparam>
+    /// <returns>The screen instance if found, or null.</returns>
+    public static T? FindScreenInOverlay<T>() where T : Node
+    {
+        var overlayStack = NOverlayStack.Instance;
+        if (overlayStack == null) return null;
+
+        // Fast path: the top overlay is the screen we want
+        if (overlayStack.Peek() is T screen)
+            return screen;
+
+        // Slow path: search children (another screen may be on top)
+        foreach (var child in overlayStack.GetChildren())
+            if (child is T found)
+                return found;
 
         return null;
     }

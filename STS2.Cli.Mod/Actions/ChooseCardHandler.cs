@@ -338,17 +338,9 @@ public static class ChooseCardHandler
     /// </summary>
     private static async Task<bool> WaitForRewardCompletion(NRewardButton button)
     {
-        var elapsed = 0;
-        while (elapsed < CompletionTimeoutMs)
-        {
-            await Task.Delay(PollIntervalMs);
-            elapsed += PollIntervalMs;
-
-            if (!GodotObject.IsInstanceValid(button) || !button.IsInsideTree())
-                return true;
-        }
-
-        return false;
+        return await ActionUtils.PollUntilAsync(
+            () => !GodotObject.IsInstanceValid(button) || !button.IsInsideTree(),
+            CompletionTimeoutMs, PollIntervalMs);
     }
 
     /// <summary>
@@ -356,17 +348,8 @@ public static class ChooseCardHandler
     /// </summary>
     private static async Task<bool> WaitForCardScreenDismissed()
     {
-        var elapsed = 0;
-        while (elapsed < CompletionTimeoutMs)
-        {
-            await Task.Delay(PollIntervalMs);
-            elapsed += PollIntervalMs;
-
-            var overlay = NOverlayStack.Instance?.Peek();
-            if (overlay is not NCardRewardSelectionScreen)
-                return true;
-        }
-
-        return false;
+        return await ActionUtils.PollUntilAsync(
+            () => NOverlayStack.Instance?.Peek() is not NCardRewardSelectionScreen,
+            CompletionTimeoutMs, PollIntervalMs);
     }
 }

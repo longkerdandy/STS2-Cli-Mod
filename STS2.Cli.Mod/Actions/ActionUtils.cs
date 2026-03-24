@@ -167,4 +167,28 @@ public static class ActionUtils
         var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(timeoutMs));
         return completedTask == tcs.Task ? tcs.Task.Result : null;
     }
+
+    /// <summary>
+    ///     Polls asynchronously until a condition is met or the timeout expires.
+    ///     Uses <c>await Task.Delay</c> to yield the main thread between polls,
+    ///     allowing Godot to process frames during the wait.
+    /// </summary>
+    /// <param name="condition">Predicate evaluated each poll cycle; returns <c>true</c> to stop waiting.</param>
+    /// <param name="timeoutMs">Maximum milliseconds to wait.</param>
+    /// <param name="pollIntervalMs">Milliseconds between each poll (default 100).</param>
+    /// <returns><c>true</c> if the condition was met; <c>false</c> if the timeout expired.</returns>
+    public static async Task<bool> PollUntilAsync(Func<bool> condition, int timeoutMs, int pollIntervalMs = 100)
+    {
+        var elapsed = 0;
+        while (elapsed < timeoutMs)
+        {
+            await Task.Delay(pollIntervalMs);
+            elapsed += pollIntervalMs;
+
+            if (condition())
+                return true;
+        }
+
+        return false;
+    }
 }

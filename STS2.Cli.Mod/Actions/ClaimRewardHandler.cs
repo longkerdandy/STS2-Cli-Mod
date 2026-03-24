@@ -259,18 +259,14 @@ public static class ClaimRewardHandler
     /// </summary>
     private static async Task<bool> WaitForButtonRemoval(NRewardButton button)
     {
-        var elapsed = 0;
-        while (elapsed < ClaimTimeoutMs)
-        {
-            await Task.Delay(PollIntervalMs);
-            elapsed += PollIntervalMs;
+        var removed = await ActionUtils.PollUntilAsync(
+            () => !GodotObject.IsInstanceValid(button) || !button.IsInsideTree(),
+            ClaimTimeoutMs, PollIntervalMs);
 
-            if (!GodotObject.IsInstanceValid(button) || !button.IsInsideTree())
-                return true;
-        }
+        if (!removed)
+            Logger.Warning($"Timed out waiting for reward button removal after {ClaimTimeoutMs}ms");
 
-        Logger.Warning($"Timed out waiting for reward button removal after {ClaimTimeoutMs}ms");
-        return false;
+        return removed;
     }
 
     /// <summary>

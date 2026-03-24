@@ -157,7 +157,6 @@ public static class AdvanceDialogueHandler
     private static async Task<object> AutoAdvanceDialogue(NAncientEventLayout ancientLayout, NClickableControl hitbox)
     {
         var linesAdvanced = 0;
-        GetCurrentDialogueLine(ancientLayout);
 
         Logger.Info("Auto-advancing Ancient event dialogue");
 
@@ -305,30 +304,11 @@ public static class AdvanceDialogueHandler
     /// </summary>
     private static async Task<bool> WaitForDialogueAdvance(NAncientEventLayout ancientLayout, int previousLine)
     {
-        var elapsed = 0;
-        while (elapsed < MaxWaitTimeMs)
-        {
-            await Task.Delay(PollIntervalMs);
-            elapsed += PollIntervalMs;
-
-            // Check if the line changed
-            var currentLine = GetCurrentDialogueLine(ancientLayout);
-            if (currentLine != previousLine)
-                return true;
-
-            // Check if dialogue finished
-            if (IsDialogueFinished(ancientLayout))
-                return true;
-
-            // Check if overlay appeared (combat)
-            if (NOverlayStack.Instance?.Peek() is not null)
-                return true;
-
-            // Check if the map opened
-            if (NMapScreen.Instance is { IsOpen: true })
-                return true;
-        }
-
-        return false;
+        return await ActionUtils.PollUntilAsync(() =>
+            GetCurrentDialogueLine(ancientLayout) != previousLine ||
+            IsDialogueFinished(ancientLayout) ||
+            NOverlayStack.Instance?.Peek() is not null ||
+            NMapScreen.Instance is { IsOpen: true },
+            MaxWaitTimeMs, PollIntervalMs);
     }
 }

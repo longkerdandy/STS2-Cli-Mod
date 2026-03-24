@@ -25,17 +25,17 @@ public static class ProceedHandler
     ///     Handles the proceed request.
     ///     Automatically detects the current context (reward screen or FakeMerchant event).
     /// </summary>
-    public static object HandleRequest(Request request)
+    public static async Task<object> HandleRequestAsync(Request request)
     {
         Logger.Info("Requested to proceed");
-        return Execute();
+        return await ExecuteAsync();
     }
 
     /// <summary>
     ///     Executes the proceed action based on detected context.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    private static object Execute()
+    private static async Task<object> ExecuteAsync()
     {
         try
         {
@@ -57,7 +57,7 @@ public static class ProceedHandler
                 if (fakeMerchant != null)
                 {
                     Logger.Info("Detected FakeMerchant event context");
-                    return ExecuteFakeMerchantProceed(fakeMerchant);
+                    return await ExecuteFakeMerchantProceedAsync(fakeMerchant);
                 }
 
                 // Event room exists but not FakeMerchant
@@ -90,7 +90,7 @@ public static class ProceedHandler
     /// </summary>
     private static object ExecuteRewardProceed(NRewardsScreen screen)
     {
-        var proceedButton = RewardUiHelper.FindFirst<NProceedButton>(screen);
+        var proceedButton = UiHelper.FindFirst<NProceedButton>(screen);
         if (proceedButton == null)
         {
             Logger.Warning("NProceedButton not found in NRewardsScreen");
@@ -133,7 +133,7 @@ public static class ProceedHandler
     /// <summary>
     ///     Proceeds from the FakeMerchant event.
     /// </summary>
-    private static object ExecuteFakeMerchantProceed(NFakeMerchant fakeMerchant)
+    private static async Task<object> ExecuteFakeMerchantProceedAsync(NFakeMerchant fakeMerchant)
     {
         var proceedButton = fakeMerchant.GetNodeOrNull<NProceedButton>("%ProceedButton");
         if (proceedButton == null)
@@ -172,8 +172,8 @@ public static class ProceedHandler
         Logger.Info("Clicking proceed button on FakeMerchant event");
         proceedButton.ForceClick();
 
-        // Wait for map to open
-        var proceeded = WaitForMapOpen();
+        // Wait for map to open (async — does not block the Godot main thread)
+        var proceeded = await WaitForMapOpenAsync();
 
         return new
         {
@@ -189,23 +189,20 @@ public static class ProceedHandler
 
     /// <summary>
     ///     Waits for the map to open after proceeding.
+    ///     Uses <see cref="ActionUtils.PollUntilAsync" /> to avoid blocking the Godot main thread.
     /// </summary>
-    private static bool WaitForMapOpen()
+    private static async Task<bool> WaitForMapOpenAsync()
     {
         const int timeoutMs = 5000;
         const int pollIntervalMs = 100;
-        var elapsed = 0;
 
-        while (elapsed < timeoutMs)
-        {
-            Thread.Sleep(pollIntervalMs);
-            elapsed += pollIntervalMs;
+        var opened = await ActionUtils.PollUntilAsync(
+            () => NMapScreen.Instance is { IsOpen: true },
+            timeoutMs, pollIntervalMs);
 
-            if (NMapScreen.Instance is { IsOpen: true })
-                return true;
-        }
+        if (!opened)
+            Logger.Warning("Timed out waiting for map to open after proceed");
 
-        Logger.Warning("Timed out waiting for map to open after proceed");
-        return false;
+        return opened;
     }
 }
