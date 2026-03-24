@@ -102,6 +102,54 @@ public static class ActionUtils
     }
 
     /// <summary>
+    ///     Resolves an ally target (player or pet) by combat ID.
+    ///     Returns null if the creature is not found or not a valid ally (not player or pet).
+    /// </summary>
+    /// <param name="player">The local player.</param>
+    /// <param name="combatId">The combat ID of the target ally.</param>
+    /// <returns>The resolved <see cref="Creature" />, or null if invalid.</returns>
+    public static Creature? ResolveAllyTarget(Player player, uint combatId)
+    {
+        try
+        {
+            // Check if it's the player
+            if (player.Creature.CombatId == combatId)
+                return player.Creature;
+
+            // Check if it's a pet
+            var combatState = CombatManager.Instance.DebugOnlyGetState();
+            if (combatState == null)
+                return null;
+
+            var creature = combatState.GetCreature(combatId);
+            if (creature == null)
+            {
+                Logger.Warning($"No creature found with combat_id {combatId}");
+                return null;
+            }
+
+            // Verify it's a pet of the player
+            var playerCombatState = player.PlayerCombatState;
+            if (playerCombatState != null)
+            {
+                foreach (var pet in playerCombatState.Pets)
+                {
+                    if (pet.CombatId == combatId)
+                        return pet;
+                }
+            }
+
+            Logger.Warning($"Creature with combat_id {combatId} is not the player or a pet");
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to resolve ally target with combat_id {combatId}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
     ///     Enqueues a <see cref="GameAction" />, subscribes to its lifecycle events,
     ///     and awaits completion with a timeout.
     ///     Bridges <c>AfterFinished</c> and <c>BeforeCancelled</c> to a <see cref="TaskCompletionSource{T}" />.

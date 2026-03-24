@@ -8,8 +8,8 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
-using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Models.Actions;
+using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -22,13 +22,13 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class UsePotionHandler
 {
-    private static readonly ModLogger Logger = new("UsePotionHandler");
-
     /// <summary>
     ///     Maximum time to wait for a <see cref="UsePotionAction" /> to finish executing.
     ///     Covers potion throw animation and triggered effects.
     /// </summary>
     private const int ActionTimeoutMs = 10000;
+
+    private static readonly ModLogger Logger = new("UsePotionHandler");
 
     /// <summary>
     ///     Handles the use_potion request.
@@ -40,7 +40,8 @@ public static class UsePotionHandler
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Potion ID required (e.g., FIRE_POTION)" };
 
         var nthValue = request.Nth ?? 0;
-        Logger.Info($"Requested to use potion {request.Id}, nth={nthValue}, target={request.Target?.ToString() ?? "none"}");
+        Logger.Info(
+            $"Requested to use potion {request.Id}, nth={nthValue}, target={request.Target?.ToString() ?? "none"}");
 
         return await ExecuteAsync(request.Id, nthValue, request.Target);
     }
@@ -106,18 +107,37 @@ public static class UsePotionHandler
                         message = $"No hittable enemy found with combat_id {targetCombatId}"
                     };
             }
-            else if (potion.TargetType is TargetType.Self or TargetType.AnyPlayer)
+            else if (potion.TargetType == TargetType.Self)
             {
-                // Self-targeting or any player: target is the player's creature
+                // Self-targeting: target is always the player's creature
                 target = player.Creature;
 
                 if (targetCombatId != null)
                     return new
                     {
                         ok = false, error = "TARGET_NOT_ALLOWED",
-                        message =
-                            $"Potion '{potion.Title}' has target type '{potion.TargetType}' and does not accept a target"
+                        message = $"Potion '{potion.Title}' is self-targeting and does not accept a target"
                     };
+            }
+            else if (potion.TargetType == TargetType.AnyPlayer)
+            {
+                // AnyPlayer: can target player or pet
+                if (targetCombatId == null)
+                {
+                    // Default to player if no target specified
+                    target = player.Creature;
+                }
+                else
+                {
+                    // Try to resolve as player or pet
+                    target = ActionUtils.ResolveAllyTarget(player, (uint)targetCombatId.Value);
+                    if (target == null)
+                        return new
+                        {
+                            ok = false, error = "TARGET_NOT_FOUND",
+                            message = $"No ally found with combat_id {targetCombatId}. Must be the player or a pet."
+                        };
+                }
             }
             else
             {
@@ -170,7 +190,7 @@ public static class UsePotionHandler
         // Start the action without awaiting completion
         _ = ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
 
-        // Poll for selection screen to appear (max 5 seconds)
+        // Poll for the selection screen to appear (max 5 seconds)
         const int selectionScreenTimeoutMs = 5000;
         const int pollIntervalMs = 100;
         var elapsedMs = 0;
@@ -180,7 +200,7 @@ public static class UsePotionHandler
             await Task.Delay(pollIntervalMs);
             elapsedMs += pollIntervalMs;
 
-            // Check if selection screen appeared
+            // Check if the selection screen appeared
             var selectionScreen = FindCardSelectionScreen();
             if (selectionScreen != null)
             {
@@ -205,11 +225,8 @@ public static class UsePotionHandler
                 };
             }
 
-            // Check if action completed without selection screen (shouldn't happen for these potions)
-            if (action.State != GameActionState.WaitingForExecution && action.State != GameActionState.Executing)
-            {
-                break;
-            }
+            // Check if action completed without the selection screen (shouldn't happen for these potions)
+            if (action.State != GameActionState.WaitingForExecution && action.State != GameActionState.Executing) break;
         }
 
         // Selection screen didn't appear, wait for normal completion
@@ -281,24 +298,15 @@ public static class UsePotionHandler
     /// </summary>
     private static NChooseACardSelectionScreen? FindCardSelectionScreen()
     {
-        // Check overlay stack first
+        // Check the overlay stack first
         var overlayStack = NOverlayStack.Instance;
-        if (overlayStack?.Peek() is NChooseACardSelectionScreen screen)
-        {
-            return screen;
-        }
+        if (overlayStack?.Peek() is NChooseACardSelectionScreen screen) return screen;
 
-        // Search in children if not on top of stack
+        // Search in children if not on top of the stack
         if (overlayStack != null)
-        {
             foreach (var child in overlayStack.GetChildren())
-            {
                 if (child is NChooseACardSelectionScreen childScreen)
-                {
                     return childScreen;
-                }
-            }
-        }
 
         return null;
     }
@@ -346,9 +354,7 @@ public static class UsePotionHandler
         {
             var potion = player.GetPotionAtSlotIndex(slot);
             if (potion != null && potion.Id.Entry.Equals(potionId, StringComparison.OrdinalIgnoreCase))
-            {
                 matchingPotions.Add((potion, slot));
-            }
         }
 
         if (matchingPotions.Count == 0)
@@ -361,6 +367,7 @@ public static class UsePotionHandler
                 if (potion != null)
                     availablePotions.Add(potion.Id.Entry);
             }
+
             var availableStr = availablePotions.Count > 0 ? string.Join(", ", availablePotions) : "(none)";
             Logger.Warning($"Potion '{potionId}' not found. Available: {availableStr}");
 
@@ -379,12 +386,14 @@ public static class UsePotionHandler
             {
                 ok = false,
                 error = "INVALID_POTION_SLOT",
-                message = $"Potion '{potionId}' has {matchingPotions.Count} copies. Use nth from 0 to {matchingPotions.Count - 1}."
+                message =
+                    $"Potion '{potionId}' has {matchingPotions.Count} copies. Use nth from 0 to {matchingPotions.Count - 1}."
             });
         }
 
         var selected = matchingPotions[nth];
-        Logger.Info($"Found potion '{potionId}' at slot {selected.Slot} (nth={nth}, total matches={matchingPotions.Count})");
+        Logger.Info(
+            $"Found potion '{potionId}' at slot {selected.Slot} (nth={nth}, total matches={matchingPotions.Count})");
 
         return (selected.Potion, selected.Slot, null);
     }

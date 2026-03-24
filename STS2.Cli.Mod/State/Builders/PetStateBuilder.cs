@@ -25,6 +25,7 @@ public static class PetStateBuilder
             {
                 result.Add(new PetStateDto
                 {
+                    CombatId = pet.CombatId ?? 0,
                     Id = pet.Monster!.Id.Entry,
                     Name = StripGameTags(pet.Monster.Title.GetFormattedText()),
                     IsAlive = pet.IsAlive,

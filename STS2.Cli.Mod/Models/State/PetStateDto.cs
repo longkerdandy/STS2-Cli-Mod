@@ -9,6 +9,12 @@ namespace STS2.Cli.Mod.State;
 public class PetStateDto
 {
     /// <summary>
+    ///     Unique combat ID assigned by the game engine.
+    ///     Can be used as target for AnyPlayer/AnyAlly potions and cards.
+    /// </summary>
+    public uint CombatId { get; set; }
+
+    /// <summary>
     ///     Monster model ID (e.g., "OSTY", "BYRDPIP").
     /// </summary>
     public required string Id { get; set; }
