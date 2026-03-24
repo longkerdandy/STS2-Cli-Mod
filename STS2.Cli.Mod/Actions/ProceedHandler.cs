@@ -172,7 +172,7 @@ public static class ProceedHandler
         Logger.Info("Clicking proceed button on FakeMerchant event");
         proceedButton.ForceClick();
 
-        // Wait for map to open (async — does not block the Godot main thread)
+        // Wait for the map to open (async — does not block the Godot main thread)
         var proceeded = await WaitForMapOpenAsync();
 
         return new
@@ -193,12 +193,9 @@ public static class ProceedHandler
     /// </summary>
     private static async Task<bool> WaitForMapOpenAsync()
     {
-        const int timeoutMs = 5000;
-        const int pollIntervalMs = 100;
-
         var opened = await ActionUtils.PollUntilAsync(
             () => NMapScreen.Instance is { IsOpen: true },
-            timeoutMs, pollIntervalMs);
+            ActionUtils.UiTimeoutMs);
 
         if (!opened)
             Logger.Warning("Timed out waiting for map to open after proceed");

@@ -63,7 +63,6 @@ public static class PotionSelectCardHandler
             };
 
         // Get selection constraints from the screen's _canSkip field
-        var cardHolders = UiHelper.FindAll<NCardHolder>(selectionScreen);
         var constraints = GetScreenConstraints(selectionScreen);
 
         // Validate selection count
@@ -118,7 +117,7 @@ public static class PotionSelectCardHandler
             });
 
             // Small delay between clicks for multi-select
-            if (i < cardIds.Length - 1) OS.DelayMsec(100);
+            if (i < cardIds.Length - 1) OS.DelayMsec(ActionUtils.ClickDelayMs);
         }
 
         Logger.Info($"Successfully selected {selectedCards.Count} card(s)");

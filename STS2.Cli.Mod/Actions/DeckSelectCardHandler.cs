@@ -18,26 +18,6 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class DeckSelectCardHandler
 {
-    /// <summary>
-    ///     Delay between card selection clicks (for multi-select).
-    /// </summary>
-    private const int ClickDelayMs = 100;
-
-    /// <summary>
-    ///     Delay after all selections to allow the preview to appear.
-    /// </summary>
-    private const int PreviewAppearDelayMs = 300;
-
-    /// <summary>
-    ///     Maximum time to wait for the screen to be removed after confirmation.
-    /// </summary>
-    private const int CompletionTimeoutMs = 5000;
-
-    /// <summary>
-    ///     Polling interval when waiting for UI transitions.
-    /// </summary>
-    private const int PollIntervalMs = 100;
-
     private static readonly ModLogger Logger = new("DeckSelectCardHandler");
 
     /// <summary>
@@ -152,7 +132,7 @@ public static class DeckSelectCardHandler
                 selectedCardIds.Add(cardId);
 
                 // Small delay between clicks for multi-select
-                if (i < cardIds.Length - 1) await Task.Delay(ClickDelayMs);
+                if (i < cardIds.Length - 1) await Task.Delay(ActionUtils.ClickDelayMs);
             }
 
             // After selecting all cards:
@@ -163,7 +143,7 @@ public static class DeckSelectCardHandler
                                                        && prefs.Value.MinSelect != prefs.Value.MaxSelect)
             {
                 // Need to click the manual confirmation button to trigger preview
-                await Task.Delay(PreviewAppearDelayMs);
+                await Task.Delay(ActionUtils.PreviewAppearDelayMs);
                 var confirmButton = GetConfirmButton(screen);
                 if (confirmButton != null)
                 {
@@ -173,7 +153,7 @@ public static class DeckSelectCardHandler
             }
 
             // Wait for the preview to appear, then confirm
-            await Task.Delay(PreviewAppearDelayMs);
+            await Task.Delay(ActionUtils.PreviewAppearDelayMs);
 
             // Click the preview confirm button to finalize
             var previewConfirm = GetPreviewConfirmButton(screen);
@@ -475,6 +455,6 @@ public static class DeckSelectCardHandler
     {
         return await ActionUtils.PollUntilAsync(
             () => !GodotObject.IsInstanceValid(screen) || !screen.IsInsideTree(),
-            CompletionTimeoutMs, PollIntervalMs);
+            ActionUtils.UiTimeoutMs);
     }
 }

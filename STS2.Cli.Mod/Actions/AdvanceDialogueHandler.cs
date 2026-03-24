@@ -18,21 +18,6 @@ namespace STS2.Cli.Mod.Actions;
 public static class AdvanceDialogueHandler
 {
     /// <summary>
-    ///     Delay after ForceClick before starting to poll for state changes.
-    /// </summary>
-    private const int PostClickDelayMs = 200;
-
-    /// <summary>
-    ///     Polling interval when waiting for dialogue state changes.
-    /// </summary>
-    private const int PollIntervalMs = 100;
-
-    /// <summary>
-    ///     Maximum time to wait for dialogue to advance.
-    /// </summary>
-    private const int MaxWaitTimeMs = 3000;
-
-    /// <summary>
     ///     Maximum number of dialogue lines to auto-advance (safety limit).
     /// </summary>
     private const int MaxAutoAdvanceLines = 50;
@@ -115,7 +100,7 @@ public static class AdvanceDialogueHandler
         hitbox.ForceClick();
 
         // Wait for animation
-        await Task.Delay(PostClickDelayMs);
+        await Task.Delay(ActionUtils.PostClickDelayMs);
 
         // Wait for the line to change or dialogue to finish
         var advanced = await WaitForDialogueAdvance(ancientLayout, initialLine);
@@ -168,7 +153,7 @@ public static class AdvanceDialogueHandler
             hitbox.ForceClick();
 
             // Wait for animation
-            await Task.Delay(PostClickDelayMs);
+            await Task.Delay(ActionUtils.PostClickDelayMs);
 
             // Wait for the line to change
             var advanced = await WaitForDialogueAdvance(ancientLayout, currentLine);
@@ -305,10 +290,10 @@ public static class AdvanceDialogueHandler
     private static async Task<bool> WaitForDialogueAdvance(NAncientEventLayout ancientLayout, int previousLine)
     {
         return await ActionUtils.PollUntilAsync(() =>
-            GetCurrentDialogueLine(ancientLayout) != previousLine ||
-            IsDialogueFinished(ancientLayout) ||
-            NOverlayStack.Instance?.Peek() is not null ||
-            NMapScreen.Instance is { IsOpen: true },
-            MaxWaitTimeMs, PollIntervalMs);
+                GetCurrentDialogueLine(ancientLayout) != previousLine ||
+                IsDialogueFinished(ancientLayout) ||
+                NOverlayStack.Instance?.Peek() is not null ||
+                NMapScreen.Instance is { IsOpen: true },
+            ActionUtils.ShortTimeoutMs);
     }
 }

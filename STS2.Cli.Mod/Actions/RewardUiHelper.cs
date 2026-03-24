@@ -55,11 +55,11 @@ public static class RewardUiHelper
     ///     Called after ForceClick on a card reward button, which triggers
     ///     <see cref="MegaCrit.Sts2.Core.Rewards.CardReward.OnSelect" /> to push the screen.
     /// </summary>
-    /// <param name="timeoutMs">Maximum time to wait.</param>
-    /// <param name="pollIntervalMs">Polling interval.</param>
+    /// <param name="timeoutMs">Maximum time to wait (default <see cref="ActionUtils.ShortTimeoutMs" />).</param>
+    /// <param name="pollIntervalMs">Polling interval (default <see cref="ActionUtils.DefaultPollIntervalMs" />).</param>
     /// <returns>The card reward selection screen, or null if timed out.</returns>
     public static async Task<NCardRewardSelectionScreen?> WaitForCardRewardScreen(
-        int timeoutMs = 3000, int pollIntervalMs = 100)
+        int timeoutMs = ActionUtils.ShortTimeoutMs, int pollIntervalMs = ActionUtils.DefaultPollIntervalMs)
     {
         NCardRewardSelectionScreen? result = null;
 
@@ -130,5 +130,4 @@ public static class RewardUiHelper
 
         return buttons;
     }
-
 }

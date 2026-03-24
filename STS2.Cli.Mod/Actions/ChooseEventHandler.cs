@@ -16,21 +16,6 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class ChooseEventHandler
 {
-    /// <summary>
-    ///     Delay after ForceClick before starting to poll for state changes.
-    /// </summary>
-    private const int PostClickDelayMs = 200;
-
-    /// <summary>
-    ///     Polling interval when waiting for event state changes.
-    /// </summary>
-    private const int PollIntervalMs = 100;
-
-    /// <summary>
-    ///     Maximum time to wait for the event state to change after clicking an option.
-    /// </summary>
-    private const int MaxWaitTimeMs = 5000;
-
     private static readonly ModLogger Logger = new("ChooseEventHandler");
 
     /// <summary>
@@ -143,7 +128,7 @@ public static class ChooseEventHandler
             targetButton.ForceClick();
 
             // --- Wait a bit for the click to register ---
-            await Task.Delay(PostClickDelayMs);
+            await Task.Delay(ActionUtils.PostClickDelayMs);
 
             // --- Post-click handling based on the option type ---
             if (selectedOption.IsProceed)
@@ -223,10 +208,10 @@ public static class ChooseEventHandler
     private static async Task<bool> WaitForProceed(NEventRoom originalEventRoom)
     {
         return await ActionUtils.PollUntilAsync(() =>
-            NMapScreen.Instance is { IsOpen: true } ||
-            !GodotObject.IsInstanceValid(originalEventRoom) || !originalEventRoom.IsInsideTree() ||
-            NOverlayStack.Instance?.Peek() is not null,
-            MaxWaitTimeMs, PollIntervalMs);
+                NMapScreen.Instance is { IsOpen: true } ||
+                !GodotObject.IsInstanceValid(originalEventRoom) || !originalEventRoom.IsInsideTree() ||
+                NOverlayStack.Instance?.Peek() is not null,
+            ActionUtils.UiTimeoutMs);
     }
 
     /// <summary>
@@ -244,7 +229,7 @@ public static class ChooseEventHandler
             if (eventModel == null) return true;
 
             return HasEventStateChanged(eventModel, snapshot);
-        }, MaxWaitTimeMs, PollIntervalMs);
+        }, ActionUtils.UiTimeoutMs);
     }
 
     /// <summary>

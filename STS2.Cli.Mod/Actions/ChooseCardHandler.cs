@@ -18,21 +18,6 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class ChooseCardHandler
 {
-    /// <summary>
-    ///     Delay after the card reward selection screen opens before interacting with cards.
-    /// </summary>
-    private const int CardEnableDelayMs = 500;
-
-    /// <summary>
-    ///     Maximum time to wait for the card reward button to be removed from the UI.
-    /// </summary>
-    private const int CompletionTimeoutMs = 5000;
-
-    /// <summary>
-    ///     Polling interval when waiting for UI transitions.
-    /// </summary>
-    private const int PollIntervalMs = 100;
-
     private static readonly ModLogger Logger = new("ChooseCardHandler");
 
     /// <summary>
@@ -140,7 +125,7 @@ public static class ChooseCardHandler
                 };
 
             // Wait for cards to become clickable
-            await Task.Delay(CardEnableDelayMs);
+            await Task.Delay(ActionUtils.CardEnableDelayMs);
 
             // --- Find and select the target card ---
 
@@ -237,7 +222,7 @@ public static class ChooseCardHandler
                 };
 
             // Wait for UI to settle
-            await Task.Delay(CardEnableDelayMs);
+            await Task.Delay(ActionUtils.CardEnableDelayMs);
 
             // --- Find and click the Skip button ---
 
@@ -340,7 +325,7 @@ public static class ChooseCardHandler
     {
         return await ActionUtils.PollUntilAsync(
             () => !GodotObject.IsInstanceValid(button) || !button.IsInsideTree(),
-            CompletionTimeoutMs, PollIntervalMs);
+            ActionUtils.UiTimeoutMs);
     }
 
     /// <summary>
@@ -350,6 +335,6 @@ public static class ChooseCardHandler
     {
         return await ActionUtils.PollUntilAsync(
             () => NOverlayStack.Instance?.Peek() is not NCardRewardSelectionScreen,
-            CompletionTimeoutMs, PollIntervalMs);
+            ActionUtils.UiTimeoutMs);
     }
 }

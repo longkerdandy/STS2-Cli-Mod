@@ -16,17 +16,6 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class ClaimRewardHandler
 {
-    /// <summary>
-    ///     Maximum time to wait for the reward button to be removed from the UI
-    ///     after ForceClick (covers claim animation for relic/potion fly-to-inventory).
-    /// </summary>
-    private const int ClaimTimeoutMs = 5000;
-
-    /// <summary>
-    ///     Polling interval when waiting for the reward button removal.
-    /// </summary>
-    private const int PollIntervalMs = 100;
-
     private static readonly ModLogger Logger = new("ClaimRewardHandler");
 
     /// <summary>
@@ -261,10 +250,10 @@ public static class ClaimRewardHandler
     {
         var removed = await ActionUtils.PollUntilAsync(
             () => !GodotObject.IsInstanceValid(button) || !button.IsInsideTree(),
-            ClaimTimeoutMs, PollIntervalMs);
+            ActionUtils.UiTimeoutMs);
 
         if (!removed)
-            Logger.Warning($"Timed out waiting for reward button removal after {ClaimTimeoutMs}ms");
+            Logger.Warning($"Timed out waiting for reward button removal after {ActionUtils.UiTimeoutMs}ms");
 
         return removed;
     }

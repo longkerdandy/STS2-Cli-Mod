@@ -13,6 +13,37 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class ActionUtils
 {
+    // ── Shared timing constants ───────────────────────────────────────
+
+    /// <summary>Default polling interval for UI state changes (ms).</summary>
+    public const int DefaultPollIntervalMs = 100;
+
+    /// <summary>Delay between consecutive UI clicks in multi-select scenarios (ms).</summary>
+    public const int ClickDelayMs = 100;
+
+    /// <summary>Delay after a ForceClick before polling for state changes (ms).</summary>
+    public const int PostClickDelayMs = 200;
+
+    /// <summary>Delay for a preview or animation to appear after interaction (ms).</summary>
+    public const int PreviewAppearDelayMs = 300;
+
+    /// <summary>Delay for card reward buttons to become enabled after the screen opens (ms).</summary>
+    public const int CardEnableDelayMs = 500;
+
+    /// <summary>Short timeout for quick UI transitions like dialogue advance (ms).</summary>
+    public const int ShortTimeoutMs = 3000;
+
+    /// <summary>Standard timeout for UI completion and state changes (ms).</summary>
+    public const int UiTimeoutMs = 5000;
+
+    /// <summary>Timeout for game action execution like card play or potion use (ms).</summary>
+    public const int ActionTimeoutMs = 10000;
+
+    /// <summary>Timeout for a full enemy turn to complete (ms).</summary>
+    public const int TurnTimeoutMs = 30000;
+
+    // ── Fields ────────────────────────────────────────────────────────
+
     private static readonly ModLogger Logger = new("ActionUtils");
 
     /// <summary>
@@ -175,9 +206,10 @@ public static class ActionUtils
     /// </summary>
     /// <param name="condition">Predicate evaluated each poll cycle; returns <c>true</c> to stop waiting.</param>
     /// <param name="timeoutMs">Maximum milliseconds to wait.</param>
-    /// <param name="pollIntervalMs">Milliseconds between each poll (default 100).</param>
+    /// <param name="pollIntervalMs">Milliseconds between each poll (default <see cref="DefaultPollIntervalMs" />).</param>
     /// <returns><c>true</c> if the condition was met; <c>false</c> if the timeout expired.</returns>
-    public static async Task<bool> PollUntilAsync(Func<bool> condition, int timeoutMs, int pollIntervalMs = 100)
+    public static async Task<bool> PollUntilAsync(Func<bool> condition, int timeoutMs,
+        int pollIntervalMs = DefaultPollIntervalMs)
     {
         var elapsed = 0;
         while (elapsed < timeoutMs)

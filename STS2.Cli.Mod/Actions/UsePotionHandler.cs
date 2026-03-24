@@ -21,12 +21,6 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class UsePotionHandler
 {
-    /// <summary>
-    ///     Maximum time to wait for a <see cref="UsePotionAction" /> to finish executing.
-    ///     Covers potion throw animation and triggered effects.
-    /// </summary>
-    private const int ActionTimeoutMs = 10000;
-
     private static readonly ModLogger Logger = new("UsePotionHandler");
 
     /// <summary>
@@ -187,17 +181,15 @@ public static class UsePotionHandler
         Logger.Info($"UsePotionAction enqueued (selection type): '{potion.Title}' (slot {slot}){targetMsg}");
 
         // Start the action and keep the Task reference for later
-        var enqueueTask = ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
+        var enqueueTask = ActionUtils.EnqueueAndAwaitAsync(action, ActionUtils.ActionTimeoutMs);
 
-        // Poll for the selection screen to appear (max 5 seconds)
-        const int selectionScreenTimeoutMs = 5000;
-        const int pollIntervalMs = 100;
+        // Poll for the selection screen to appear
         var elapsedMs = 0;
 
-        while (elapsedMs < selectionScreenTimeoutMs)
+        while (elapsedMs < ActionUtils.UiTimeoutMs)
         {
-            await Task.Delay(pollIntervalMs);
-            elapsedMs += pollIntervalMs;
+            await Task.Delay(ActionUtils.DefaultPollIntervalMs);
+            elapsedMs += ActionUtils.DefaultPollIntervalMs;
 
             // Check if the selection screen appeared
             var selectionScreen = FindCardSelectionScreen();
@@ -290,7 +282,7 @@ public static class UsePotionHandler
     private static async Task<object> WaitForPotionCompletionAsync(
         UsePotionAction action, PotionModel potion, int slot, int? targetCombatId, int historyBefore)
     {
-        var finalState = await ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
+        var finalState = await ActionUtils.EnqueueAndAwaitAsync(action, ActionUtils.ActionTimeoutMs);
         if (finalState == null)
         {
             Logger.Warning("UsePotionAction timed out waiting for completion");

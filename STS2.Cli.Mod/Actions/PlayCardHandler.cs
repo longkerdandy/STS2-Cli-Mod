@@ -16,12 +16,6 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class PlayCardHandler
 {
-    /// <summary>
-    ///     Maximum time to wait for a <see cref="PlayCardAction" /> to finish executing.
-    ///     Covers animation time for multi-hit attacks and triggered effects.
-    /// </summary>
-    private const int ActionTimeoutMs = 10000;
-
     private static readonly ModLogger Logger = new("PlayCardHandler");
 
     /// <summary>
@@ -115,7 +109,7 @@ public static class PlayCardHandler
             var targetMsg = targetName != null ? $" targeting {targetName}" : "";
             Logger.Info($"PlayCardAction enqueued: '{card.Title}'{targetMsg}");
 
-            var finalState = await ActionUtils.EnqueueAndAwaitAsync(action, ActionTimeoutMs);
+            var finalState = await ActionUtils.EnqueueAndAwaitAsync(action, ActionUtils.ActionTimeoutMs);
             if (finalState == null)
             {
                 Logger.Warning("PlayCardAction timed out waiting for completion");

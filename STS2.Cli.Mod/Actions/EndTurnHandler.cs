@@ -16,12 +16,6 @@ public static class EndTurnHandler
     private static readonly ModLogger Logger = new("EndTurnAction");
 
     /// <summary>
-    ///     Maximum time to wait for the enemy turn to complete and the next player turn to start.
-    ///     Covers all enemy animations, triggered effects, and transitions.
-    /// </summary>
-    private const int TurnTimeoutMs = 30000;
-
-    /// <summary>
     ///     Handles the end_turn request.
     /// </summary>
     public static async Task<object> HandleRequestAsync(Request request)
@@ -74,11 +68,11 @@ public static class EndTurnHandler
             {
                 // Use PlayerCmd.EndTurn (same as game UI)
                 // canBackOut: false means the AI cannot undo the end-turn decision
-                PlayerCmd.EndTurn(player, canBackOut: false);
+                PlayerCmd.EndTurn(player, false);
                 Logger.Info("EndTurn action executed via PlayerCmd, waiting for enemy turn...");
 
                 // Wait for the next player turn or combat end (with timeout)
-                var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(TurnTimeoutMs));
+                var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(ActionUtils.TurnTimeoutMs));
                 if (completedTask != tcs.Task)
                 {
                     Logger.Warning("EndTurn timed out waiting for enemy turn to complete");
