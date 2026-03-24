@@ -34,7 +34,7 @@ public static class UiUtils
             return typedNode;
         }
 
-        foreach (Node child in parent.GetChildren())
+        foreach (var child in parent.GetChildren())
         {
             var result = FindFirst<T>(child);
             if (result != null)
@@ -76,7 +76,7 @@ public static class UiUtils
             results.Add(typedNode);
         }
 
-        foreach (Node child in node.GetChildren())
+        foreach (var child in node.GetChildren())
         {
             FindAllRecursive(child, results);
         }

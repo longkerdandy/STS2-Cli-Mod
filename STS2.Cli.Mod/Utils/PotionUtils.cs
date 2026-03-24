@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using STS2.Cli.Mod.Models.Actions;
 
 namespace STS2.Cli.Mod.Utils;
 
@@ -152,22 +153,5 @@ public static class PotionUtils
         }
 
         return null;
-    }
-}
-
-/// <summary>
-///     Selection constraints for potion card selection.
-/// </summary>
-public readonly struct SelectionConstraints
-{
-    public int MinSelect { get; }
-    public int MaxSelect { get; }
-    public bool CanSkip { get; }
-
-    public SelectionConstraints(int minSelect, int maxSelect, bool canSkip)
-    {
-        MinSelect = minSelect;
-        MaxSelect = maxSelect;
-        CanSkip = canSkip;
     }
 }
