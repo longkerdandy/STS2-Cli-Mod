@@ -1,6 +1,6 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
-using STS2.Cli.Mod.State;
+using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.State.Builders;

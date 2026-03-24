@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace STS2.Cli.Mod.State;
+namespace STS2.Cli.Mod.Models.State;
 
 /// <summary>
 ///     Individual reward DTO representing a single reward on the reward screen.

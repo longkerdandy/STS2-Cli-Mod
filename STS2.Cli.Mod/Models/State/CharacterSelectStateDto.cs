@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace STS2.Cli.Mod.State;
+namespace STS2.Cli.Mod.Models.State;
 
 /// <summary>
 ///     Character selection screen state DTO containing available characters and selection status.

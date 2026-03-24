@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace STS2.Cli.Mod.State;
+namespace STS2.Cli.Mod.Models.State;
 
 /// <summary>
 ///     Relic state DTO representing an acquired relic.

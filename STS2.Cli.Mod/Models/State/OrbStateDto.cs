@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 
-namespace STS2.Cli.Mod.State;
+namespace STS2.Cli.Mod.Models.State;
 
 /// <summary>
 ///     Orb state DTO representing a channeled orb (Defect exclusive).

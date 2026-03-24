@@ -1,7 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
-using STS2.Cli.Mod.State;
+using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
 using static STS2.Cli.Mod.Utils.TextUtils;
 
