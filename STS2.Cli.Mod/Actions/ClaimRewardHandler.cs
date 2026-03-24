@@ -1,10 +1,8 @@
+using System.Reflection;
 using Godot;
-using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
-using MegaCrit.Sts2.Core.Nodes.Screens;
-using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Rewards;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
@@ -18,8 +16,6 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class ClaimRewardHandler
 {
-    private static readonly ModLogger Logger = new("ClaimRewardHandler");
-
     /// <summary>
     ///     Maximum time to wait for the reward button to be removed from the UI
     ///     after ForceClick (covers claim animation for relic/potion fly-to-inventory).
@@ -30,6 +26,8 @@ public static class ClaimRewardHandler
     ///     Polling interval when waiting for the reward button removal.
     /// </summary>
     private const int PollIntervalMs = 100;
+
+    private static readonly ModLogger Logger = new("ClaimRewardHandler");
 
     /// <summary>
     ///     Handles the claim_reward request.
@@ -52,8 +50,8 @@ public static class ClaimRewardHandler
     /// </summary>
     /// <param name="rewardType">Reward type: gold, potion, relic, special_card.</param>
     /// <param name="itemId">Item ID for potion/relic/special_card (optional for gold).</param>
-    /// <param name="nth">N-th occurrence when multiple rewards of same type exist (0-based).</param>
-    public static async Task<object> ExecuteAsync(string rewardType, string? itemId, int nth)
+    /// <param name="nth">N-th occurrence when multiple rewards of the same type exist (0-based).</param>
+    private static async Task<object> ExecuteAsync(string rewardType, string? itemId, int nth)
     {
         try
         {
@@ -70,9 +68,10 @@ public static class ClaimRewardHandler
 
             if (matchingRewards.Count == 0)
             {
-                // Build list of available reward types for error message
+                // Build a list of available reward types for the error message
                 var availableTypes = GetAvailableRewardTypes(rewardButtons);
-                Logger.Warning($"No {rewardType} reward found with id={itemId ?? "null"}. Available: {string.Join(", ", availableTypes)}");
+                Logger.Warning(
+                    $"No {rewardType} reward found with id={itemId ?? "null"}. Available: {string.Join(", ", availableTypes)}");
 
                 return new
                 {
@@ -85,14 +84,13 @@ public static class ClaimRewardHandler
 
             // If only one matching reward, nth must be 0
             if (matchingRewards.Count == 1 && nth != 0)
-            {
                 return new
                 {
                     ok = false,
                     error = "AMBIGUOUS_REWARD",
-                    message = $"Only one {rewardType} reward available, but nth={nth} was specified. Use nth=0 or omit --nth."
+                    message =
+                        $"Only one {rewardType} reward available, but nth={nth} was specified. Use nth=0 or omit --nth."
                 };
-            }
 
             // If multiple matching rewards, nth is required to be specified (or defaults to 0)
             if (nth < 0 || nth >= matchingRewards.Count)
@@ -102,7 +100,8 @@ public static class ClaimRewardHandler
                 {
                     ok = false,
                     error = "INVALID_REWARD_INDEX",
-                    message = $"{rewardType}{idPart} has {matchingRewards.Count} copies. Use nth from 0 to {matchingRewards.Count - 1}."
+                    message =
+                        $"{rewardType}{idPart} has {matchingRewards.Count} copies. Use nth from 0 to {matchingRewards.Count - 1}."
                 };
             }
 
@@ -135,7 +134,7 @@ public static class ClaimRewardHandler
             var removed = await WaitForButtonRemoval(rewardButton);
             if (!removed)
             {
-                // Button still present — claim likely failed (e.g., potion belt full)
+                // Button still presents — claim likely failed (e.g., potion belt full)
                 if (reward is PotionReward)
                     return new
                     {
@@ -155,7 +154,7 @@ public static class ClaimRewardHandler
                 {
                     reward_type = rewardType,
                     item_id = itemId,
-                    nth = nth,
+                    nth,
                     claimed = true
                 }
             };
@@ -189,7 +188,7 @@ public static class ClaimRewardHandler
                            (itemId == null || MatchesId(rr.ClaimedRelic?.Id.Entry, itemId) ||
                             MatchesId(GetRelicFromReflection(rr)?.Id.Entry, itemId)),
                 "special_card" => reward is SpecialCardReward scr &&
-                                 (itemId == null || MatchesId(GetCardFromReflection(scr)?.Id.Entry, itemId)),
+                                  (itemId == null || MatchesId(GetCardFromReflection(scr)?.Id.Entry, itemId)),
                 _ => false
             };
 
@@ -217,7 +216,7 @@ public static class ClaimRewardHandler
         try
         {
             var field = typeof(RelicReward).GetField("_relic",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
             return field?.GetValue(relicReward) as RelicModel;
         }
         catch
@@ -227,14 +226,14 @@ public static class ClaimRewardHandler
     }
 
     /// <summary>
-    ///     Gets card from SpecialCardReward using reflection (private field access).
+    ///     Gets a card from SpecialCardReward using reflection (private field access).
     /// </summary>
     private static CardModel? GetCardFromReflection(SpecialCardReward specialCardReward)
     {
         try
         {
             var field = typeof(SpecialCardReward).GetField("_card",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
             return field?.GetValue(specialCardReward) as CardModel;
         }
         catch
@@ -244,16 +243,14 @@ public static class ClaimRewardHandler
     }
 
     /// <summary>
-    ///     Gets list of available reward types for error messages.
+    ///     Gets a list of available reward types for error messages.
     /// </summary>
     private static List<string> GetAvailableRewardTypes(List<NRewardButton> rewardButtons)
     {
         var types = new List<string>();
         foreach (var button in rewardButtons)
-        {
             if (button.Reward != null)
                 types.Add(GetRewardTypeName(button.Reward));
-        }
         return types;
     }
 
@@ -279,14 +276,17 @@ public static class ClaimRewardHandler
     /// <summary>
     ///     Gets the reward type name string for the response.
     /// </summary>
-    private static string GetRewardTypeName(Reward reward) => reward switch
+    private static string GetRewardTypeName(Reward reward)
     {
-        GoldReward => "Gold",
-        PotionReward => "Potion",
-        RelicReward => "Relic",
-        SpecialCardReward => "SpecialCard",
-        CardRemovalReward => "CardRemoval",
-        CardReward => "Card",
-        _ => reward.GetType().Name
-    };
+        return reward switch
+        {
+            GoldReward => "Gold",
+            PotionReward => "Potion",
+            RelicReward => "Relic",
+            SpecialCardReward => "SpecialCard",
+            CardRemovalReward => "CardRemoval",
+            CardReward => "Card",
+            _ => reward.GetType().Name
+        };
+    }
 }

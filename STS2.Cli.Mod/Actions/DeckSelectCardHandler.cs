@@ -1,4 +1,5 @@
 using System.Reflection;
+using Godot;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards;
@@ -6,7 +7,6 @@ using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
-using Godot;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
@@ -19,20 +19,18 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class DeckSelectCardHandler
 {
-    private static readonly ModLogger Logger = new("DeckSelectCardHandler");
-
     /// <summary>
     ///     Delay between card selection clicks (for multi-select).
     /// </summary>
     private const int ClickDelayMs = 100;
 
     /// <summary>
-    ///     Delay after all selections to allow preview to appear.
+    ///     Delay after all selections to allow the preview to appear.
     /// </summary>
     private const int PreviewAppearDelayMs = 300;
 
     /// <summary>
-    ///     Maximum time to wait for the screen to be removed after confirm.
+    ///     Maximum time to wait for the screen to be removed after confirmation.
     /// </summary>
     private const int CompletionTimeoutMs = 5000;
 
@@ -40,6 +38,8 @@ public static class DeckSelectCardHandler
     ///     Polling interval when waiting for UI transitions.
     /// </summary>
     private const int PollIntervalMs = 100;
+
+    private static readonly ModLogger Logger = new("DeckSelectCardHandler");
 
     /// <summary>
     ///     Handles the deck_select_card request.
@@ -73,62 +73,55 @@ public static class DeckSelectCardHandler
     /// <param name="cardIds">Array of card IDs to select.</param>
     /// <param name="nthValues">Optional nth values for each card ID (0-based).</param>
     /// <returns>Response object indicating success or failure.</returns>
-    public static async Task<object> ExecuteAsync(string[] cardIds, int[]? nthValues = null)
+    private static async Task<object> ExecuteAsync(string[] cardIds, int[]? nthValues = null)
     {
         try
         {
             // Guard: Must be on a grid card selection screen
             var screen = FindGridSelectionScreen();
             if (screen == null)
-            {
                 return new
                 {
                     ok = false,
                     error = "NOT_IN_DECK_CARD_SELECT",
                     message = "Not on a deck card selection screen. Use 'sts2 state' to check current screen."
                 };
-            }
 
             // Get prefs for validation
             var prefs = GetPrefs(screen);
             if (prefs == null)
-            {
                 return new
                 {
                     ok = false,
                     error = "INTERNAL_ERROR",
                     message = "Failed to read selection preferences from screen."
                 };
-            }
 
             // Validate selection count
             if (cardIds.Length < 1 || cardIds.Length > prefs.Value.MaxSelect)
-            {
                 return new
                 {
                     ok = false,
                     error = "INVALID_SELECTION_COUNT",
-                    message = $"This selection requires 1-{prefs.Value.MaxSelect} card(s), but {cardIds.Length} was provided."
+                    message =
+                        $"This selection requires 1-{prefs.Value.MaxSelect} card(s), but {cardIds.Length} was provided."
                 };
-            }
 
             // Get the card list and grid
             var cards = GetCards(screen);
             var grid = GetGrid(screen);
             if (cards == null || grid == null)
-            {
                 return new
                 {
                     ok = false,
                     error = "INTERNAL_ERROR",
                     message = "Failed to access card grid or card list."
                 };
-            }
 
             // Find and select each card
             var selectedCardIds = new List<string>();
 
-            for (int i = 0; i < cardIds.Length; i++)
+            for (var i = 0; i < cardIds.Length; i++)
             {
                 var cardId = cardIds[i];
                 var nth = nthValues != null && i < nthValues.Length ? nthValues[i] : 0;
@@ -136,7 +129,6 @@ public static class DeckSelectCardHandler
                 // Find the CardModel in the _cards list by ID
                 var cardModel = FindCardModelById(cards, cardId, nth);
                 if (cardModel == null)
-                {
                     return new
                     {
                         ok = false,
@@ -144,19 +136,16 @@ public static class DeckSelectCardHandler
                         message = $"Card '{cardId}' (nth={nth}) not found in selection screen.",
                         available_cards = GetAvailableCardIds(cards)
                     };
-                }
 
                 // Find the holder in the grid using the CardModel reference
                 var holder = grid.GetCardHolder(cardModel);
                 if (holder == null)
-                {
                     return new
                     {
                         ok = false,
                         error = "CARD_NOT_FOUND",
                         message = $"Card holder for '{cardId}' (nth={nth}) not found in grid."
                     };
-                }
 
                 // Emit Pressed signal on the holder — triggers NCardGrid.OnHolderPressed → HolderPressed signal → OnCardClicked
                 Logger.Info($"Selecting card: {cardId} (nth={nth})");
@@ -164,20 +153,17 @@ public static class DeckSelectCardHandler
                 selectedCardIds.Add(cardId);
 
                 // Small delay between clicks for multi-select
-                if (i < cardIds.Length - 1)
-                {
-                    await Task.Delay(ClickDelayMs);
-                }
+                if (i < cardIds.Length - 1) await Task.Delay(ClickDelayMs);
             }
 
             // After selecting all cards:
-            // If we selected exactly MaxSelect cards, the preview should auto-appear.
-            // If we selected fewer than MaxSelect but >= MinSelect, we need to click the confirm button
+            // If we selected MaxSelect cards, the preview should auto-appear.
+            // If we selected fewer than MaxSelect but >= MinSelect, we need to click the confirmation button
             // to trigger PreviewSelection.
             if (cardIds.Length < prefs.Value.MaxSelect && cardIds.Length >= prefs.Value.MinSelect
-                && prefs.Value.MinSelect != prefs.Value.MaxSelect)
+                                                       && prefs.Value.MinSelect != prefs.Value.MaxSelect)
             {
-                // Need to click the manual confirm button to trigger preview
+                // Need to click the manual confirmation button to trigger preview
                 await Task.Delay(PreviewAppearDelayMs);
                 var confirmButton = GetConfirmButton(screen);
                 if (confirmButton != null)
@@ -187,7 +173,7 @@ public static class DeckSelectCardHandler
                 }
             }
 
-            // Wait for preview to appear, then confirm
+            // Wait for the preview to appear, then confirm
             await Task.Delay(PreviewAppearDelayMs);
 
             // Click the preview confirm button to finalize
@@ -202,7 +188,7 @@ public static class DeckSelectCardHandler
                 Logger.Warning("Preview confirm button not found — selection may complete via other path");
             }
 
-            // Wait for the screen to be removed from overlay stack
+            // Wait for the screen to be removed from the overlay stack
             var completed = await WaitForScreenRemoval(screen);
             if (!completed)
                 Logger.Warning("Deck card selection completed but screen was not removed in time");
@@ -232,45 +218,39 @@ public static class DeckSelectCardHandler
     ///     Must be called on the Godot main thread (via RunOnMainThreadAsync from PipeServer).
     /// </summary>
     /// <returns>Response object indicating success or failure.</returns>
-    public static async Task<object> ExecuteSkipAsync()
+    private static async Task<object> ExecuteSkipAsync()
     {
         try
         {
             // Guard: Must be on a grid card selection screen
             var screen = FindGridSelectionScreen();
             if (screen == null)
-            {
                 return new
                 {
                     ok = false,
                     error = "NOT_IN_DECK_CARD_SELECT",
                     message = "Not on a deck card selection screen."
                 };
-            }
 
             // Check if cancelable
             var prefs = GetPrefs(screen);
             if (prefs is not { Cancelable: true })
-            {
                 return new
                 {
                     ok = false,
                     error = "CANNOT_SKIP",
                     message = "This deck card selection cannot be cancelled/skipped."
                 };
-            }
 
             // Find and click the close button
             var closeButton = GetCloseButton(screen);
             if (closeButton == null)
-            {
                 return new
                 {
                     ok = false,
                     error = "UI_NOT_FOUND",
                     message = "Close button not found on deck card selection screen."
                 };
-            }
 
             Logger.Info("Skipping deck card selection via close button");
             closeButton.ForceClick();
@@ -306,10 +286,8 @@ public static class DeckSelectCardHandler
             return gridScreen;
 
         foreach (var child in overlayStack.GetChildren())
-        {
             if (child is NCardGridSelectionScreen childScreen)
                 return childScreen;
-        }
 
         return null;
     }
@@ -369,7 +347,7 @@ public static class DeckSelectCardHandler
     }
 
     /// <summary>
-    ///     Gets the preview confirm button from the screen via node path.
+    ///     Gets the preview confirm button from the screen via the node path.
     ///     NDeckCardSelectScreen uses "%PreviewConfirm" inside "%PreviewContainer".
     ///     NDeckUpgradeSelectScreen uses different node names for single/multi preview.
     ///     Falls back to searching by type.
@@ -389,11 +367,10 @@ public static class DeckSelectCardHandler
             // NDeckUpgradeSelectScreen: has single and multi preview
             if (screen is NDeckUpgradeSelectScreen)
             {
-                // Try single preview confirm first
+                // Try a single preview confirm first
                 var singleField = typeof(NDeckUpgradeSelectScreen).GetField("_singlePreviewConfirmButton",
                     BindingFlags.NonPublic | BindingFlags.Instance);
-                var singleBtn = singleField?.GetValue(screen) as NConfirmButton;
-                if (singleBtn != null && GodotObject.IsInstanceValid(singleBtn))
+                if (singleField?.GetValue(screen) is NConfirmButton singleBtn && GodotObject.IsInstanceValid(singleBtn))
                     return singleBtn;
 
                 // Fall back to multi preview confirm
@@ -410,7 +387,7 @@ public static class DeckSelectCardHandler
                 return field?.GetValue(screen) as NConfirmButton;
             }
 
-            // Generic fallback: search for confirm buttons in the tree
+            // Generic fallback: search for confirmation buttons in the tree
             return UiHelper.FindFirst<NConfirmButton>(screen);
         }
         catch (Exception ex)
@@ -421,7 +398,7 @@ public static class DeckSelectCardHandler
     }
 
     /// <summary>
-    ///     Gets the manual confirm button (for when MinSelect != MaxSelect).
+    ///     Gets the manual confirmation button (for when MinSelect != MaxSelect).
     ///     NDeckCardSelectScreen: _confirmButton (%Confirm).
     ///     NSimpleCardSelectScreen: _confirmButton (%Confirm).
     /// </summary>
@@ -483,16 +460,15 @@ public static class DeckSelectCardHandler
     /// </summary>
     private static CardModel? FindCardModelById(IReadOnlyList<CardModel> cards, string cardId, int nth)
     {
-        int matchCount = 0;
+        var matchCount = 0;
         foreach (var card in cards)
-        {
             if (card.Id.Entry.Equals(cardId, StringComparison.OrdinalIgnoreCase))
             {
                 if (matchCount == nth)
                     return card;
                 matchCount++;
             }
-        }
+
         return null;
     }
 

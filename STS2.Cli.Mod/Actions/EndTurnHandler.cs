@@ -34,7 +34,7 @@ public static class EndTurnHandler
     ///     Ends the player's turn, waits for the enemy turn to complete, and returns execution results.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static async Task<object> ExecuteAsync()
+    private static async Task<object> ExecuteAsync()
     {
         try
         {

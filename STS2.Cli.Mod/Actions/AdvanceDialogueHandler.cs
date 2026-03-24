@@ -1,10 +1,8 @@
-using Godot;
-using MegaCrit.Sts2.Core.Events;
-using MegaCrit.Sts2.Core.Models;
+using System.Collections;
+using System.Reflection;
 using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
-using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Models.Message;
@@ -19,8 +17,6 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class AdvanceDialogueHandler
 {
-    private static readonly ModLogger Logger = new("AdvanceDialogueHandler");
-
     /// <summary>
     ///     Delay after ForceClick before starting to poll for state changes.
     /// </summary>
@@ -41,13 +37,15 @@ public static class AdvanceDialogueHandler
     /// </summary>
     private const int MaxAutoAdvanceLines = 50;
 
+    private static readonly ModLogger Logger = new("AdvanceDialogueHandler");
+
     /// <summary>
     ///     Handles the advance_dialogue request.
     ///     Validates parameters and delegates to ExecuteAsync.
     /// </summary>
     public static async Task<object> HandleRequestAsync(Request request)
     {
-        // args[0] = 1 for auto mode, 0 or not present for single advance
+        // args[0] = 1 for auto mode, 0 or not present for a single advance
         var auto = request.Args is { Length: > 0 } && request.Args[0] == 1;
         Logger.Info($"Requested to advance dialogue (auto={auto})");
 
@@ -59,7 +57,7 @@ public static class AdvanceDialogueHandler
     ///     Must be called on the Godot main thread.
     /// </summary>
     /// <param name="auto">If true, auto-advance until options appear or dialogue ends.</param>
-    public static async Task<object> ExecuteAsync(bool auto = false)
+    private static async Task<object> ExecuteAsync(bool auto = false)
     {
         try
         {
@@ -70,27 +68,33 @@ public static class AdvanceDialogueHandler
 
             // --- Guard: Check layout is Ancient ---
             if (eventRoom.Layout is not NAncientEventLayout ancientLayout)
-                return new { ok = false, error = "NOT_ANCIENT_EVENT", message = "Current event is not an Ancient event" };
+                return new
+                {
+                    ok = false, error = "NOT_ANCIENT_EVENT", message = "Current event is not an Ancient event"
+                };
 
             // --- Guard: Check we're in dialogue phase ---
             if (IsDialogueFinished(ancientLayout))
-                return new { ok = false, error = "NOT_IN_DIALOGUE", message = "Dialogue has already finished, options are available" };
+                return new
+                {
+                    ok = false, error = "NOT_IN_DIALOGUE",
+                    message = "Dialogue has already finished, options are available"
+                };
 
             // --- Find the dialogue hitbox ---
             var hitbox = FindDialogueHitbox(ancientLayout);
             if (hitbox == null)
-                return new { ok = false, error = "DIALOGUE_HITBOX_NOT_FOUND", message = "Could not find dialogue hitbox" };
+                return new
+                {
+                    ok = false, error = "DIALOGUE_HITBOX_NOT_FOUND", message = "Could not find dialogue hitbox"
+                };
 
             if (auto)
-            {
                 // Auto-advance all dialogue lines
                 return await AutoAdvanceDialogue(ancientLayout, hitbox);
-            }
-            else
-            {
-                // Advance single line
-                return await AdvanceSingleLine(ancientLayout, hitbox);
-            }
+
+            // Advance a single line
+            return await AdvanceSingleLine(ancientLayout, hitbox);
         }
         catch (Exception ex)
         {
@@ -113,7 +117,7 @@ public static class AdvanceDialogueHandler
         // Wait for animation
         await Task.Delay(PostClickDelayMs);
 
-        // Wait for line to change or dialogue to finish
+        // Wait for the line to change or dialogue to finish
         var advanced = await WaitForDialogueAdvance(ancientLayout, initialLine);
 
         if (!advanced)
@@ -153,7 +157,7 @@ public static class AdvanceDialogueHandler
     private static async Task<object> AutoAdvanceDialogue(NAncientEventLayout ancientLayout, NClickableControl hitbox)
     {
         var linesAdvanced = 0;
-        var startLine = GetCurrentDialogueLine(ancientLayout);
+        GetCurrentDialogueLine(ancientLayout);
 
         Logger.Info("Auto-advancing Ancient event dialogue");
 
@@ -167,7 +171,7 @@ public static class AdvanceDialogueHandler
             // Wait for animation
             await Task.Delay(PostClickDelayMs);
 
-            // Wait for line to change
+            // Wait for the line to change
             var advanced = await WaitForDialogueAdvance(ancientLayout, currentLine);
 
             if (!advanced)
@@ -178,14 +182,14 @@ public static class AdvanceDialogueHandler
 
             linesAdvanced++;
 
-            // Check if screen changed (e.g., combat started)
+            // Check if the screen changed (e.g., combat started)
             if (NOverlayStack.Instance?.Peek() is not null)
             {
                 Logger.Info("Overlay detected during auto-advance, stopping");
                 break;
             }
 
-            // Check if map opened (event ended)
+            // Check if the map opened (event ended)
             if (NMapScreen.Instance is { IsOpen: true })
             {
                 Logger.Info("Map opened during auto-advance, event ended");
@@ -201,10 +205,7 @@ public static class AdvanceDialogueHandler
 
         // Build updated event state if dialogue finished
         object? eventState = null;
-        if (isFinished)
-        {
-            eventState = EventStateBuilder.Build();
-        }
+        if (isFinished) eventState = EventStateBuilder.Build();
 
         return new
         {
@@ -228,17 +229,15 @@ public static class AdvanceDialogueHandler
     {
         try
         {
-            // Try to find via node path first
+            // Try to find via the node path first
             var hitbox = ancientLayout.GetNodeOrNull<NClickableControl>("%DialogueHitbox");
             if (hitbox != null)
                 return hitbox;
 
             // Fallback: search children
             foreach (var child in ancientLayout.GetChildren())
-            {
                 if (child is NClickableControl clickable && child.Name.ToString().Contains("Hitbox"))
                     return clickable;
-            }
 
             Logger.Warning("Could not find dialogue hitbox in Ancient layout");
             return null;
@@ -274,7 +273,7 @@ public static class AdvanceDialogueHandler
         try
         {
             var field = typeof(NAncientEventLayout).GetField("_currentDialogueLine",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
             return field?.GetValue(ancientLayout) as int? ?? 0;
         }
         catch
@@ -291,8 +290,8 @@ public static class AdvanceDialogueHandler
         try
         {
             var field = typeof(NAncientEventLayout).GetField("_dialogue",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            var dialogue = field?.GetValue(ancientLayout) as System.Collections.IList;
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            var dialogue = field?.GetValue(ancientLayout) as IList;
             return dialogue?.Count ?? 0;
         }
         catch
@@ -312,7 +311,7 @@ public static class AdvanceDialogueHandler
             await Task.Delay(PollIntervalMs);
             elapsed += PollIntervalMs;
 
-            // Check if line changed
+            // Check if the line changed
             var currentLine = GetCurrentDialogueLine(ancientLayout);
             if (currentLine != previousLine)
                 return true;
@@ -325,7 +324,7 @@ public static class AdvanceDialogueHandler
             if (NOverlayStack.Instance?.Peek() is not null)
                 return true;
 
-            // Check if map opened
+            // Check if the map opened
             if (NMapScreen.Instance is { IsOpen: true })
                 return true;
         }

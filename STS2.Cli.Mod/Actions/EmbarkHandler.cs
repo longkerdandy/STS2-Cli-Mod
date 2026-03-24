@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
-using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
@@ -28,9 +27,9 @@ public static class EmbarkHandler
     /// <remarks>
     ///     Must be called on the Godot main thread (PipeServer handles dispatching).
     /// </remarks>
-    public static object Execute()
+    private static object Execute()
     {
-        // Guard: Must be on character select screen
+        // Guard: Must be on the character select screen
         var screen = CharacterSelectHelper.FindScreen();
         if (screen == null)
         {
@@ -69,7 +68,7 @@ public static class EmbarkHandler
             };
         }
 
-        // Check if button is enabled
+        // Check if the button is enabled
         if (!embarkBtn.IsEnabled)
         {
             Logger.Warning("Embark button is disabled");
@@ -81,7 +80,7 @@ public static class EmbarkHandler
             };
         }
 
-        // Click embark via ForceClick which emits Released signal
+        // Click embark via ForceClick, which emits the Released signal
         Logger.Info("Clicking embark button");
         embarkBtn.ForceClick();
 

@@ -1,5 +1,4 @@
 using Godot;
-using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
@@ -19,8 +18,6 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class ChooseCardHandler
 {
-    private static readonly ModLogger Logger = new("ChooseCardHandler");
-
     /// <summary>
     ///     Delay after the card reward selection screen opens before interacting with cards.
     /// </summary>
@@ -35,6 +32,8 @@ public static class ChooseCardHandler
     ///     Polling interval when waiting for UI transitions.
     /// </summary>
     private const int PollIntervalMs = 100;
+
+    private static readonly ModLogger Logger = new("ChooseCardHandler");
 
     /// <summary>
     ///     Handles the choose_card request.
@@ -81,8 +80,8 @@ public static class ChooseCardHandler
     /// </summary>
     /// <param name="rewardType">Reward type (only 'card' is supported).</param>
     /// <param name="cardId">Card ID to select (e.g., STRIKE_IRONCLAD).</param>
-    /// <param name="nth">N-th card reward when multiple exist (0-based).</param>
-    public static async Task<object> ExecuteAsync(string rewardType, string cardId, int nth)
+    /// <param name="nth">N-th card reward when multiple exists (0-based).</param>
+    private static async Task<object> ExecuteAsync(string rewardType, string cardId, int nth)
     {
         try
         {
@@ -100,14 +99,12 @@ public static class ChooseCardHandler
 
             // If multiple card rewards exist and nth is out of range
             if (nth < 0 || nth >= cardRewards.Count)
-            {
                 return new
                 {
                     ok = false,
                     error = "INVALID_REWARD_INDEX",
                     message = $"Card reward count: {cardRewards.Count}. Use nth from 0 to {cardRewards.Count - 1}."
                 };
-            }
 
             var (rewardButton, cardReward) = cardRewards[nth];
 
@@ -116,7 +113,8 @@ public static class ChooseCardHandler
             if (cardChoice == null)
             {
                 var availableCards = GetAvailableCardIds(cardReward);
-                Logger.Warning($"Card '{cardId}' not found in card reward (nth={nth}). Available: {string.Join(", ", availableCards)}");
+                Logger.Warning(
+                    $"Card '{cardId}' not found in card reward (nth={nth}). Available: {string.Join(", ", availableCards)}");
 
                 return new
                 {
@@ -179,7 +177,7 @@ public static class ChooseCardHandler
                 data = new
                 {
                     reward_type = rewardType,
-                    nth = nth,
+                    nth,
                     card_id = selectedCardId,
                     card_name = cardName
                 }
@@ -197,8 +195,8 @@ public static class ChooseCardHandler
     ///     Must be called on the Godot main thread.
     /// </summary>
     /// <param name="rewardType">Reward type (only 'card' is supported).</param>
-    /// <param name="nth">N-th card reward when multiple exist (0-based).</param>
-    public static async Task<object> ExecuteSkipAsync(string rewardType, int nth)
+    /// <param name="nth">N-th card reward when multiple exists (0-based).</param>
+    private static async Task<object> ExecuteSkipAsync(string rewardType, int nth)
     {
         try
         {
@@ -215,14 +213,12 @@ public static class ChooseCardHandler
                 return new { ok = false, error = "REWARD_NOT_FOUND", message = "No card rewards available" };
 
             if (nth < 0 || nth >= cardRewards.Count)
-            {
                 return new
                 {
                     ok = false,
                     error = "INVALID_REWARD_INDEX",
                     message = $"Card reward count: {cardRewards.Count}. Use nth from 0 to {cardRewards.Count - 1}."
                 };
-            }
 
             var (rewardButton, _) = cardRewards[nth];
 
@@ -271,7 +267,7 @@ public static class ChooseCardHandler
                 data = new
                 {
                     reward_type = rewardType,
-                    nth = nth,
+                    nth,
                     skipped = true
                 }
             };
@@ -292,10 +288,8 @@ public static class ChooseCardHandler
         var rewardButtons = RewardUiHelper.FindRewardButtons(screen);
 
         foreach (var button in rewardButtons)
-        {
             if (button.Reward is CardReward cardReward)
                 result.Add((button, cardReward));
-        }
 
         return result;
     }
@@ -306,25 +300,21 @@ public static class ChooseCardHandler
     private static CardModel? FindCardById(CardReward cardReward, string cardId)
     {
         var cards = cardReward.Cards;
-        if (cards == null) return null;
 
         foreach (var card in cards)
-        {
             if (card.Id.Entry.Equals(cardId, StringComparison.OrdinalIgnoreCase))
                 return card;
-        }
 
         return null;
     }
 
     /// <summary>
-    ///     Gets list of available card IDs in a reward for error messages.
+    ///     Gets a list of available card IDs in a reward for error messages.
     /// </summary>
     private static List<string> GetAvailableCardIds(CardReward cardReward)
     {
         var ids = new List<string>();
         var cards = cardReward.Cards;
-        if (cards == null) return ids;
 
         foreach (var card in cards)
             ids.Add(card.Id.Entry);
@@ -333,15 +323,13 @@ public static class ChooseCardHandler
     }
 
     /// <summary>
-    ///     Finds the card holder by card ID.
+    ///     Finds the cardholder by card ID.
     /// </summary>
     private static NCardHolder? FindCardHolderById(List<NCardHolder> cardHolders, string cardId)
     {
         foreach (var holder in cardHolders)
-        {
             if (holder.CardModel?.Id.Entry.Equals(cardId, StringComparison.OrdinalIgnoreCase) == true)
                 return holder;
-        }
         return null;
     }
 

@@ -1,12 +1,9 @@
+using System.Reflection;
 using Godot;
-using MegaCrit.Sts2.Core.Events;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
-using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
-using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
@@ -15,12 +12,10 @@ namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
 ///     Handles choosing an event option by index via ForceClick.
-///     Returns updated event state after the option resolves.
+///     Returns the updated event state after the option resolves.
 /// </summary>
 public static class ChooseEventHandler
 {
-    private static readonly ModLogger Logger = new("ChooseEventHandler");
-
     /// <summary>
     ///     Delay after ForceClick before starting to poll for state changes.
     /// </summary>
@@ -32,9 +27,11 @@ public static class ChooseEventHandler
     private const int PollIntervalMs = 100;
 
     /// <summary>
-    ///     Maximum time to wait for event state to change after clicking an option.
+    ///     Maximum time to wait for the event state to change after clicking an option.
     /// </summary>
     private const int MaxWaitTimeMs = 5000;
+
+    private static readonly ModLogger Logger = new("ChooseEventHandler");
 
     /// <summary>
     ///     Handles the choose_event request.
@@ -56,7 +53,7 @@ public static class ChooseEventHandler
     ///     Must be called on the Godot main thread.
     /// </summary>
     /// <param name="optionIndex">0-based index of the option to choose.</param>
-    public static async Task<object> ExecuteAsync(int optionIndex)
+    private static async Task<object> ExecuteAsync(int optionIndex)
     {
         try
         {
@@ -70,7 +67,7 @@ public static class ChooseEventHandler
             if (layout == null)
                 return new { ok = false, error = "NO_EVENT_LAYOUT", message = "Event layout not found" };
 
-            // --- Guard: Get event model and validate option index ---
+            // --- Guard: Get the event model and validate the option index ---
             var eventModel = GetEventModel(eventRoom);
             if (eventModel == null)
                 return new { ok = false, error = "INTERNAL_ERROR", message = "Failed to access event model" };
@@ -89,7 +86,7 @@ public static class ChooseEventHandler
                 Logger.Info("Event is finished, calling NEventRoom.Proceed()");
                 await NEventRoom.Proceed();
 
-                // Wait for map to open
+                // Wait for the map to open
                 var proceeded = await WaitForProceed(eventRoom);
                 if (!proceeded)
                     Logger.Warning("Timed out waiting for proceed transition");
@@ -101,7 +98,7 @@ public static class ChooseEventHandler
                     {
                         option_index = 0,
                         is_proceed = true,
-                        proceeded = proceeded
+                        proceeded
                     }
                 };
             }
@@ -148,10 +145,10 @@ public static class ChooseEventHandler
             // --- Wait a bit for the click to register ---
             await Task.Delay(PostClickDelayMs);
 
-            // --- Post-click handling based on option type ---
+            // --- Post-click handling based on the option type ---
             if (selectedOption.IsProceed)
             {
-                // Wait for map to open or event room to leave tree
+                // Wait for the map to open or event room to leave the tree
                 var proceeded = await WaitForProceed(eventRoom);
                 if (!proceeded)
                     Logger.Warning("Timed out waiting for proceed transition");
@@ -163,39 +160,37 @@ public static class ChooseEventHandler
                     {
                         option_index = optionIndex,
                         is_proceed = true,
-                        proceeded = proceeded
+                        proceeded
                     }
                 };
             }
-            else
+
+            // Wait for the event state to change (new page)
+            var stateChanged = await WaitForEventStateChange(eventRoom, preClickSnapshot);
+            if (!stateChanged)
             {
-                // Wait for event state to change (new page)
-                var stateChanged = await WaitForEventStateChange(eventRoom, preClickSnapshot);
-                if (!stateChanged)
-                {
-                    Logger.Warning("Timed out waiting for event state change");
-                    return new
-                    {
-                        ok = false,
-                        error = "EVENT_TIMEOUT",
-                        message = "Event state did not change within timeout period"
-                    };
-                }
-
-                // Build and return updated event state
-                var updatedEventState = EventStateBuilder.Build();
-
+                Logger.Warning("Timed out waiting for event state change");
                 return new
                 {
-                    ok = true,
-                    data = new
-                    {
-                        option_index = optionIndex,
-                        is_proceed = false,
-                        event_state = updatedEventState
-                    }
+                    ok = false,
+                    error = "EVENT_TIMEOUT",
+                    message = "Event state did not change within timeout period"
                 };
             }
+
+            // Build and return the updated event state
+            var updatedEventState = EventStateBuilder.Build();
+
+            return new
+            {
+                ok = true,
+                data = new
+                {
+                    option_index = optionIndex,
+                    is_proceed = false,
+                    event_state = updatedEventState
+                }
+            };
         }
         catch (Exception ex)
         {
@@ -212,7 +207,7 @@ public static class ChooseEventHandler
         try
         {
             var field = typeof(NEventRoom).GetField("_event",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
             return field?.GetValue(eventRoom) as EventModel;
         }
         catch (Exception ex)
@@ -223,7 +218,7 @@ public static class ChooseEventHandler
     }
 
     /// <summary>
-    ///     Waits for the proceed transition (map opens or event room leaves tree).
+    ///     Waits for the Proceed transition (map opens or event room leaves the tree).
     /// </summary>
     private static async Task<bool> WaitForProceed(NEventRoom originalEventRoom)
     {
@@ -233,11 +228,11 @@ public static class ChooseEventHandler
             await Task.Delay(PollIntervalMs);
             elapsed += PollIntervalMs;
 
-            // Check if map opened
+            // Check if the map opened
             if (NMapScreen.Instance is { IsOpen: true })
                 return true;
 
-            // Check if event room left tree
+            // Check if event room left the tree
             if (!GodotObject.IsInstanceValid(originalEventRoom) || !originalEventRoom.IsInsideTree())
                 return true;
 
@@ -250,7 +245,7 @@ public static class ChooseEventHandler
     }
 
     /// <summary>
-    ///     Waits for event state to change (new options or finished).
+    ///     Waits for the event state to change (new options or finished).
     /// </summary>
     private static async Task<bool> WaitForEventStateChange(NEventRoom eventRoom, EventStateSnapshot snapshot)
     {
@@ -260,7 +255,7 @@ public static class ChooseEventHandler
             await Task.Delay(PollIntervalMs);
             elapsed += PollIntervalMs;
 
-            // Check if screen changed (combat started)
+            // Check if the screen changed (combat started)
             if (!eventRoom.IsInsideTree())
                 return true;
 
@@ -268,7 +263,7 @@ public static class ChooseEventHandler
             if (overlay is not null)
                 return true;
 
-            // Check if map opened (event finished)
+            // Check if the map opened (event finished)
             if (NMapScreen.Instance is { IsOpen: true })
                 return true;
 
@@ -293,7 +288,7 @@ public static class ChooseEventHandler
         if (eventModel.CurrentOptions.Count != snapshot.OptionCount)
             return true;
 
-        // Check if first option title changed
+        // Check if the first option title changed
         if (eventModel.CurrentOptions.Count > 0 && snapshot.FirstOptionTitle != null)
         {
             var currentFirstTitle = eventModel.CurrentOptions[0].Title.GetFormattedText();
@@ -313,10 +308,6 @@ public static class ChooseEventHandler
     /// </summary>
     private class EventStateSnapshot
     {
-        public int OptionCount { get; }
-        public string? FirstOptionTitle { get; }
-        public bool IsFinished { get; }
-
         public EventStateSnapshot(EventModel eventModel)
         {
             OptionCount = eventModel.CurrentOptions.Count;
@@ -330,7 +321,12 @@ public static class ChooseEventHandler
             {
                 FirstOptionTitle = null;
             }
+
             IsFinished = eventModel.IsFinished;
         }
+
+        public int OptionCount { get; }
+        public string? FirstOptionTitle { get; }
+        public bool IsFinished { get; }
     }
 }

@@ -16,13 +16,13 @@ namespace STS2.Cli.Mod.Actions;
 /// </summary>
 public static class PlayCardHandler
 {
-    private static readonly ModLogger Logger = new("PlayCardHandler");
-
     /// <summary>
     ///     Maximum time to wait for a <see cref="PlayCardAction" /> to finish executing.
     ///     Covers animation time for multi-hit attacks and triggered effects.
     /// </summary>
     private const int ActionTimeoutMs = 10000;
+
+    private static readonly ModLogger Logger = new("PlayCardHandler");
 
     /// <summary>
     ///     Handles the play_card request.
@@ -34,7 +34,8 @@ public static class PlayCardHandler
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Card ID required (e.g., STRIKE_IRONCLAD)" };
 
         var nthValue = request.Nth ?? 0;
-        Logger.Info($"Requested to play card {request.Id}, nth={nthValue}, target={request.Target?.ToString() ?? "none"}");
+        Logger.Info(
+            $"Requested to play card {request.Id}, nth={nthValue}, target={request.Target?.ToString() ?? "none"}");
 
         return await ExecuteAsync(request.Id, nthValue, request.Target);
     }
@@ -46,7 +47,7 @@ public static class PlayCardHandler
     /// <param name="cardId">Card ID to play (e.g., "STRIKE_IRONCLAD").</param>
     /// <param name="nth">N-th occurrence when multiple copies exist (0-based).</param>
     /// <param name="targetCombatId">Optional target combat ID for targeted cards.</param>
-    public static async Task<object> ExecuteAsync(string cardId, int nth = 0, int? targetCombatId = null)
+    private static async Task<object> ExecuteAsync(string cardId, int nth = 0, int? targetCombatId = null)
     {
         try
         {
@@ -167,12 +168,8 @@ public static class PlayCardHandler
         // Find all matching cards
         var matchingCards = new List<(CardModel Card, int Index)>();
         for (var i = 0; i < hand.Cards.Count; i++)
-        {
             if (hand.Cards[i].Id.Entry.Equals(cardId, StringComparison.OrdinalIgnoreCase))
-            {
                 matchingCards.Add((hand.Cards[i], i));
-            }
-        }
 
         if (matchingCards.Count == 0)
         {
@@ -196,12 +193,14 @@ public static class PlayCardHandler
             {
                 ok = false,
                 error = "INVALID_CARD_INDEX",
-                message = $"Card '{cardId}' has {matchingCards.Count} copies in hand. Use nth from 0 to {matchingCards.Count - 1}."
+                message =
+                    $"Card '{cardId}' has {matchingCards.Count} copies in hand. Use nth from 0 to {matchingCards.Count - 1}."
             });
         }
 
         var selected = matchingCards[nth];
-        Logger.Info($"Found card '{cardId}' at hand index {selected.Index} (nth={nth}, total matches={matchingCards.Count})");
+        Logger.Info(
+            $"Found card '{cardId}' at hand index {selected.Index} (nth={nth}, total matches={matchingCards.Count})");
 
         return (selected.Card, selected.Index, null);
     }

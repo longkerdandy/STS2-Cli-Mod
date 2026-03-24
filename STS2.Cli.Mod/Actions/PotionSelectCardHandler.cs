@@ -53,14 +53,12 @@ public static class PotionSelectCardHandler
         // Guard: Must be in the POTION_SELECTION screen
         var selectionScreen = PotionUtils.FindSelectionScreen();
         if (selectionScreen == null)
-        {
             return new
             {
                 ok = false,
                 error = "NOT_IN_POTION_SELECTION",
                 message = "Not in potion card selection screen. Use 'sts2 state' to check current screen."
             };
-        }
 
         // Get selection constraints from the screen (detect from available cards or use defaults)
         var cardHolders = UiHelper.FindAll<NCardHolder>(selectionScreen);
@@ -68,14 +66,13 @@ public static class PotionSelectCardHandler
 
         // Validate selection count
         if (cardIds.Length < constraints.MinSelect || cardIds.Length > constraints.MaxSelect)
-        {
             return new
             {
                 ok = false,
                 error = "INVALID_SELECTION_COUNT",
-                message = $"This potion requires selecting {constraints.MinSelect}-{constraints.MaxSelect} card(s), but {cardIds.Length} was provided."
+                message =
+                    $"This potion requires selecting {constraints.MinSelect}-{constraints.MaxSelect} card(s), but {cardIds.Length} was provided."
             };
-        }
 
         // Validate no duplicates
         var uniqueIds = new HashSet<string>();
@@ -83,19 +80,17 @@ public static class PotionSelectCardHandler
         {
             var key = $"{cardIds[i]}_{nthValues?[i] ?? 0}";
             if (!uniqueIds.Add(key))
-            {
                 return new
                 {
                     ok = false,
                     error = "DUPLICATE_SELECTION",
                     message = $"Card '{cardIds[i]}' (nth={nthValues?[i] ?? 0}) was selected multiple times."
                 };
-            }
         }
 
         // Find and select each card by ID
         var selectedCards = new List<SelectedCardDto>();
-        
+
         for (var i = 0; i < cardIds.Length; i++)
         {
             var cardId = cardIds[i];
@@ -103,19 +98,17 @@ public static class PotionSelectCardHandler
 
             var holder = PotionUtils.FindCardHolderById(selectionScreen, cardId, nth);
             if (holder == null)
-            {
                 return new
                 {
                     ok = false,
                     error = "CARD_NOT_FOUND",
                     message = $"Card '{cardId}' (nth={nth}) not found in selection screen."
                 };
-            }
 
             // Emit click signal
             Logger.Info($"Selecting card: {cardId} (nth={nth})");
             holder.EmitSignal(NCardHolder.SignalName.Pressed, holder);
-            
+
             selectedCards.Add(new SelectedCardDto
             {
                 Index = i,
@@ -123,10 +116,7 @@ public static class PotionSelectCardHandler
             });
 
             // Small delay between clicks for multi-select
-            if (i < cardIds.Length - 1)
-            {
-                OS.DelayMsec(100);
-            }
+            if (i < cardIds.Length - 1) OS.DelayMsec(100);
         }
 
         Logger.Info($"Successfully selected {selectedCards.Count} card(s)");
@@ -155,40 +145,34 @@ public static class PotionSelectCardHandler
         // Guard: Must be in the POTION_SELECTION screen
         var selectionScreen = PotionUtils.FindSelectionScreen();
         if (selectionScreen == null)
-        {
             return new
             {
                 ok = false,
                 error = "NOT_IN_POTION_SELECTION",
                 message = "Not in potion card selection screen."
             };
-        }
 
         // Infer constraints to check if skip is allowed
         var cardHolders = UiHelper.FindAll<NCardHolder>(selectionScreen);
         var constraints = InferSelectionConstraints(cardHolders);
 
         if (!constraints.CanSkip)
-        {
             return new
             {
                 ok = false,
                 error = "CANNOT_SKIP",
                 message = "This potion selection cannot be skipped. You must select at least one card."
             };
-        }
 
         // Find and click the skip button
         var skipButton = PotionUtils.FindSkipButton(selectionScreen);
         if (skipButton == null)
-        {
             return new
             {
                 ok = false,
                 error = "SKIP_BUTTON_NOT_FOUND",
                 message = "Skip button not found in selection screen."
             };
-        }
 
         Logger.Info("Skipping potion card selection");
         skipButton.ForceClick();
@@ -209,19 +193,12 @@ public static class PotionSelectCardHandler
         var cardCount = cardHolders.Count;
 
         // If we have 3 cards, it's likely a "choose 1 of 3" potion (Attack/Skill/Power/Colorless)
-        if (cardCount == 3)
-        {
-            return new SelectionConstraints(0, 1, true); // Can skip (e.g., Colorless Potion)
-        }
+        if (cardCount == 3) return new SelectionConstraints(0, 1, true); // Can skip (e.g., Colorless Potion)
 
         // If we have many cards, it's likely a hand-based selection (Gambler's Brew, Ashwater, etc.)
-        if (cardCount > 3)
-        {
-            return new SelectionConstraints(0, cardCount, true); // Multi-select with the skip option
-        }
+        if (cardCount > 3) return new SelectionConstraints(0, cardCount, true); // Multi-select with the skip option
 
         // Default: single select, cannot skip
         return new SelectionConstraints(1, 1, false);
     }
-
 }

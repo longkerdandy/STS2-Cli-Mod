@@ -131,13 +131,9 @@ public static class ActionUtils
             // Verify it's a pet of the player
             var playerCombatState = player.PlayerCombatState;
             if (playerCombatState != null)
-            {
                 foreach (var pet in playerCombatState.Pets)
-                {
                     if (pet.CombatId == combatId)
                         return pet;
-                }
-            }
 
             Logger.Warning($"Creature with combat_id {combatId} is not the player or a pet");
             return null;
