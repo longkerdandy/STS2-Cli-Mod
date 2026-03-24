@@ -1,5 +1,6 @@
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
+using STS2.Cli.Mod.Models.Actions;
 using STS2.Cli.Mod.Models.Message;
 using STS2.Cli.Mod.Utils;
 
@@ -93,7 +94,7 @@ public static class PotionSelectCardHandler
         }
 
         // Find and select each card by ID
-        var selectedCards = new List<SelectedCardInfo>();
+        var selectedCards = new List<SelectedCardDto>();
         
         for (var i = 0; i < cardIds.Length; i++)
         {
@@ -115,7 +116,7 @@ public static class PotionSelectCardHandler
             Logger.Info($"Selecting card: {cardId} (nth={nth})");
             holder.EmitSignal(NCardHolder.SignalName.Pressed, holder);
             
-            selectedCards.Add(new SelectedCardInfo
+            selectedCards.Add(new SelectedCardDto
             {
                 Index = i,
                 CardId = cardId
@@ -223,12 +224,4 @@ public static class PotionSelectCardHandler
         return new SelectionConstraints(1, 1, false);
     }
 
-    /// <summary>
-    ///     Helper class to track selected card info.
-    /// </summary>
-    private class SelectedCardInfo
-    {
-        public int Index { get; set; }
-        public required string CardId { get; set; }
-    }
 }
