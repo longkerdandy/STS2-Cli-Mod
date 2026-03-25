@@ -1,0 +1,118 @@
+using MegaCrit.Sts2.Core.Entities.Merchant;
+using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
+using STS2.Cli.Mod.Models.Messages;
+using STS2.Cli.Mod.State;
+using STS2.Cli.Mod.Utils;
+
+namespace STS2.Cli.Mod.Actions;
+
+/// <summary>
+///     Handles buying a potion from the shop by potion_id + nth.
+///     Finds the matching <see cref="MerchantPotionEntry" /> in the
+///     <see cref="MerchantInventory.PotionEntries" /> list and calls
+///     <see cref="MerchantEntry.OnTryPurchaseWrapper" /> to purchase it.
+///     Note: potion purchase can fail with <see cref="PurchaseStatus.FailureSpace" />
+///     if the player's potion belt is full.
+/// </summary>
+public static class ShopBuyPotionHandler
+{
+    private static readonly ModLogger Logger = new("ShopBuyPotionHandler");
+
+    /// <summary>
+    ///     Handles the shop_buy_potion request.
+    /// </summary>
+    public static async Task<object> HandleRequestAsync(Request request)
+    {
+        if (string.IsNullOrEmpty(request.Id))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Potion ID required" };
+
+        var potionId = request.Id;
+        var nth = request.Nth ?? 0;
+        Logger.Info($"Requested to buy potion: {potionId} (nth={nth})");
+
+        return await ExecuteAsync(potionId, nth);
+    }
+
+    /// <summary>
+    ///     Executes the shop_buy_potion command.
+    ///     Must be called on the Godot main thread.
+    /// </summary>
+    private static async Task<object> ExecuteAsync(string potionId, int nth)
+    {
+        try
+        {
+            // --- Guard: Check merchant room ---
+            var merchantRoom = NMerchantRoom.Instance;
+            if (merchantRoom == null || !merchantRoom.IsInsideTree())
+                return new { ok = false, error = "NOT_IN_SHOP", message = "Not currently in a shop" };
+
+            var inventory = merchantRoom.Room?.Inventory;
+            if (inventory == null)
+                return new { ok = false, error = "NOT_IN_SHOP", message = "Shop inventory not available" };
+
+            // --- Find the potion entry by ID + nth ---
+            var entry = FindPotionEntry(inventory, potionId, nth);
+            if (entry == null)
+                return new { ok = false, error = "ITEM_NOT_FOUND", message = $"Potion '{potionId}' (nth={nth}) not found in shop" };
+
+            // --- Guard: Check item is in stock ---
+            if (!entry.IsStocked)
+                return new { ok = false, error = "ITEM_SOLD_OUT", message = $"Potion '{potionId}' is sold out" };
+
+            // --- Guard: Check enough gold ---
+            if (!entry.EnoughGold)
+                return new { ok = false, error = "NOT_ENOUGH_GOLD", message = $"Not enough gold to buy potion '{potionId}' (cost={entry.Cost})" };
+
+            // --- Purchase ---
+            // OnTryPurchaseWrapper handles the full flow: PotionCmd.TryToProcure, gold deduction, etc.
+            // It returns false if the potion belt is full (FailureSpace) or purchase is forbidden.
+            var success = await entry.OnTryPurchaseWrapper(inventory);
+            if (!success)
+                return new { ok = false, error = "POTION_BELT_FULL", message = $"Failed to purchase potion '{potionId}' (potion belt may be full)" };
+
+            Logger.Info($"Successfully purchased potion: {potionId}");
+
+            var screen = StateHandler.DetectCurrentScreen();
+            return new
+            {
+                ok = true,
+                data = new
+                {
+                    action = "SHOP_BUY_POTION",
+                    potion_id = potionId,
+                    cost = entry.Cost,
+                    screen
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to buy potion: {ex.Message}");
+            return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
+        }
+    }
+
+    /// <summary>
+    ///     Finds a potion entry in the inventory by potion_id and nth occurrence.
+    /// </summary>
+    private static MerchantPotionEntry? FindPotionEntry(MerchantInventory inventory, string potionId, int nth)
+    {
+        int count = 0;
+        for (int i = 0; i < inventory.PotionEntries.Count; i++)
+        {
+            var entry = inventory.PotionEntries[i];
+            var model = entry.Model;
+            if (model == null) continue;
+
+            if (string.Equals(model.Id.Entry, potionId, StringComparison.OrdinalIgnoreCase))
+            {
+                if (count == nth)
+                    return entry;
+                count++;
+            }
+        }
+
+        return null;
+    }
+}

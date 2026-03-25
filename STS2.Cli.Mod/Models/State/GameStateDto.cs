@@ -69,4 +69,9 @@ public class GameStateDto
     ///     Treasure room state if at a treasure room, null otherwise.
     /// </summary>
     public TreasureStateDto? Treasure { get; set; }
+
+    /// <summary>
+    ///     Shop (merchant room) state if at a shop, null otherwise.
+    /// </summary>
+    public ShopStateDto? Shop { get; set; }
 }

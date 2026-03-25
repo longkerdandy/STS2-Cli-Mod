@@ -61,7 +61,7 @@ Verify the mod works by:
 6. `sts2.exe reward_claim --type <type> [--id <id>] [--nth <n>]` - confirms reward claim (gold, potion, relic)
 7. `sts2.exe reward_choose_card --type card --card_id <card_id> [--nth <n>]` - confirms card choice from card reward
 8. `sts2.exe reward_skip_card --type card [--nth <n>]` - confirms skipping a card reward
-9. `sts2.exe proceed` - confirms leaving reward screen or FakeMerchant event and proceeding to map
+9. `sts2.exe proceed` - confirms leaving reward screen, FakeMerchant event, or shop and proceeding to map
 10. `sts2.exe choose_event <index>` - confirms event option selection with updated event state
 11. `sts2.exe advance_dialogue [--auto]` - confirms Ancient event dialogue advancement (use --auto to skip to options)
 12. `sts2.exe potion_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from potion-opened selection screen
@@ -73,6 +73,10 @@ Verify the mod works by:
 18. `sts2.exe choose_rest_option <option_id>` - confirms rest site option selection (HEAL, SMITH, etc.)
 19. `sts2.exe open_chest` - confirms treasure chest opening with relic reveal
 20. `sts2.exe pick_relic <index>` - confirms relic pick from treasure room
+21. `sts2.exe shop_buy_card <card_id> [--nth <n>]` - confirms card purchase from shop
+22. `sts2.exe shop_buy_relic <relic_id> [--nth <n>]` - confirms relic purchase from shop
+23. `sts2.exe shop_buy_potion <potion_id> [--nth <n>]` - confirms potion purchase from shop
+24. `sts2.exe shop_remove_card` - confirms card removal service purchase (opens deck select)
 
 ## Code Style Guidelines
 

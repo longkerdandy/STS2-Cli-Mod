@@ -18,6 +18,7 @@ namespace STS2.Cli.Mod.Actions;
 ///     - FakeMerchant custom event (NFakeMerchant with NProceedButton)
 ///     - Rest site (NRestSiteRoom with NProceedButton, after choosing an option)
 ///     - Treasure room (NTreasureRoom with NProceedButton, after picking/skipping relic)
+///     - Merchant room (NMerchantRoom with NProceedButton, shop proceed to map)
 ///     Mimics the AutoSlayer / STS2MCP approach: finds the <see cref="NProceedButton" /> and calls
 ///     <see cref="NClickableControl.ForceClick" />, which triggers the full UI flow.
 /// </summary>
@@ -91,13 +92,22 @@ public static class ProceedHandler
                 return await ExecuteTreasureRoomProceedAsync(treasureRoom);
             }
 
+            // --- Try Merchant Room ---
+
+            var merchantRoom = NRun.Instance?.MerchantRoom;
+            if (merchantRoom != null && merchantRoom.IsInsideTree())
+            {
+                Logger.Info("Detected merchant room context");
+                return await ExecuteMerchantRoomProceedAsync(merchantRoom);
+            }
+
             // --- No valid context found ---
 
             return new
             {
                 ok = false,
                 error = "NO_PROCEED_AVAILABLE",
-                message = "Not on reward screen, FakeMerchant event, rest site, or treasure room"
+                message = "Not on reward screen, FakeMerchant event, rest site, treasure room, or merchant room"
             };
         }
         catch (Exception ex)
@@ -313,6 +323,55 @@ public static class ProceedHandler
             {
                 context = "treasure_room",
                 skipped_relic = isSkip,
+                proceeded,
+                action = "PROCEED"
+            }
+        };
+    }
+
+    /// <summary>
+    ///     Proceeds from the merchant room (shop).
+    ///     The proceed button in <see cref="NMerchantRoom" /> triggers <c>HideScreen</c>
+    ///     which calls <c>NMapScreen.Instance.Open()</c>.
+    ///     The proceed button is enabled by default on room entry, disabled while the
+    ///     inventory is open, and re-enabled when the inventory closes.
+    /// </summary>
+    private static async Task<object> ExecuteMerchantRoomProceedAsync(NMerchantRoom merchantRoom)
+    {
+        var proceedButton = merchantRoom.ProceedButton;
+        if (proceedButton == null)
+        {
+            Logger.Warning("NProceedButton not found in NMerchantRoom");
+            return new
+            {
+                ok = false,
+                error = "PROCEED_BUTTON_NOT_FOUND",
+                message = "Proceed button not found on merchant room"
+            };
+        }
+
+        if (!proceedButton.IsEnabled)
+        {
+            Logger.Warning("NProceedButton is not enabled on merchant room (shop inventory may be open)");
+            return new
+            {
+                ok = false,
+                error = "PROCEED_NOT_ENABLED",
+                message = "Proceed button is not enabled (close shop inventory first)"
+            };
+        }
+
+        Logger.Info("Clicking proceed button on merchant room");
+        proceedButton.ForceClick();
+
+        var proceeded = await WaitForMapOpenAsync();
+
+        return new
+        {
+            ok = true,
+            data = new
+            {
+                context = "merchant_room",
                 proceeded,
                 action = "PROCEED"
             }

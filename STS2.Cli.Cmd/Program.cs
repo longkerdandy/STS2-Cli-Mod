@@ -92,6 +92,12 @@ internal static class Program
         rootCommand.Subcommands.Add(OpenChestCommand.Create(prettyOption));
         rootCommand.Subcommands.Add(PickRelicCommand.Create(prettyOption));
 
+        // Shop commands
+        rootCommand.Subcommands.Add(ShopBuyCardCommand.Create(prettyOption));
+        rootCommand.Subcommands.Add(ShopBuyRelicCommand.Create(prettyOption));
+        rootCommand.Subcommands.Add(ShopBuyPotionCommand.Create(prettyOption));
+        rootCommand.Subcommands.Add(ShopRemoveCardCommand.Create(prettyOption));
+
         return rootCommand.Parse(args).Invoke();
     }
 }

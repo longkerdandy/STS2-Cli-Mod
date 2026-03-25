@@ -81,6 +81,9 @@ public static class StateHandler
         // Extract treasure room state if at a treasure room
         if (state.Screen == "TREASURE") state.Treasure = ExtractTreasureState();
 
+        // Extract shop state if at a merchant room
+        if (state.Screen == "SHOP") state.Shop = ExtractShopState();
+
         return state;
         }
         catch (Exception ex)
@@ -99,7 +102,7 @@ public static class StateHandler
     /// <summary>
     ///     Detects which screen the player is currently on.
     ///     Priority order: CHARACTER_SELECT → COMBAT → MAP → overlay screens
-    ///     (CARD_REWARD, POTION_SELECTION, DECK_CARD_SELECT, REWARD) → EVENT → REST_SITE → TREASURE → UNKNOWN.
+    ///     (CARD_REWARD, POTION_SELECTION, DECK_CARD_SELECT, REWARD) → EVENT → REST_SITE → TREASURE → SHOP → UNKNOWN.
     ///     Overlay screens take priority over EVENT because events can trigger overlays
     ///     (e.g., Neow's Lead Paperweight opens NCardRewardSelectionScreen while NEventRoom
     ///     is still in the scene tree).
@@ -205,6 +208,15 @@ public static class StateHandler
         {
             Logger.Info("Detected TREASURE screen");
             return "TREASURE";
+        }
+
+        // Check for merchant room (shop).
+        // NRun.Instance?.MerchantRoom returns non-null if the current room is a merchant room.
+        var merchantRoom = NRun.Instance?.MerchantRoom;
+        if (merchantRoom is { } && merchantRoom.IsInsideTree())
+        {
+            Logger.Info("Detected SHOP screen");
+            return "SHOP";
         }
 
         return "UNKNOWN";
@@ -480,6 +492,22 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract treasure state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the shop (merchant room) state from <see cref="NMerchantRoom" />.
+    /// </summary>
+    private static ShopStateDto? ExtractShopState()
+    {
+        try
+        {
+            return ShopStateBuilder.Build();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract shop state: {ex.Message}");
             return null;
         }
     }

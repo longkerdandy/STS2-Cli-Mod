@@ -75,7 +75,7 @@ Pick or skip a card reward. `--nth` selects which card reward when multiple exis
 ./sts2 proceed
 ```
 
-Leave reward screen, FakeMerchant event, rest site (after choosing an option), or treasure room (after picking/skipping relic) and proceed to map.
+Leave reward screen, FakeMerchant event, rest site (after choosing an option), treasure room (after picking/skipping relic), or merchant room and proceed to map.
 
 ---
 
@@ -153,6 +153,40 @@ Pick a relic from an opened treasure chest by 0-based index. After picking, use 
 
 ---
 
+### shop_buy_card
+
+```
+./sts2 shop_buy_card <card_id> [--nth <n>]
+```
+
+Buy a card from the shop by card ID. Use `--nth` to disambiguate when multiple copies of the same card exist.
+
+### shop_buy_relic
+
+```
+./sts2 shop_buy_relic <relic_id> [--nth <n>]
+```
+
+Buy a relic from the shop by relic ID.
+
+### shop_buy_potion
+
+```
+./sts2 shop_buy_potion <potion_id> [--nth <n>]
+```
+
+Buy a potion from the shop by potion ID. Fails if the potion belt is full.
+
+### shop_remove_card
+
+```
+./sts2 shop_remove_card
+```
+
+Buy the card removal service from the shop. Opens a deck card selection screen (screen becomes `DECK_CARD_SELECT`) -- use `deck_select_card` to pick a card to remove, or `deck_select_skip` to cancel. After the shop, use `proceed` to leave.
+
+---
+
 ### select_character
 
 ```
@@ -195,7 +229,7 @@ Returned by `state` in the `data` field. Only the relevant screen's data is popu
 ```
 data
 ├── screen              # COMBAT | REWARD | CARD_REWARD | EVENT | POTION_SELECTION
-│                       # MAP | CHARACTER_SELECT | DECK_CARD_SELECT | REST_SITE | TREASURE | MENU | UNKNOWN
+│                       # MAP | CHARACTER_SELECT | DECK_CARD_SELECT | REST_SITE | TREASURE | SHOP | MENU | UNKNOWN
 ├── timestamp           # Unix ms
 ├── combat
 │   ├── encounter, turn_number, is_player_turn
@@ -244,6 +278,13 @@ data
 │   ├── relics[]            # [{index, id, name, description, rarity}] -- available after opening
 │   ├── can_proceed         # bool, true after picking/skipping relic
 │   └── can_skip            # bool, true if relic can be skipped via proceed
+├── shop
+│   ├── cards[]             # [{index, card_id, card_name, description, card_type, rarity, cost, is_on_sale, is_stocked}]
+│   ├── relics[]            # [{index, relic_id, relic_name, description, rarity, cost, is_stocked}]
+│   ├── potions[]           # [{index, potion_id, potion_name, description, rarity, cost, is_stocked}]
+│   ├── card_removal        # {cost, is_used} or null
+│   ├── player_gold         # int
+│   └── can_proceed         # bool, true when proceed button is enabled
 ```
 
 ### Card Object (in hand)
@@ -298,6 +339,10 @@ data
 - **Map Node**: `{col, row, type, state, children[], parents[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE|NONE`; children/parents are `[{col, row}]`
 - **Rest Site Option**: `{index, option_id, name, description, is_enabled}` -- option_id: `HEAL`, `SMITH`, `MEND`, `LIFT`, `DIG`, `HATCH`, `COOK`, `CLONE`
 - **Treasure Relic**: `{index, id, name, description, rarity}` -- relic available from an opened treasure chest
+- **Shop Card**: `{index, card_id, card_name, description, card_type, rarity, cost, is_on_sale, is_stocked}` -- card for sale in shop
+- **Shop Relic**: `{index, relic_id, relic_name, description, rarity, cost, is_stocked}` -- relic for sale in shop
+- **Shop Potion**: `{index, potion_id, potion_name, description, rarity, cost, is_stocked}` -- potion for sale in shop
+- **Shop Card Removal**: `{cost, is_used}` -- card removal service info
 
 ### Action Results
 
@@ -390,6 +435,18 @@ data
 | `CHEST_ALREADY_OPENED` | Chest already opened |
 | `NO_RELICS_AVAILABLE` | No relics to pick (not opened or already picked) |
 | `INVALID_RELIC_INDEX` | Relic index out of range |
+
+**Shop** (`shop_buy_card`, `shop_buy_relic`, `shop_buy_potion`, `shop_remove_card`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_SHOP` | Not in a merchant room |
+| `ITEM_NOT_FOUND` | Item ID not found in shop |
+| `ITEM_SOLD_OUT` | Item already purchased |
+| `NOT_ENOUGH_GOLD` | Insufficient gold |
+| `POTION_BELT_FULL` | No empty potion slots |
+| `CARD_REMOVAL_USED` | Card removal already used this visit |
+| `PURCHASE_FAILED` | Unknown purchase failure |
 
 **Character Select** (`select_character`, `set_ascension`, `embark`):
 

@@ -228,6 +228,22 @@ public static class PipeServer
                 "pick_relic" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     PickRelicHandler.HandleRequestAsync(request)),
 
+                // shop_buy_card is async — purchases a card from the shop
+                "shop_buy_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ShopBuyCardHandler.HandleRequestAsync(request)),
+
+                // shop_buy_relic is async — purchases a relic from the shop
+                "shop_buy_relic" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ShopBuyRelicHandler.HandleRequestAsync(request)),
+
+                // shop_buy_potion is async — purchases a potion from the shop
+                "shop_buy_potion" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ShopBuyPotionHandler.HandleRequestAsync(request)),
+
+                // shop_remove_card is async — fire-and-forget card removal, polls for deck select overlay
+                "shop_remove_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ShopRemoveCardHandler.HandleRequestAsync(request)),
+
                 // state is synchronous — single-frame game state extraction on the main thread
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 
