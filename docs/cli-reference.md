@@ -123,6 +123,43 @@ Skip potion card selection (only if `potion_selection.can_skip` is true).
 
 Travel to a map node. Only nodes with state `TRAVELABLE` can be selected -- check `map.travelable_coords` in state.
 
+---
+
+### select_character
+
+```
+./sts2 select_character <character_id>
+```
+
+Select a character on the character select screen. ID matching is case-insensitive.
+
+### set_ascension
+
+```
+./sts2 set_ascension <level>
+```
+
+Set ascension level (0 to max) on the character select screen. Max level is read from the game (typically 20).
+
+### embark
+
+```
+./sts2 embark
+```
+
+Start a run from the character select screen. Requires a character to be selected first.
+
+---
+
+### deck_select_card / deck_select_skip
+
+```
+./sts2 deck_select_card <card_id> [<card_id>...] [--nth <n>...]
+./sts2 deck_select_skip
+```
+
+Select or skip cards from a grid-style deck selection screen (card removal, upgrade, transform, enchant). Check `deck_card_select.min_select` / `max_select` in state for how many to pick. Skip only works when `deck_card_select.cancelable` is true.
+
 ## Game State Structure
 
 Returned by `state` in the `data` field. Only the relevant screen's data is populated; others are null/omitted.
@@ -155,6 +192,15 @@ data
 │   └── options[]
 ├── potion_selection
 │   ├── selection_type, min_select, max_select, can_skip
+│   └── cards[]
+├── character_select
+│   ├── available_characters[]  # {character_id, character_name, is_locked, is_selected}
+│   ├── selected_character      # string?, null if none selected
+│   ├── current_ascension, max_ascension
+│   └── can_embark
+├── deck_card_select
+│   ├── selection_type          # remove, upgrade, transform, enchant, generic, unknown
+│   ├── prompt, min_select, max_select, cancelable
 │   └── cards[]
 └── map
     ├── act_index, act_floor, total_floor
@@ -211,6 +257,8 @@ data
 - **Card Choice** (in reward): `{index, id, name, description, type, rarity, cost, is_upgraded}`
 - **Event Option**: `{index, title, description, is_locked, is_proceed, relic_id?}`
 - **Selectable Card** (potion selection): `{index, card_id, card_name, description, card_type, cost}`
+- **Selectable Card** (deck selection): `{index, card_id, card_name, description, card_type, cost}` -- same structure as potion selection
+- **Character Option**: `{character_id, character_name, is_locked, is_selected}`
 - **Map Node**: `{col, row, type, state, children[], parents[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE|NONE`; children/parents are `[{col, row}]`
 
 ### Action Results
@@ -286,5 +334,25 @@ data
 | `NODE_NOT_FOUND` | Invalid coordinates |
 | `NOT_TRAVELABLE` | Node not reachable |
 | `TRAVEL_DISABLED` | Animation in progress |
+
+**Character Select** (`select_character`, `set_ascension`, `embark`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_CHARACTER_SELECT` | Not on character select screen |
+| `CHARACTER_NOT_FOUND` | Character ID not found |
+| `CHARACTER_LOCKED` | Character not unlocked |
+| `INVALID_ASCENSION_LEVEL` | Level out of range (0 to max) |
+| `NO_CHARACTER_SELECTED` | Embark without selecting character |
+| `EMBARK_NOT_AVAILABLE` | Embark button disabled |
+
+**Deck Card Select** (`deck_select_card`, `deck_select_skip`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_DECK_CARD_SELECT` | Not on deck selection screen |
+| `INVALID_SELECTION_COUNT` | Wrong number of cards selected |
+| `CARD_NOT_FOUND` | Card ID not in selection |
+| `CANNOT_SKIP` | Selection is not cancelable |
 
 **General**: `CONNECTION_ERROR` -- game disconnected.

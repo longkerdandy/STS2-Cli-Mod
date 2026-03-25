@@ -96,7 +96,7 @@ internal static class CommandExecutor
                 "NOT_IN_POTION_SELECTION" or "CANNOT_SKIP" or
                 "SKIP_BUTTON_NOT_FOUND" or "NO_CARDS_AVAILABLE" or
                 "NOT_IN_CHARACTER_SELECT" or "CHARACTER_LOCKED" or
-                "NO_CHARACTER_SELECTED" or "EMBARK_NOT_AVAILABLE" or
+                "NO_CHARACTER_SELECTED" or "EMBARK_BUTTON_NOT_FOUND" or "EMBARK_NOT_AVAILABLE" or
                 "NOT_IN_DECK_CARD_SELECT" or
                 "NOT_ON_MAP" or "NO_RUN_STATE" or "NOT_TRAVELABLE" or
                 "TRAVEL_DISABLED" => ExitInvalidState,
