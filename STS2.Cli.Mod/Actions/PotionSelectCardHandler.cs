@@ -79,13 +79,14 @@ public static class PotionSelectCardHandler
         var uniqueIds = new HashSet<string>();
         for (var i = 0; i < cardIds.Length; i++)
         {
-            var key = $"{cardIds[i]}_{nthValues?[i] ?? 0}";
+            var nthVal = nthValues != null && i < nthValues.Length ? nthValues[i] : 0;
+            var key = $"{cardIds[i]}_{nthVal}";
             if (!uniqueIds.Add(key))
                 return new
                 {
                     ok = false,
                     error = "DUPLICATE_SELECTION",
-                    message = $"Card '{cardIds[i]}' (nth={nthValues?[i] ?? 0}) was selected multiple times."
+                    message = $"Card '{cardIds[i]}' (nth={nthVal}) was selected multiple times."
                 };
         }
 
@@ -95,7 +96,7 @@ public static class PotionSelectCardHandler
         for (var i = 0; i < cardIds.Length; i++)
         {
             var cardId = cardIds[i];
-            var nth = nthValues?[i] ?? 0;
+            var nth = nthValues != null && i < nthValues.Length ? nthValues[i] : 0;
 
             var holder = PotionUtils.FindCardHolderById(selectionScreen, cardId, nth);
             if (holder == null)

@@ -85,8 +85,11 @@ public static class StateHandler
 
     /// <summary>
     ///     Detects which screen the player is currently on.
-    ///     Priority order: CHARACTER_SELECT → COMBAT → MAP (takes precedence over stale overlays)
-    ///     → EVENT → CARD_REWARD → REWARD → UNKNOWN.
+    ///     Priority order: CHARACTER_SELECT → COMBAT → MAP → overlay screens
+    ///     (CARD_REWARD, POTION_SELECTION, DECK_CARD_SELECT, REWARD) → EVENT → UNKNOWN.
+    ///     Overlay screens take priority over EVENT because events can trigger overlays
+    ///     (e.g., Neow's Lead Paperweight opens NCardRewardSelectionScreen while NEventRoom
+    ///     is still in the scene tree).
     /// </summary>
     private static string DetectScreen()
     {
@@ -110,10 +113,60 @@ public static class StateHandler
         // the player has moved past the current room to the map.
         if (NMapScreen.Instance is { IsOpen: true }) return "MAP";
 
-        // Check for event room BEFORE overlay stack.
+        // Check NOverlayStack for interactive screens BEFORE event detection.
+        // Events can trigger overlay screens (e.g., Neow opening card reward selection),
+        // and NEventRoom.Instance remains in the scene tree while the overlay is active.
+        // CARD_REWARD must be checked before REWARD because NCardRewardSelectionScreen
+        // is pushed on top of NRewardsScreen in the overlay stack.
+        var overlayStack = NOverlayStack.Instance;
+        if (overlayStack != null)
+        {
+            var overlay = overlayStack.Peek();
+            if (overlay != null)
+            {
+                Logger.Info($"NOverlayStack.Peek() returned: {overlay.GetType().FullName}");
+
+                if (overlay is NCardRewardSelectionScreen) return "CARD_REWARD";
+                if (overlay is NRewardsScreen) return "REWARD";
+
+                if (overlay is NChooseACardSelectionScreen)
+                {
+                    Logger.Info("Detected POTION_SELECTION screen");
+                    return "POTION_SELECTION";
+                }
+
+                if (overlay is NCardGridSelectionScreen)
+                {
+                    Logger.Info($"Detected DECK_CARD_SELECT screen ({overlay.GetType().Name})");
+                    return "DECK_CARD_SELECT";
+                }
+            }
+
+            // Check children for screens that may not be on top
+            foreach (var child in overlayStack.GetChildren())
+            {
+                if (child is NChooseACardSelectionScreen)
+                {
+                    Logger.Info("Detected POTION_SELECTION screen (in children)");
+                    return "POTION_SELECTION";
+                }
+
+                if (child is NCardGridSelectionScreen)
+                {
+                    Logger.Info($"Detected DECK_CARD_SELECT screen in children ({child.GetType().Name})");
+                    return "DECK_CARD_SELECT";
+                }
+            }
+        }
+        else
+        {
+            Logger.Warning("NOverlayStack.Instance is null (NRun.Instance?.GlobalUi.Overlays)");
+        }
+
+        // Check for event room AFTER overlay stack.
         // Event rooms don't use the overlay stack — the event UI is part of the room node.
-        // When proceeding from an event, the map opens but NEventRoom.Instance may still
-        // be valid momentarily. Checking MAP first avoids this stale reference.
+        // However, events can trigger overlays (card rewards, deck selection, etc.),
+        // so overlay detection must happen first.
         var eventRoom = NEventRoom.Instance;
         if (eventRoom is { } && eventRoom.IsInsideTree())
         {
@@ -121,60 +174,6 @@ public static class StateHandler
             return "EVENT";
         }
 
-        // Check NOverlayStack for reward-related screens
-        // CARD_REWARD must be checked before REWARD because NCardRewardSelectionScreen
-        // is pushed on top of NRewardsScreen in the overlay stack
-        var overlayStack = NOverlayStack.Instance;
-        if (overlayStack == null)
-        {
-            Logger.Warning("NOverlayStack.Instance is null (NRun.Instance?.GlobalUi.Overlays)");
-            return "UNKNOWN";
-        }
-
-        var overlay = overlayStack.Peek();
-        if (overlay == null)
-        {
-            Logger.Info("NOverlayStack.Peek() returned null (no overlays on stack)");
-            return "UNKNOWN";
-        }
-
-        Logger.Info($"NOverlayStack.Peek() returned: {overlay.GetType().FullName}");
-
-        if (overlay is NCardRewardSelectionScreen) return "CARD_REWARD";
-        if (overlay is NRewardsScreen) return "REWARD";
-
-        // Check for potion card selection screen
-        // This can appear on top of other screens when using selection potions
-        if (overlay is NChooseACardSelectionScreen)
-        {
-            Logger.Info("Detected POTION_SELECTION screen");
-            return "POTION_SELECTION";
-        }
-
-        // Check for grid-based card selection screens (remove, upgrade, transform, enchant, generic)
-        if (overlay is NCardGridSelectionScreen)
-        {
-            Logger.Info($"Detected DECK_CARD_SELECT screen ({overlay.GetType().Name})");
-            return "DECK_CARD_SELECT";
-        }
-
-        // Check children for potion selection screen (it may not be on top)
-        foreach (var child in overlayStack.GetChildren())
-        {
-            if (child is NChooseACardSelectionScreen)
-            {
-                Logger.Info("Detected POTION_SELECTION screen (in children)");
-                return "POTION_SELECTION";
-            }
-
-            if (child is NCardGridSelectionScreen)
-            {
-                Logger.Info($"Detected DECK_CARD_SELECT screen in children ({child.GetType().Name})");
-                return "DECK_CARD_SELECT";
-            }
-        }
-
-        // TODO: Detect other screens (SHOP, EVENT, etc.)
         return "UNKNOWN";
     }
 

@@ -50,7 +50,7 @@ internal static class RewardChooseCardCommand
             return CommandExecutor.ExecuteAsync(
                 () => new Request
                 {
-                    Cmd = "choose_card",
+                    Cmd = "reward_choose_card",
                     RewardType = type,
                     CardId = cardId,
                     Nth = nth

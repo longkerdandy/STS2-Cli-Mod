@@ -41,7 +41,7 @@ internal static class RewardSkipCardCommand
             return CommandExecutor.ExecuteAsync(
                 () => new Request
                 {
-                    Cmd = "skip_card",
+                    Cmd = "reward_skip_card",
                     RewardType = type,
                     Nth = nth
                 },
