@@ -97,7 +97,9 @@ internal static class CommandExecutor
                 "SKIP_BUTTON_NOT_FOUND" or "NO_CARDS_AVAILABLE" or
                 "NOT_IN_CHARACTER_SELECT" or "CHARACTER_LOCKED" or
                 "NO_CHARACTER_SELECTED" or "EMBARK_NOT_AVAILABLE" or
-                "NOT_IN_DECK_CARD_SELECT" => ExitInvalidState,
+                "NOT_IN_DECK_CARD_SELECT" or
+                "NOT_ON_MAP" or "NO_RUN_STATE" or "NOT_TRAVELABLE" or
+                "TRAVEL_DISABLED" => ExitInvalidState,
 
             // Invalid parameter — caller provided wrong arguments
             "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or
@@ -110,7 +112,8 @@ internal static class CommandExecutor
                 "INVALID_REWARD_TYPE" or "REWARD_NOT_FOUND" or "ID_MISMATCH" or
                 "AMBIGUOUS_REWARD" or "INVALID_SELECTION_COUNT" or
                 "DUPLICATE_SELECTION" or "CHARACTER_NOT_FOUND" or
-                "INVALID_ASCENSION_LEVEL" or "UI_NOT_FOUND" => ExitInvalidParam,
+                "INVALID_ASCENSION_LEVEL" or "UI_NOT_FOUND" or
+                "NODE_NOT_FOUND" => ExitInvalidParam,
 
             // Timeout
             "TIMEOUT" or "EVENT_TIMEOUT" => ExitTimeout,

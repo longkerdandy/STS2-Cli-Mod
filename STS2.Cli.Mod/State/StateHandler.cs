@@ -56,6 +56,9 @@ public static class StateHandler
             // Extract combat state if in combat
             if (state.Screen == "COMBAT") state.Combat = ExtractCombatState();
 
+            // Extract map state if on map screen
+            if (state.Screen == "MAP") state.Map = ExtractMapState();
+
             // Extract reward state if on reward screen
             if (state.Screen == "REWARD") state.Rewards = ExtractRewardState();
 
@@ -222,6 +225,22 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract combat state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts map state from <see cref="NMapScreen" /> and <see cref="RunState" />.
+    /// </summary>
+    private static MapStateDto? ExtractMapState()
+    {
+        try
+        {
+            return MapStateBuilder.Build();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract map state: {ex.Message}");
             return null;
         }
     }

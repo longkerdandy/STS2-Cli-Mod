@@ -54,4 +54,9 @@ public class GameStateDto
     ///     (remove, upgrade, transform, enchant), null otherwise.
     /// </summary>
     public DeckCardSelectStateDto? DeckCardSelect { get; set; }
+
+    /// <summary>
+    ///     Map state if on the map screen, null otherwise.
+    /// </summary>
+    public MapStateDto? Map { get; set; }
 }

@@ -212,6 +212,10 @@ public static class PipeServer
                 // embark is synchronous — runs on main thread and returns immediately
                 "embark" => MainThreadExecutor.RunOnMainThread(() => EmbarkHandler.HandleRequest(request)),
 
+                // choose_map_node is async — travels to a map node with animations and room loading
+                "choose_map_node" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ChooseMapNodeHandler.HandleRequestAsync(request)),
+
                 // state is synchronous — single-frame game state extraction on the main thread
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 

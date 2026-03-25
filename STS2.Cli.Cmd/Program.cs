@@ -82,6 +82,9 @@ internal static class Program
         rootCommand.Subcommands.Add(SelectCharacterCommand.Create(prettyOption));
         rootCommand.Subcommands.Add(SetAscensionCommand.Create(prettyOption));
 
+        // Map commands
+        rootCommand.Subcommands.Add(ChooseMapNodeCommand.Create(prettyOption));
+
         return rootCommand.Parse(args).Invoke();
     }
 }
