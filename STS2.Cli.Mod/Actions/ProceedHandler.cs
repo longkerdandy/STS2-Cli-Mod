@@ -14,6 +14,7 @@ namespace STS2.Cli.Mod.Actions;
 ///     Supports:
 ///     - Reward screen (NRewardsScreen with NProceedButton)
 ///     - FakeMerchant custom event (NFakeMerchant with NProceedButton)
+///     - Rest site (NRestSiteRoom with NProceedButton, after choosing an option)
 ///     Mimics the AutoSlayer / STS2MCP approach: finds the <see cref="NProceedButton" /> and calls
 ///     <see cref="NClickableControl.ForceClick" />, which triggers the full UI flow.
 /// </summary>
@@ -23,7 +24,7 @@ public static class ProceedHandler
 
     /// <summary>
     ///     Handles the proceed request.
-    ///     Automatically detects the current context (reward screen or FakeMerchant event).
+    ///     Automatically detects the current context (reward screen, FakeMerchant event, or rest site).
     /// </summary>
     public static async Task<object> HandleRequestAsync(Request request)
     {
@@ -69,13 +70,22 @@ public static class ProceedHandler
                 };
             }
 
+            // --- Try Rest Site ---
+
+            var restSiteRoom = NRestSiteRoom.Instance;
+            if (restSiteRoom != null && restSiteRoom.IsInsideTree())
+            {
+                Logger.Info("Detected rest site context");
+                return await ExecuteRestSiteProceedAsync(restSiteRoom);
+            }
+
             // --- No valid context found ---
 
             return new
             {
                 ok = false,
                 error = "NO_PROCEED_AVAILABLE",
-                message = "Not on reward screen or FakeMerchant event"
+                message = "Not on reward screen, FakeMerchant event, or rest site"
             };
         }
         catch (Exception ex)
@@ -181,6 +191,53 @@ public static class ProceedHandler
             data = new
             {
                 context = "fake_merchant",
+                proceeded,
+                action = "PROCEED"
+            }
+        };
+    }
+
+    /// <summary>
+    ///     Proceeds from the rest site after an option has been chosen.
+    ///     Finds the <see cref="NProceedButton" /> in <see cref="NRestSiteRoom" />,
+    ///     validates it is enabled, clicks it, and waits for the map to open.
+    /// </summary>
+    private static async Task<object> ExecuteRestSiteProceedAsync(NRestSiteRoom restSiteRoom)
+    {
+        var proceedButton = restSiteRoom.ProceedButton;
+        if (proceedButton == null)
+        {
+            Logger.Warning("NProceedButton not found in NRestSiteRoom");
+            return new
+            {
+                ok = false,
+                error = "PROCEED_BUTTON_NOT_FOUND",
+                message = "Proceed button not found on rest site"
+            };
+        }
+
+        if (!proceedButton.IsEnabled)
+        {
+            Logger.Warning("NProceedButton is not enabled (no option chosen yet?)");
+            return new
+            {
+                ok = false,
+                error = "PROCEED_NOT_ENABLED",
+                message = "Proceed button is not enabled (choose a rest site option first)"
+            };
+        }
+
+        Logger.Info("Clicking proceed button on rest site");
+        proceedButton.ForceClick();
+
+        var proceeded = await WaitForMapOpenAsync();
+
+        return new
+        {
+            ok = true,
+            data = new
+            {
+                context = "rest_site",
                 proceeded,
                 action = "PROCEED"
             }

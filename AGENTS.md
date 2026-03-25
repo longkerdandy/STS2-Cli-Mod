@@ -70,6 +70,7 @@ Verify the mod works by:
 15. `sts2.exe set_ascension <level>` - confirms ascension level setting
 16. `sts2.exe embark` - confirms game start from character select screen
 17. `sts2.exe choose_map_node <col> <row>` - confirms map node selection and travel
+18. `sts2.exe choose_rest_option <option_id>` - confirms rest site option selection (HEAL, SMITH, etc.)
 
 ## Code Style Guidelines
 

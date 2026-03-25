@@ -59,4 +59,9 @@ public class GameStateDto
     ///     Map state if on the map screen, null otherwise.
     /// </summary>
     public MapStateDto? Map { get; set; }
+
+    /// <summary>
+    ///     Rest site (campfire) state if at a rest site, null otherwise.
+    /// </summary>
+    public RestSiteStateDto? RestSite { get; set; }
 }

@@ -74,6 +74,9 @@ public static class StateHandler
         // Extract deck card selection state if on a grid-based card selection screen
         if (state.Screen == "DECK_CARD_SELECT") state.DeckCardSelect = ExtractDeckCardSelectState();
 
+        // Extract rest site state if at a rest site
+        if (state.Screen == "REST_SITE") state.RestSite = ExtractRestSiteState();
+
         return state;
         }
         catch (Exception ex)
@@ -86,10 +89,11 @@ public static class StateHandler
     /// <summary>
     ///     Detects which screen the player is currently on.
     ///     Priority order: CHARACTER_SELECT → COMBAT → MAP → overlay screens
-    ///     (CARD_REWARD, POTION_SELECTION, DECK_CARD_SELECT, REWARD) → EVENT → UNKNOWN.
+    ///     (CARD_REWARD, POTION_SELECTION, DECK_CARD_SELECT, REWARD) → EVENT → REST_SITE → UNKNOWN.
     ///     Overlay screens take priority over EVENT because events can trigger overlays
     ///     (e.g., Neow's Lead Paperweight opens NCardRewardSelectionScreen while NEventRoom
     ///     is still in the scene tree).
+    ///     REST_SITE is checked after overlays because SMITH opens a card selection overlay.
     /// </summary>
     private static string DetectScreen()
     {
@@ -172,6 +176,16 @@ public static class StateHandler
         {
             Logger.Info("Detected EVENT screen");
             return "EVENT";
+        }
+
+        // Check for rest site room.
+        // NRestSiteRoom.Instance resolves to NRun.Instance?.RestSiteRoom.
+        // Must check AFTER overlays because SMITH opens a card selection overlay.
+        var restSiteRoom = NRestSiteRoom.Instance;
+        if (restSiteRoom is { } && restSiteRoom.IsInsideTree())
+        {
+            Logger.Info("Detected REST_SITE screen");
+            return "REST_SITE";
         }
 
         return "UNKNOWN";
@@ -415,6 +429,22 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract deck card select state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the rest site (campfire) state from <see cref="NRestSiteRoom" />.
+    /// </summary>
+    private static RestSiteStateDto? ExtractRestSiteState()
+    {
+        try
+        {
+            return RestSiteStateBuilder.Build();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract rest site state: {ex.Message}");
             return null;
         }
     }

@@ -99,7 +99,8 @@ internal static class CommandExecutor
                 "NO_CHARACTER_SELECTED" or "EMBARK_BUTTON_NOT_FOUND" or "EMBARK_NOT_AVAILABLE" or
                 "NOT_IN_DECK_CARD_SELECT" or
                 "NOT_ON_MAP" or "NO_RUN_STATE" or "NOT_TRAVELABLE" or
-                "TRAVEL_DISABLED" => ExitInvalidState,
+                "TRAVEL_DISABLED" or
+                "NOT_AT_REST_SITE" or "OPTION_DISABLED" or "OPTION_CANCELLED" => ExitInvalidState,
 
             // Invalid parameter — caller provided wrong arguments
             "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or
@@ -113,7 +114,7 @@ internal static class CommandExecutor
                 "AMBIGUOUS_REWARD" or "INVALID_SELECTION_COUNT" or
                 "DUPLICATE_SELECTION" or "CHARACTER_NOT_FOUND" or
                 "INVALID_ASCENSION_LEVEL" or "UI_NOT_FOUND" or
-                "NODE_NOT_FOUND" => ExitInvalidParam,
+                "NODE_NOT_FOUND" or "OPTION_NOT_FOUND" => ExitInvalidParam,
 
             // Timeout
             "TIMEOUT" or "EVENT_TIMEOUT" => ExitTimeout,

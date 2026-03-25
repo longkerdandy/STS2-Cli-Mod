@@ -216,6 +216,10 @@ public static class PipeServer
                 "choose_map_node" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     ChooseMapNodeHandler.HandleRequestAsync(request)),
 
+                // choose_rest_option is async — rest site option selection with animations
+                "choose_rest_option" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ChooseRestOptionHandler.HandleRequestAsync(request)),
+
                 // state is synchronous — single-frame game state extraction on the main thread
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 

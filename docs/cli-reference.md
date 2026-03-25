@@ -75,7 +75,7 @@ Pick or skip a card reward. `--nth` selects which card reward when multiple exis
 ./sts2 proceed
 ```
 
-Leave reward screen or FakeMerchant event and proceed to map.
+Leave reward screen, FakeMerchant event, or rest site (after choosing an option) and proceed to map.
 
 ---
 
@@ -125,6 +125,16 @@ Travel to a map node. Only nodes with state `TRAVELABLE` can be selected -- chec
 
 ---
 
+### choose_rest_option
+
+```
+./sts2 choose_rest_option <option_id>
+```
+
+Choose a rest site (campfire) option by ID. Common options: `HEAL` (restore HP), `SMITH` (upgrade a card). SMITH opens a card selection overlay (screen becomes `DECK_CARD_SELECT`) -- use `deck_select_card` to complete. After choosing, use `proceed` to leave the rest site if `rest_site.can_proceed` is true.
+
+---
+
 ### select_character
 
 ```
@@ -167,7 +177,7 @@ Returned by `state` in the `data` field. Only the relevant screen's data is popu
 ```
 data
 ├── screen              # COMBAT | REWARD | CARD_REWARD | EVENT | POTION_SELECTION
-│                       # MAP | CHARACTER_SELECT | DECK_CARD_SELECT | MENU | UNKNOWN
+│                       # MAP | CHARACTER_SELECT | DECK_CARD_SELECT | REST_SITE | MENU | UNKNOWN
 ├── timestamp           # Unix ms
 ├── combat
 │   ├── encounter, turn_number, is_player_turn
@@ -208,6 +218,9 @@ data
     ├── current_coord       # {col, row}, null at start
     ├── nodes[]
     └── travelable_coords[] # [{col, row}]
+├── rest_site
+│   ├── options[]           # [{index, option_id, name, description, is_enabled}]
+│   └── can_proceed         # bool, true after an option has been chosen
 ```
 
 ### Card Object (in hand)
@@ -260,6 +273,7 @@ data
 - **Selectable Card** (deck selection): `{index, card_id, card_name, description, card_type, cost}` -- same structure as potion selection
 - **Character Option**: `{character_id, character_name, is_locked, is_selected}`
 - **Map Node**: `{col, row, type, state, children[], parents[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE|NONE`; children/parents are `[{col, row}]`
+- **Rest Site Option**: `{index, option_id, name, description, is_enabled}` -- option_id: `HEAL`, `SMITH`, `MEND`, `LIFT`, `DIG`, `HATCH`, `COOK`, `CLONE`
 
 ### Action Results
 
@@ -334,6 +348,15 @@ data
 | `NODE_NOT_FOUND` | Invalid coordinates |
 | `NOT_TRAVELABLE` | Node not reachable |
 | `TRAVEL_DISABLED` | Animation in progress |
+
+**Rest Site** (`choose_rest_option`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_AT_REST_SITE` | Not at a rest site |
+| `OPTION_NOT_FOUND` | Option ID not available |
+| `OPTION_DISABLED` | Option is disabled (e.g., SMITH with no upgradable cards) |
+| `OPTION_CANCELLED` | Option was cancelled (e.g., SMITH card selection skipped) |
 
 **Character Select** (`select_character`, `set_ascension`, `embark`):
 

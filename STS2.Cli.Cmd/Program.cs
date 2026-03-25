@@ -85,6 +85,9 @@ internal static class Program
         // Map commands
         rootCommand.Subcommands.Add(ChooseMapNodeCommand.Create(prettyOption));
 
+        // Rest site commands
+        rootCommand.Subcommands.Add(ChooseRestOptionCommand.Create(prettyOption));
+
         return rootCommand.Parse(args).Invoke();
     }
 }
