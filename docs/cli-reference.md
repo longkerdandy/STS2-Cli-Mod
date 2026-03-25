@@ -1,8 +1,12 @@
 # STS2 CLI Reference
 
-Command-line interface for interacting with Slay the Spire 2 via the STS2-Cli-Mod.
+CLI for controlling Slay the Spire 2 via named pipe. All responses are JSON: `{"ok": true, "data": {...}}` on success, `{"ok": false, "error": "CODE", "message": "..."}` on error.
+
+Exit codes: 0=success, 1=connection, 2=invalid state, 3=invalid param, 4=timeout, 5=state changed.
 
 ## Commands
+
+All commands use stable IDs (not indices). Use `--nth N` (0-based, default 0) when multiple items share the same ID.
 
 ### ping
 
@@ -10,7 +14,7 @@ Command-line interface for interacting with Slay the Spire 2 via the STS2-Cli-Mo
 ./sts2 ping
 ```
 
-Test connection to the mod. Returns `{"ok": true}` on success.
+Test connection. Returns `{"ok": true}`.
 
 ### state
 
@@ -18,7 +22,9 @@ Test connection to the mod. Returns `{"ok": true}` on success.
 ./sts2 state
 ```
 
-Get current game state. Returns screen type, combat details, player info, hand, enemies, and rewards.
+Get full game state. See [Game State Structure](#game-state-structure) below.
+
+---
 
 ### play_card
 
@@ -26,18 +32,7 @@ Get current game state. Returns screen type, combat details, player info, hand, 
 ./sts2 play_card <card_id> [--nth <n>] [--target <combat_id>]
 ```
 
-Play a card from hand by **card ID**.
-
-- **card_id**: Card identifier (e.g., `STRIKE_IRONCLAD`)
-- **--nth**: N-th occurrence when multiple copies exist (0-based, optional, defaults to 0)
-- **--target**: Required for cards with enemy-targeting target type. Omit for self-targeting or area cards.
-
-Examples:
-```bash
-./sts2 play_card STRIKE_IRONCLAD                    # Play first Strike
-./sts2 play_card STRIKE_IRONCLAD --nth 1            # Play second Strike if multiple exist
-./sts2 play_card STRIKE_IRONCLAD --target 123       # Strike specific enemy
-```
+Play a card from hand. `--target` required for enemy-targeting cards only.
 
 ### use_potion
 
@@ -45,18 +40,7 @@ Examples:
 ./sts2 use_potion <potion_id> [--nth <n>] [--target <combat_id>]
 ```
 
-Use a potion by **potion ID**.
-
-- **potion_id**: Potion identifier (e.g., `FIRE_POTION`)
-- **--nth**: N-th occurrence when multiple copies exist (0-based, optional, defaults to 0)
-- **--target**: Required for enemy-targeting potions
-
-Examples:
-```bash
-./sts2 use_potion FIRE_POTION                       # Use first Fire Potion
-./sts2 use_potion FIRE_POTION --nth 1               # Use second Fire Potion if multiple exist
-./sts2 use_potion FIRE_POTION --target 456          # Use on specific enemy
-```
+Use a potion. `--target` required for enemy-targeting potions. Some potions open a card selection screen (screen becomes `POTION_SELECTION`) -- use `potion_select_card` or `potion_select_skip` to complete.
 
 ### end_turn
 
@@ -64,7 +48,9 @@ Examples:
 ./sts2 end_turn
 ```
 
-End the current turn. The response contains all enemy action results (damage dealt, buffs applied, etc.).
+End turn. Response contains all enemy action results -- always read it.
+
+---
 
 ### reward_claim
 
@@ -72,56 +58,26 @@ End the current turn. The response contains all enemy action results (damage dea
 ./sts2 reward_claim --type <type> [--id <id>] [--nth <n>]
 ```
 
-Claim a non-card reward by **type and optional ID**.
+Claim a non-card reward. Types: `gold`, `potion`, `relic`, `special_card`. `--id` required for all except `gold`.
 
-- **--type**: Reward type - `gold`, `potion`, `relic`, `special_card`
-- **--id**: Item ID (required for `potion`, `relic`, `special_card`; optional for `gold`)
-- **--nth**: N-th occurrence when multiple rewards of same type exist (0-based, optional, defaults to 0)
-
-Examples:
-```bash
-./sts2 reward_claim --type gold                                   # Claim gold reward
-./sts2 reward_claim --type potion --id FIRE_POTION               # Claim Fire Potion
-./sts2 reward_claim --type relic --id BURNING_BLOOD              # Claim specific relic
-./sts2 reward_claim --type potion --id FIRE_POTION --nth 1       # Claim 2nd Fire Potion
-```
-
-For card rewards, use `reward_choose_card` instead (returns `USE_CHOOSE_CARD` error if attempted on a card reward).
-
-### reward_choose_card
+### reward_choose_card / reward_skip_card
 
 ```
 ./sts2 reward_choose_card --type card --card_id <card_id> [--nth <n>]
-```
-
-Pick a specific card from a card reward by **card ID**.
-
-- **--type**: Must be `card`
-- **--card_id**: Card identifier to select (e.g., `STRIKE_IRONCLAD`)
-- **--nth**: N-th card reward when multiple exist (0-based, optional, defaults to 0)
-
-Example:
-```bash
-./sts2 reward_choose_card --type card --card_id STRIKE_IRONCLAD          # Select from 1st card reward
-./sts2 reward_choose_card --type card --card_id STRIKE_IRONCLAD --nth 1  # Select from 2nd card reward
-```
-
-### reward_skip_card
-
-```
 ./sts2 reward_skip_card --type card [--nth <n>]
 ```
 
-Skip a card reward — take nothing.
+Pick or skip a card reward. `--nth` selects which card reward when multiple exist.
 
-- **--type**: Must be `card`
-- **--nth**: N-th card reward when multiple exist (0-based, optional, defaults to 0)
+### proceed
 
-Example:
-```bash
-./sts2 reward_skip_card --type card              # Skip 1st card reward
-./sts2 reward_skip_card --type card --nth 1      # Skip 2nd card reward
 ```
+./sts2 proceed
+```
+
+Leave reward screen or FakeMerchant event and proceed to map.
+
+---
 
 ### choose_event
 
@@ -129,17 +85,7 @@ Example:
 ./sts2 choose_event <index>
 ```
 
-Choose an option in an event room by **0-based index**.
-
-- **index**: Option index in the event's options list (0-based)
-
-Examples:
-```bash
-./sts2 choose_event 0                    # Choose first option
-./sts2 choose_event 1                    # Choose second option
-```
-
-For Ancient events, use `advance_dialogue` first if `is_in_dialogue` is true.
+Choose event option by 0-based index. For Ancient events, advance dialogue first.
 
 ### advance_dialogue
 
@@ -147,30 +93,9 @@ For Ancient events, use `advance_dialogue` first if `is_in_dialogue` is true.
 ./sts2 advance_dialogue [--auto]
 ```
 
-Advance dialogue in an **Ancient event**.
+Advance Ancient event dialogue. Use `--auto` to skip all dialogue lines until options appear. Then use `choose_event`.
 
-Ancient events have a dialogue phase before options appear. Use this command to click through the dialogue.
-
-- **--auto**: Automatically advance all dialogue lines until options appear
-
-Examples:
-```bash
-./sts2 advance_dialogue                   # Advance one dialogue line
-./sts2 advance_dialogue --auto           # Auto-advance to options
-```
-
-**Workflow for Ancient events**:
-1. Check `sts2 state` - if `layout_type` is "Ancient" and `is_in_dialogue` is true
-2. Run `advance_dialogue --auto` to skip to options
-3. Then use `choose_event <index>` to select an option
-
-### reward_proceed
-
-```
-./sts2 reward_proceed
-```
-
-Leave the reward screen and proceed to the map. Any unclaimed rewards are automatically skipped.
+---
 
 ### potion_select_card
 
@@ -178,31 +103,7 @@ Leave the reward screen and proceed to the map. Any unclaimed rewards are automa
 ./sts2 potion_select_card <card_id> [<card_id>...] [--nth <n>...]
 ```
 
-Select cards from a potion-opened card selection screen. Used when potions like Liquid Memories, Gambler's Brew, etc. open a selection interface.
-
-- **card_id**: One or more card identifiers to select
-- **--nth**: N-th occurrence for each card ID (0-based, optional, defaults to 0 for each card)
-
-Examples:
-```bash
-./sts2 potion_select_card BASH                                    # Select Bash
-./sts2 potion_select_card STRIKE --nth 0 DEFEND --nth 1          # Select Strike (1st) and Defend (2nd)
-```
-
-**Workflow for selection potions**:
-1. Use `use_potion <potion_id>` (e.g., `LIQUID_MEMORIES`, `GAMBLERS_BREW`)
-2. Check response for `status: "selection_required"` with available cards
-3. Use `potion_select_card <card_id>` to select cards
-4. Use `state` to confirm return to `COMBAT` screen
-
-**Supported selection potions**:
-- `ATTACK_POTION`, `SKILL_POTION`, `POWER_POTION` - Choose 1 of 3 cards
-- `COLORLESS_POTION` - Choose 1 of 3 (can skip)
-- `LIQUID_MEMORIES` - Choose 1 from discard pile
-- `DROPLET_OF_PRECOGNITION` - Choose 1 from draw pile
-- `GAMBLERS_BREW` - Choose 0-N from hand (multi-select, can skip)
-- `ASHWATER` - Choose 1-N from hand (multi-select)
-- `TOUCH_OF_INSANITY` - Choose 1 from hand
+Select cards from potion-opened selection screen. Check `potion_selection.min_select` / `max_select` in state for how many to pick.
 
 ### potion_select_skip
 
@@ -210,355 +111,111 @@ Examples:
 ./sts2 potion_select_skip
 ```
 
-Skip the current potion card selection (if the potion allows skipping).
+Skip potion card selection (only if `potion_selection.can_skip` is true).
 
-Some potions like `COLORLESS_POTION` and `GAMBLERS_BREW` allow skipping the selection. This command clicks the skip button to proceed without selecting any cards.
+---
 
-Example:
-```bash
-./sts2 potion_select_skip          # Skip the potion card selection
+### choose_map_node
+
+```
+./sts2 choose_map_node <col> <row>
 ```
 
-## Exit Codes
-
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | Connection error (game not running, mod not loaded) |
-| 2 | Invalid game state (not in combat, not on reward screen, combat ending, not player turn) |
-| 3 | Invalid parameter (bad ID, missing target, unknown command, ID mismatch) |
-| 4 | Timeout (action did not complete in time) |
-| 5 | State changed (concurrent modification) |
-
-## Response Format
-
-**Success:**
-
-```json
-{"ok": true, "data": { ... }}
-```
-
-**Error:**
-
-```json
-{"ok": false, "error": "ERROR_CODE", "message": "Human-readable description"}
-```
+Travel to a map node. Only nodes with state `TRAVELABLE` can be selected -- check `map.travelable_coords` in state.
 
 ## Game State Structure
 
-Returned by `./sts2 state` in the `data` field.
+Returned by `state` in the `data` field. Only the relevant screen's data is populated; others are null/omitted.
 
 ```
 data
-├── screen              # "COMBAT", "REWARD", "CARD_REWARD", "EVENT", "POTION_SELECTION", "MAP", "MENU", "UNKNOWN"
-├── timestamp           # Unix timestamp (ms)
-├── combat              # null when not in combat
-│   ├── encounter       # encounter ID (e.g., "jaw_worm")
-│   ├── turn_number     # 1-indexed
-│   ├── is_player_turn
-│   ├── is_player_actions_disabled
-│   ├── is_combat_ending
+├── screen              # COMBAT | REWARD | CARD_REWARD | EVENT | POTION_SELECTION
+│                       # MAP | CHARACTER_SELECT | DECK_CARD_SELECT | MENU | UNKNOWN
+├── timestamp           # Unix ms
+├── combat
+│   ├── encounter, turn_number, is_player_turn
+│   ├── is_player_actions_disabled, is_combat_ending
 │   ├── player
 │   │   ├── character_id, character_name
 │   │   ├── hp, max_hp, block, energy, max_energy
 │   │   ├── gold, deck_count
 │   │   ├── hand_count, draw_count, discard_count, exhaust_count
-│   │   ├── relics[]
-│   │   ├── potions[]
-│   │   ├── powers[]
+│   │   ├── relics[], potions[], powers[]
 │   │   ├── pets[]?          # Necrobinder only
-│   │   ├── orbs[]?          # Defect only
-│   │   ├── orb_slots?       # Defect only
+│   │   ├── orbs[]?, orb_slots?  # Defect only
 │   │   └── stars?           # Regent only
 │   ├── hand[]
 │   └── enemies[]
-└── rewards             # null when not on reward screen
-    └── rewards[]       # Array of reward items
-```
-
-### Player Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `character_id` | string | e.g., `"ironclad"` |
-| `hp`, `max_hp` | int | Current and maximum health |
-| `block` | int | Current block (damage reduction) |
-| `energy`, `max_energy` | int | Current and max energy for this turn |
-| `gold` | int | Gold count |
-| `deck_count` | int | Total cards in deck |
-| `hand_count` | int | Cards currently in hand |
-| `draw_count` | int | Cards in draw pile |
-| `discard_count` | int | Cards in discard pile |
-| `exhaust_count` | int | Cards exhausted this combat |
-
-### Relic Object
-
-```json
-{"id": "string", "name": "string", "description": "string", "rarity": "string"}
-```
-
-### Potion Object
-
-```json
-{"slot": 0, "id": "string", "name": "string", "description": "string", "rarity": "string", "usage": "string", "target_type": "string"}
-```
-
-### Power Object
-
-```json
-{"id": "string", "name": "string", "amount": 0, "type": "string", "stack_type": "string", "description": "string"}
+├── rewards
+│   └── rewards[]
+├── event
+│   ├── event_id, title, description, layout_type
+│   ├── is_finished, is_in_dialogue
+│   ├── current_dialogue_line, total_dialogue_lines  # Ancient only
+│   └── options[]
+├── potion_selection
+│   ├── selection_type, min_select, max_select, can_skip
+│   └── cards[]
+└── map
+    ├── act_index, act_floor, total_floor
+    ├── columns, rows
+    ├── current_coord       # {col, row}, null at start
+    ├── nodes[]
+    └── travelable_coords[] # [{col, row}]
 ```
 
 ### Card Object (in hand)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `index` | int | 0-based position in hand (may shift after plays) |
-| `id` | string | Card identifier |
+| `index` | int | Position in hand (0-based) |
+| `id` | string | Card identifier (use with `play_card`) |
 | `name` | string | Display name |
 | `description` | string | Card effect text |
 | `type` | string | `Attack`, `Skill`, `Power`, `Status`, `Curse` |
 | `rarity` | string | `Basic`, `Common`, `Uncommon`, `Rare`, `Ancient`, `Event`, `Token`, `Status`, `Curse` |
 | `target_type` | string | `None`, `Self`, `AnyEnemy`, `AllEnemies`, `RandomEnemy`, `AnyAlly`, etc. |
-| `cost` | int | Energy cost (-1 for X-cost) |
-| `star_cost` | int? | Star cost (Regent only, -1 for X-star) |
-| `keywords` | string[] | Keywords like `Exhaust`, `Ethereal`, `Innate`, `Retain`, `Sly` |
-| `tags` | string[] | Additional tags like `Strike`, `Defend` |
+| `cost` | int | Energy cost (-1 = X-cost) |
+| `star_cost` | int? | Regent only (-1 = X-star) |
+| `keywords` | string[] | `Exhaust`, `Ethereal`, `Innate`, `Retain`, `Sly`, etc. |
+| `tags` | string[] | `Strike`, `Defend`, etc. |
 | `damage` | int? | Preview damage (after all modifiers) |
 | `block` | int? | Preview block (after all modifiers) |
 | `enchantment` | string? | Enchantment model ID |
 | `affliction` | string? | Affliction model ID |
-| `is_upgraded` | bool | Whether the card is upgraded |
-| `can_play` | bool | Whether the card can be played right now |
-| `unplayable_reason` | string? | Why the card can't be played |
+| `is_upgraded` | bool | Whether upgraded |
+| `can_play` | bool | Whether playable right now |
+| `unplayable_reason` | string? | Why not playable |
 
 ### Enemy Object
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `combat_id` | uint | **Stable** target ID for `--target` parameter (does not change when enemies die) |
+| `combat_id` | uint | **Stable** target ID for `--target` (survives other enemies dying) |
 | `id` | string | Enemy type identifier |
 | `name` | string | Display name |
-| `hp`, `max_hp` | int | Current and maximum health |
+| `hp`, `max_hp` | int | Health |
 | `block` | int | Current block |
-| `is_alive` | bool | Whether enemy is alive |
-| `is_minion` | bool | Whether enemy is a summoned minion |
-| `move_id` | string | Current move identifier |
-| `intents` | array | Current turn intents |
-| `powers` | array | Active powers/buffs/debuffs |
+| `is_alive` | bool | Alive status |
+| `is_minion` | bool | Summoned minion |
+| `move_id` | string | Current move |
+| `intents[]` | array | `{type, damage?, hits?}` -- damage is **per hit** |
+| `powers[]` | array | `{id, name, amount, type, stack_type, description}` |
 
-### Intent Object
+### Sub-objects
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `type` | string | `Attack`, `Defend`, `Buff`, `Debuff`, `Unknown`, etc. |
-| `damage` | int? | Damage **per hit** |
-| `hits` | int? | Number of hits (total damage = damage * hits) |
+- **Relic**: `{id, name, description, rarity}`
+- **Potion**: `{slot, id, name, description, rarity, usage, target_type}`
+- **Power**: `{id, name, amount, type, stack_type, description}`
+- **Reward Item**: `{index, type, description, gold_amount?, potion_id?, potion_name?, potion_rarity?, relic_id?, relic_name?, relic_description?, relic_rarity?, card_choices[]?, card_id?, card_name?}` -- type is `Gold`, `Potion`, `Relic`, `Card`, `SpecialCard`, `CardRemoval`
+- **Card Choice** (in reward): `{index, id, name, description, type, rarity, cost, is_upgraded}`
+- **Event Option**: `{index, title, description, is_locked, is_proceed, relic_id?}`
+- **Selectable Card** (potion selection): `{index, card_id, card_name, description, card_type, cost}`
+- **Map Node**: `{col, row, type, state, children[], parents[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE|NONE`; children/parents are `[{col, row}]`
 
-## Reward State Structure
+### Action Results
 
-Returned by `./sts2 state` in the `data.rewards` field when screen is `REWARD`.
-
-### Reward Item Object
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `index` | int | 0-based position in reward list (legacy, may shift after claims) |
-| `type` | string | `Gold`, `Potion`, `Relic`, `Card`, `SpecialCard`, `CardRemoval` |
-| `description` | string | Localized description |
-| `gold_amount` | int? | Gold rewards only: amount of gold |
-| `potion_id` | string? | Potion rewards only: potion identifier |
-| `potion_name` | string? | Potion rewards only: display name |
-| `potion_rarity` | string? | Potion rewards only: rarity |
-| `relic_id` | string? | Relic rewards only: relic identifier |
-| `relic_name` | string? | Relic rewards only: display name |
-| `relic_description` | string? | Relic rewards only: effect description |
-| `relic_rarity` | string? | Relic rewards only: rarity |
-| `card_choices` | array? | Card rewards only: array of card choices (typically 3) |
-| `card_id` | string? | SpecialCard rewards only: card identifier |
-| `card_name` | string? | SpecialCard rewards only: display name |
-
-### Card Choice Object (within card rewards)
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `index` | int | 0-based position in card choices (legacy) |
-| `id` | string | Card identifier (use with `choose_card --card_id`) |
-| `name` | string | Display name |
-| `description` | string | Card effect text |
-| `type` | string | `Attack`, `Skill`, `Power`, `Status`, `Curse` |
-| `rarity` | string | `Common`, `Uncommon`, `Rare` |
-| `cost` | int | Energy cost |
-| `is_upgraded` | bool | Whether the card is upgraded |
-
-### JSON Example (Reward Screen)
-
-```json
-{
-  "ok": true,
-  "data": {
-    "screen": "REWARD",
-    "timestamp": 1711123456789,
-    "rewards": {
-      "rewards": [
-        {"index": 0, "type": "Gold", "description": "25 Gold", "gold_amount": 25},
-        {"index": 1, "type": "Potion", "description": "Fire Potion",
-         "potion_id": "FIRE_POTION", "potion_name": "Fire Potion", "potion_rarity": "Common"},
-        {"index": 2, "type": "Card", "description": "Add a card to your deck",
-         "card_choices": [
-           {"index": 0, "id": "INFLAME", "name": "Inflame", "description": "Gain 2 Strength.",
-            "type": "Power", "rarity": "Uncommon", "cost": 1, "is_upgraded": false},
-           {"index": 1, "id": "SHRUG_IT_OFF", "name": "Shrug It Off",
-            "description": "Gain 8 Block. Draw 1 card.",
-            "type": "Skill", "rarity": "Common", "cost": 1, "is_upgraded": false},
-           {"index": 2, "id": "ANGER", "name": "Anger",
-            "description": "Deal 6 damage. Add a copy to discard.",
-            "type": "Attack", "rarity": "Common", "cost": 0, "is_upgraded": false}
-         ]}
-      ]
-    }
-  }
-}
-```
-
-### Event State Structure
-
-Returned by `./sts2 state` in the `data.event` field when screen is `EVENT`.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `event_id` | string | Event identifier (e.g., "BIG_FISH") |
-| `title` | string | Localized event title |
-| `description` | string | Localized event description (current page) |
-| `layout_type` | string | "Default", "Combat", "Ancient", "Custom" |
-| `is_finished` | bool | Whether the event has concluded |
-| `is_in_dialogue` | bool | **Ancient events only**: True when dialogue is in progress |
-| `current_dialogue_line` | int | **Ancient events only**: Current dialogue line index (0-based) |
-| `total_dialogue_lines` | int | **Ancient events only**: Total number of dialogue lines |
-| `options` | array | Current available options (empty during Ancient dialogue) |
-
-### Event Option Object
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `index` | int | 0-based index for `choose_event` |
-| `title` | string | Localized option text |
-| `description` | string | Localized option description/tooltip |
-| `is_locked` | bool | Cannot be selected (OnChosen == null) |
-| `is_proceed` | bool | Final "proceed to map" option |
-| `relic_id` | string | Relic ID if option shows a relic |
-
-### JSON Example (Event Screen)
-
-```json
-{
-  "ok": true,
-  "data": {
-    "screen": "EVENT",
-    "timestamp": 1711123456789,
-    "event": {
-      "event_id": "BIG_FISH",
-      "title": "Big Fish",
-      "description": "You find a large fish flopping on the riverbank...",
-      "layout_type": "Default",
-      "is_finished": false,
-      "is_in_dialogue": false,
-      "options": [
-        {
-          "index": 0,
-          "title": "[Eat] Heal 5 HP.",
-          "description": "Heal 5 HP.",
-          "is_locked": false,
-          "is_proceed": false
-        }
-      ]
-    }
-  }
-}
-```
-
-### JSON Example (Ancient Event in Dialogue)
-
-```json
-{
-  "ok": true,
-  "data": {
-    "screen": "EVENT",
-    "event": {
-      "event_id": "ANCIENT_EXAMPLE",
-      "title": "Ancient One",
-      "layout_type": "Ancient",
-      "is_in_dialogue": true,
-      "current_dialogue_line": 0,
-      "total_dialogue_lines": 3,
-      "options": []
-    }
-  }
-}
-```
-
-### Potion Selection State Structure
-
-Returned by `./sts2 state` in the `data.potion_selection` field when screen is `POTION_SELECTION`.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `selection_type` | string | Type of selection: `choose_from_pool`, `choose_from_discard`, `choose_from_draw`, `choose_from_hand` |
-| `min_select` | int | Minimum number of cards to select |
-| `max_select` | int | Maximum number of cards to select |
-| `can_skip` | bool | Whether the player can skip this selection |
-| `cards` | array | Available cards to choose from |
-
-### Selectable Card Object
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `index` | int | 0-based position in selection screen |
-| `card_id` | string | Card identifier (use with `potion_select_card`) |
-| `card_name` | string | Display name |
-| `description` | string | Card effect text |
-| `card_type` | string | `Attack`, `Skill`, `Power`, `Status`, `Curse` |
-| `cost` | int | Energy cost |
-
-### JSON Example (Potion Selection Screen)
-
-```json
-{
-  "ok": true,
-  "data": {
-    "screen": "POTION_SELECTION",
-    "timestamp": 1711123456789,
-    "potion_selection": {
-      "selection_type": "choose_from_discard",
-      "min_select": 1,
-      "max_select": 1,
-      "can_skip": false,
-      "cards": [
-        {
-          "index": 0,
-          "card_id": "STRIKE",
-          "card_name": "Strike",
-          "description": "Deal 6 damage.",
-          "card_type": "Attack",
-          "cost": 1
-        },
-        {
-          "index": 1,
-          "card_id": "BASH",
-          "card_name": "Bash",
-          "description": "Deal 8 damage. Apply 2 Vulnerable.",
-          "card_type": "Attack",
-          "cost": 2
-        }
-      ]
-    }
-  }
-}
-```
-
-## Action Results
-
-After `play_card`, `end_turn`, and `use_potion`, the response `data` includes a `results` array:
+`play_card`, `end_turn`, `use_potion` responses include `data.results[]`:
 
 | Type | Fields |
 |------|--------|
@@ -569,45 +226,65 @@ After `play_card`, `end_turn`, and `use_potion`, the response `data` includes a 
 
 ## Key Notes
 
-- **Use IDs, not indices**: All commands now use stable IDs (`card_id`, `potion_id`, `relic_id`) instead of shifting indices. This prevents errors when the game state changes between command issuance and execution.
-- **--nth parameter**: Only specify `--nth` when multiple items with the same ID exist. If only one item exists but `--nth` is specified with a non-zero value, an `AMBIGUOUS_REWARD` error is returned.
-- **combat_id** on enemies is **stable** across the entire combat -- use it for `--target`. It does not change when other enemies die.
-- Null/empty fields are **omitted** from JSON (not serialized as `null`).
-- `damage` and `block` on cards are **preview values** after all modifiers (strength, vulnerable, etc.).
-- `intents[].damage` is **per-hit**; multiply by `intents[].hits` for total incoming damage.
-- After `end_turn`, the response contains all enemy actions -- always read it.
-- **Ancient events**: Use `is_in_dialogue` field to detect dialogue phase. Run `advance_dialogue --auto` before `choose_event`.
-- **Event workflow**: For Ancient events: check `is_in_dialogue` → `advance_dialogue --auto` → wait → `choose_event`.
-- **Selection potions**: Some potions (Liquid Memories, Gambler's Brew, etc.) open card selection screens. When using these potions, check for `status: "selection_required"` response, then use `potion_select_card` or `potion_select_skip`.
-- **Potion selection workflow**: Use `use_potion` → check for `POTION_SELECTION` screen → use `potion_select_card <card_id>` or `potion_select_skip` → confirm return to `COMBAT`.
+- `damage`/`block` on cards are **preview values** with all modifiers applied.
+- `intents[].damage` is **per hit**; total = `damage * hits`.
+- Null/empty fields are **omitted** from JSON.
+- After `end_turn`, always read the response for enemy action results.
+- On any error, run `state` to refresh before retrying.
 
-## Error Handling
+## Error Codes
 
-| Error | Cause | Recovery |
-|-------|-------|----------|
-| `TARGET_NOT_FOUND` | Enemy died or wrong combat_id | Run `./sts2 state` to get alive enemies |
-| `CARD_NOT_FOUND` | Card ID not in hand | Run `./sts2 state` to get current hand |
-| `CANNOT_PLAY_CARD` | Not enough energy or blocked by effect | Skip this card |
-| `NOT_IN_COMBAT` | Combat ended | Stop the combat loop |
-| `COMBAT_ENDING` | Combat is resolving | Stop playing, wait for resolution |
-| `NOT_ON_REWARD_SCREEN` | Not on the reward screen | Run `./sts2 state` to check current screen |
-| `REWARD_NOT_FOUND` | No reward matching type/ID found | Run `./sts2 state` to get available rewards |
-| `AMBIGUOUS_REWARD` | Only one item but nth≠0 specified | Use nth=0 or omit --nth |
-| `INVALID_REWARD_INDEX` | nth out of range for matching rewards | Check available count in error message |
-| `ID_MISMATCH` | Item at position doesn't match expected ID | Run `./sts2 state` to verify current state |
-| `NOT_CARD_REWARD` | Used `reward_choose_card`/`reward_skip_card` on non-card reward | Use `reward_claim` instead |
-| `USE_CHOOSE_CARD` | Used `reward_claim` on a card reward | Use `reward_choose_card` or `reward_skip_card` instead |
-| `POTION_BELT_FULL` | Potion reward but belt has no empty slots | Skip this reward or use a potion first |
-| `NOT_SUPPORTED` | Reward type not yet supported (e.g., CardRemoval) | Skip this reward |
-| `CLAIM_FAILED` | Reward claim failed for unknown reason | Run `./sts2 state` to refresh and retry |
-| `NOT_ANCIENT_EVENT` | Tried `advance_dialogue` on non-Ancient event | Check `layout_type` in event state |
-| `NOT_IN_DIALOGUE` | Ancient event dialogue already finished | Use `choose_event` directly |
-| `NOT_IN_POTION_SELECTION` | Not in potion card selection screen | Check current screen with `state` |
-| `CANNOT_SKIP` | This potion selection cannot be skipped | Must select required cards |
-| `SKIP_BUTTON_NOT_FOUND` | Skip button not found on selection screen | Use `potion_select_card` instead |
-| `INVALID_SELECTION_COUNT` | Wrong number of cards selected | Check `min_select`/`max_select` in state |
-| `DUPLICATE_SELECTION` | Same card selected multiple times | Ensure unique card IDs |
-| `NO_CARDS_AVAILABLE` | No cards found in selection screen | Check potion state |
-| `CONNECTION_ERROR` | Game disconnected | Report to user and stop |
+**Combat** (`play_card`, `use_potion`, `end_turn`):
 
-On any error, run `./sts2 state` to refresh state before continuing.
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_COMBAT` | Combat ended |
+| `COMBAT_ENDING` | Combat resolving |
+| `CARD_NOT_FOUND` | Card ID not in hand |
+| `CANNOT_PLAY_CARD` | Not enough energy or blocked |
+| `TARGET_NOT_FOUND` | Enemy died or wrong combat_id |
+
+**Reward** (`reward_claim`, `reward_choose_card`, `reward_skip_card`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_ON_REWARD_SCREEN` | Not on reward screen |
+| `REWARD_NOT_FOUND` | No matching reward |
+| `AMBIGUOUS_REWARD` | nth!=0 but only one item |
+| `INVALID_REWARD_INDEX` | nth out of range |
+| `ID_MISMATCH` | Item doesn't match expected ID |
+| `NOT_CARD_REWARD` | Used card command on non-card reward |
+| `USE_CHOOSE_CARD` | Used `reward_claim` on card reward |
+| `POTION_BELT_FULL` | No empty potion slots |
+| `NOT_SUPPORTED` | Unsupported reward type |
+| `CLAIM_FAILED` | Unknown failure |
+
+**Event** (`choose_event`, `advance_dialogue`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_ANCIENT_EVENT` | `advance_dialogue` on non-Ancient event |
+| `NOT_IN_DIALOGUE` | Dialogue already finished |
+
+**Potion Selection** (`potion_select_card`, `potion_select_skip`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_POTION_SELECTION` | Not on selection screen |
+| `CANNOT_SKIP` | Selection cannot be skipped |
+| `SKIP_BUTTON_NOT_FOUND` | Skip button unavailable |
+| `INVALID_SELECTION_COUNT` | Wrong number of cards |
+| `DUPLICATE_SELECTION` | Same card selected twice |
+| `NO_CARDS_AVAILABLE` | Empty selection screen |
+
+**Map** (`choose_map_node`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_ON_MAP` | Map not open |
+| `NO_RUN_STATE` | No active run |
+| `NODE_NOT_FOUND` | Invalid coordinates |
+| `NOT_TRAVELABLE` | Node not reachable |
+| `TRAVEL_DISABLED` | Animation in progress |
+
+**General**: `CONNECTION_ERROR` -- game disconnected.

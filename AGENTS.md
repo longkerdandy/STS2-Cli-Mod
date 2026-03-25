@@ -69,6 +69,7 @@ Verify the mod works by:
 14. `sts2.exe select_character <character_id>` - confirms character selection on character select screen
 15. `sts2.exe set_ascension <level>` - confirms ascension level setting
 16. `sts2.exe embark` - confirms game start from character select screen
+17. `sts2.exe choose_map_node <col> <row>` - confirms map node selection and travel
 
 ## Code Style Guidelines
 
