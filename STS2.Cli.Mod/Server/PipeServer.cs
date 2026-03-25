@@ -6,6 +6,7 @@ using System.Text;
 using System.Text.Json;
 using STS2.Cli.Mod.Actions;
 using STS2.Cli.Mod.Models.Messages;
+using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Server;

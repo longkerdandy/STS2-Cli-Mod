@@ -8,6 +8,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
+using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
@@ -15,16 +16,34 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.State;
 
 /// <summary>
-///     Extracts game state from Slay the Spire 2 using direct type references.
+///     Handles the 'state' command by extracting the current game state
+///     from Slay the Spire 2 using direct type references.
 /// </summary>
-public static class GameStateExtractor
+public static class StateHandler
 {
-    private static readonly ModLogger Logger = new("GameStateExtractor");
+    private static readonly ModLogger Logger = new("StateHandler");
+
+    /// <summary>
+    ///     Handles the state request.
+    /// </summary>
+    /// <param name="request">The parsed request object.</param>
+    /// <returns>Response containing the game state DTO, or an error if extraction failed.</returns>
+    public static object HandleRequest(Request request)
+    {
+        Logger.Info("Requested game state");
+
+        var state = GetState();
+
+        if (state.Error != null)
+            return new { ok = false, error = "STATE_EXTRACTION_ERROR", message = state.Error };
+
+        return new { ok = true, data = state };
+    }
 
     /// <summary>
     ///     Gets the current game state.
     /// </summary>
-    public static GameStateDto GetState()
+    private static GameStateDto GetState()
     {
         try
         {
