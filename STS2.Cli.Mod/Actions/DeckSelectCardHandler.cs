@@ -6,7 +6,7 @@ using MegaCrit.Sts2.Core.Nodes.Cards;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
-using STS2.Cli.Mod.Models.Message;
+using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;

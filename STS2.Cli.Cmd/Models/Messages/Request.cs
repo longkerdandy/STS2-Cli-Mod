@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
-namespace STS2.Cli.Cmd.Models.Message;
+namespace STS2.Cli.Cmd.Models.Messages;
 
 /// <summary>
 ///     Request model for pipe communication.

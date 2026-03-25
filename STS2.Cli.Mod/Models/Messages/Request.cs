@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace STS2.Cli.Mod.Models.Message;
+namespace STS2.Cli.Mod.Models.Messages;
 
 /// <summary>
 /// Request model for pipe communication.

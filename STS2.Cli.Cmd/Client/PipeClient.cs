@@ -1,7 +1,7 @@
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
-using STS2.Cli.Cmd.Models.Message;
+using STS2.Cli.Cmd.Models.Messages;
 using STS2.Cli.Cmd.Utils;
 
 namespace STS2.Cli.Cmd.Client;

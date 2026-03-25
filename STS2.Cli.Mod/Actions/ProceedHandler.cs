@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
-using STS2.Cli.Mod.Models.Message;
+using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;

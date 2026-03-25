@@ -5,7 +5,7 @@ using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using STS2.Cli.Mod.Actions;
-using STS2.Cli.Mod.Models.Message;
+using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -166,46 +166,60 @@ public static class PipeServer
                 "ping" => new { ok = true, data = new { connected = true } },
 
                 // play_card is async — spans multiple frames waiting for action completion
-                "play_card" => await MainThreadExecutor.RunOnMainThreadAsync(() => PlayCardHandler.HandleRequestAsync(request)),
+                "play_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    PlayCardHandler.HandleRequestAsync(request)),
 
                 // end_turn is async — waits for the enemy turn to complete before returning results
-                "end_turn" => await MainThreadExecutor.RunOnMainThreadAsync(() => EndTurnHandler.HandleRequestAsync(request)),
+                "end_turn" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    EndTurnHandler.HandleRequestAsync(request)),
 
                 // use_potion is async — spans multiple frames waiting for action completion
-                "use_potion" => await MainThreadExecutor.RunOnMainThreadAsync(() => UsePotionHandler.HandleRequestAsync(request)),
+                "use_potion" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    UsePotionHandler.HandleRequestAsync(request)),
 
                 // reward_claim is async — uses type + id + nth for stable identification
-                "reward_claim" => await MainThreadExecutor.RunOnMainThreadAsync(() => ClaimRewardHandler.HandleRequestAsync(request)),
+                "reward_claim" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ClaimRewardHandler.HandleRequestAsync(request)),
 
                 // reward_choose_card is async — uses reward type + card_id + nth
-                "reward_choose_card" => await MainThreadExecutor.RunOnMainThreadAsync(() => ChooseCardHandler.HandleRequestAsync(request)),
+                "reward_choose_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ChooseCardHandler.HandleRequestAsync(request)),
 
                 // reward_skip_card is async — uses reward type + nth
-                "reward_skip_card" => await MainThreadExecutor.RunOnMainThreadAsync(() => ChooseCardHandler.HandleSkipRequestAsync(request)),
+                "reward_skip_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ChooseCardHandler.HandleSkipRequestAsync(request)),
 
                 // choose_event is async — ForceClick option button + polling for state change
-                "choose_event" => await MainThreadExecutor.RunOnMainThreadAsync(() => ChooseEventHandler.HandleRequestAsync(request)),
+                "choose_event" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ChooseEventHandler.HandleRequestAsync(request)),
 
                 // advance_dialogue is async — ForceClick dialogue hitbox + polling for Ancient events
-                "advance_dialogue" => await MainThreadExecutor.RunOnMainThreadAsync(() => AdvanceDialogueHandler.HandleRequestAsync(request)),
+                "advance_dialogue" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    AdvanceDialogueHandler.HandleRequestAsync(request)),
 
                 // proceed is async — FakeMerchant path needs to wait for map to open
-                "proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() => ProceedHandler.HandleRequestAsync(request)),
+                "proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ProceedHandler.HandleRequestAsync(request)),
 
                 // potion_select_card is synchronous — runs on main thread and returns immediately
-                "potion_select_card" => MainThreadExecutor.RunOnMainThread(() => PotionSelectCardHandler.HandleRequest(request)),
+                "potion_select_card" => MainThreadExecutor.RunOnMainThread(() =>
+                    PotionSelectCardHandler.HandleRequest(request)),
 
                 // potion_select_skip is synchronous — runs on main thread and returns immediately
-                "potion_select_skip" => MainThreadExecutor.RunOnMainThread(() => PotionSelectCardHandler.HandleSkipRequest(request)),
+                "potion_select_skip" => MainThreadExecutor.RunOnMainThread(() =>
+                    PotionSelectCardHandler.HandleSkipRequest(request)),
 
                 // deck_select_card is async — multi-step: select cards, preview, confirm, poll for removal
-                "deck_select_card" => await MainThreadExecutor.RunOnMainThreadAsync(() => DeckSelectCardHandler.HandleRequestAsync(request)),
+                "deck_select_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    DeckSelectCardHandler.HandleRequestAsync(request)),
 
                 // deck_select_skip is async — click close button, poll for removal
-                "deck_select_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() => DeckSelectCardHandler.HandleSkipRequestAsync(request)),
+                "deck_select_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    DeckSelectCardHandler.HandleSkipRequestAsync(request)),
 
                 // select_character is synchronous — runs on main thread and returns immediately
-                "select_character" => MainThreadExecutor.RunOnMainThread(() => SelectCharacterHandler.HandleRequest(request)),
+                "select_character" => MainThreadExecutor.RunOnMainThread(() =>
+                    SelectCharacterHandler.HandleRequest(request)),
 
                 // set_ascension is synchronous — runs on main thread and returns immediately
                 "set_ascension" => MainThreadExecutor.RunOnMainThread(() => SetAscensionHandler.HandleRequest(request)),
@@ -248,9 +262,9 @@ public static class PipeServer
     /// </summary>
     private static NamedPipeServerStream CreatePipeServer()
     {
+#pragma warning disable CA1416 // Validate platform compatibility
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-#pragma warning disable CA1416 // Validate platform compatibility
             var pipeSecurity = new PipeSecurity();
             pipeSecurity.AddAccessRule(new PipeAccessRule(
                 new SecurityIdentifier(WellKnownSidType.WorldSid, null),
@@ -266,8 +280,8 @@ public static class PipeServer
                 4096,
                 4096,
                 pipeSecurity);
-#pragma warning restore CA1416
         }
+#pragma warning restore CA1416
 
         // Linux/macOS: Standard constructor uses Unix Domain Sockets
         // No ACL needed — CLI and game run under the same user

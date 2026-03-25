@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
-using STS2.Cli.Mod.Models.Message;
+using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
