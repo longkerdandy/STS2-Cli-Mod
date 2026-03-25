@@ -18,8 +18,9 @@ namespace STS2.Cli.Mod.Server;
 public static class PipeServer
 {
     private static readonly ModLogger Logger = new("PipeServer");
+    private const string PipeName = "sts2-cli-mod";
+    private const int PipeBufferSize = 4096;
     private static CancellationTokenSource? _cts;
-    private static Task? _serverTask;
 
     /// <summary>
     ///     Starts the pipe server loop in the background.
@@ -27,27 +28,14 @@ public static class PipeServer
     /// </summary>
     public static void Start()
     {
-        if (_serverTask != null)
+        if (_cts != null)
         {
             Logger.Warning("Named Pipe Server already started");
             return;
         }
 
         _cts = new CancellationTokenSource();
-        _serverTask = Task.Run(() => RunServerLoopAsync(_cts.Token));
-    }
-
-    /// <summary>
-    ///     Stops the pipe server and waits up to 2 seconds for graceful shutdown.
-    /// </summary>
-    public static async Task StopAsync()
-    {
-        if (_cts != null) await _cts.CancelAsync();
-        if (_serverTask != null) await Task.WhenAny(_serverTask, Task.Delay(TimeSpan.FromSeconds(2)));
-
-        _cts?.Dispose();
-        _cts = null;
-        _serverTask = null;
+        _ = Task.Run(() => RunServerLoopAsync(_cts.Token));
     }
 
     /// <summary>
@@ -110,17 +98,14 @@ public static class PipeServer
             Logger.Info($"Received: {requestJson}");
 
             // Parse request
-            Request? request;
+            Request? request = null;
             try
             {
                 request = JsonSerializer.Deserialize<Request>(requestJson, JsonOptions.Default);
             }
             catch (Exception)
             {
-                await writer.WriteLineAsync(JsonSerializer.Serialize(
-                    new { ok = false, error = "INVALID_REQUEST", message = "Failed to parse request" },
-                    JsonOptions.Default));
-                return;
+                // Deserialization failed — fall through to null check below
             }
 
             if (request == null)
@@ -227,12 +212,10 @@ public static class PipeServer
                 // embark is synchronous — runs on main thread and returns immediately
                 "embark" => MainThreadExecutor.RunOnMainThread(() => EmbarkHandler.HandleRequest(request)),
 
-                // Synchronous commands — single-frame game state access on the main thread
-                _ => MainThreadExecutor.RunOnMainThread(() => cmd switch
-                {
-                    "state" => HandleStateRequest(),
-                    _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
-                })
+                // state is synchronous — single-frame game state extraction on the main thread
+                "state" => MainThreadExecutor.RunOnMainThread(HandleStateRequest),
+
+                _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
             };
         }
         catch (Exception ex)
@@ -272,13 +255,13 @@ public static class PipeServer
                 AccessControlType.Allow));
 
             return NamedPipeServerStreamAcl.Create(
-                "sts2-cli-mod",
+                PipeName,
                 PipeDirection.InOut,
                 1,
                 PipeTransmissionMode.Byte,
                 PipeOptions.Asynchronous,
-                4096,
-                4096,
+                PipeBufferSize,
+                PipeBufferSize,
                 pipeSecurity);
         }
 #pragma warning restore CA1416
@@ -286,7 +269,7 @@ public static class PipeServer
         // Linux/macOS: Standard constructor uses Unix Domain Sockets
         // No ACL needed — CLI and game run under the same user
         return new NamedPipeServerStream(
-            "sts2-cli-mod",
+            PipeName,
             PipeDirection.InOut,
             1,
             PipeTransmissionMode.Byte,
