@@ -88,7 +88,9 @@ public static class RewardStateBuilder
                     index++;
                 }
 
-        // TODO: Handle NLinkedRewardSet children if needed
+        // NLinkedRewardSet (mutually-exclusive grouped rewards linked by chains) is fully
+        // implemented in the game code but never instantiated in the current version.
+        // No code path calls `new LinkedRewardSet(...)`, so we skip it for now.
         return result;
     }
 
