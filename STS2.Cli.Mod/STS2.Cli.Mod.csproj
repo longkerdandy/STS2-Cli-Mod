@@ -11,8 +11,12 @@
   </PropertyGroup>
 
   <!-- 
-    Game directory detection - supports Windows, WSL, and IDE scenarios
+    Game directory detection - supports Windows, WSL, macOS, and Linux
     Priority: 1. STS2_GAME_DIR env var > 2. Auto-detect based on platform
+    
+    Data directory naming follows Godot engine convention (godotsharp_dirs.cpp):
+      data_{appname}_{platform}_{arch}
+    Platform mapping: Windows -> windows, macOS -> macos, Linux/BSD -> linuxbsd
   -->
   <PropertyGroup>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>None</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
@@ -22,36 +26,41 @@
     
     <!-- Windows native (PowerShell, CMD, Visual Studio, Rider) -->
     <STS2GameDir Condition="'$(STS2GameDir)' == '' AND '$(OS)' == 'Windows_NT'">C:\Program Files (x86)\Steam\steamapps\common\Slay the Spire 2</STS2GameDir>
+    <STS2DataDir Condition="'$(STS2DataDir)' == '' AND '$(OS)' == 'Windows_NT'">data_sts2_windows_x86_64</STS2DataDir>
     
     <!-- WSL - detect if running in WSL by checking /mnt/c existence -->
     <STS2GameDir Condition="'$(STS2GameDir)' == '' AND Exists('/mnt/c/')">/mnt/c/Program Files (x86)/Steam/steamapps/common/Slay the Spire 2</STS2GameDir>
+    <STS2DataDir Condition="'$(STS2DataDir)' == '' AND Exists('/mnt/c/')">data_sts2_windows_x86_64</STS2DataDir>
     
     <!-- macOS - detect by checking macOS-specific directory -->
-    <STS2GameDir Condition="'$(STS2GameDir)' == '' AND Exists('/System/Library/') AND Exists('$(HOME)/Library/Application Support/Steam/')">$(HOME)/Library/Application Support/Steam/steamapps/common/Slay the Spire 2</STS2GameDir>
+    <!-- DLLs are inside the .app bundle: SlayTheSpire2.app/Contents/Resources/data_sts2_macos_{arch}/ -->
+    <STS2GameDir Condition="'$(STS2GameDir)' == '' AND Exists('/System/Library/') AND Exists('$(HOME)/Library/Application Support/Steam/')">$(HOME)/Library/Application Support/Steam/steamapps/common/Slay the Spire 2/SlayTheSpire2.app/Contents/Resources</STS2GameDir>
+    <STS2DataDir Condition="'$(STS2DataDir)' == '' AND Exists('/System/Library/') AND '$([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture)' == 'Arm64'">data_sts2_macos_arm64</STS2DataDir>
+    <STS2DataDir Condition="'$(STS2DataDir)' == '' AND Exists('/System/Library/')">data_sts2_macos_x86_64</STS2DataDir>
     
     <!-- Linux native (Steam default) -->
     <STS2GameDir Condition="'$(STS2GameDir)' == ''">$(HOME)/.local/share/Steam/steamapps/common/Slay the Spire 2</STS2GameDir>
+    <STS2DataDir Condition="'$(STS2DataDir)' == ''">data_sts2_linuxbsd_x86_64</STS2DataDir>
   </PropertyGroup>
 
   <!-- Validate game directory exists -->
   <Target Name="ValidateGameDir" BeforeTargets="BeforeBuild">
-    <Error Text="Game directory not found: $(STS2GameDir). Please set STS2_GAME_DIR environment variable or ensure Steam is installed in the default location." Condition="!Exists('$(STS2GameDir)/data_sts2_windows_x86_64/sts2.dll')" />
-    <Message Text="Using game directory: $(STS2GameDir)" Importance="high" />
+    <Error Text="Game data directory not found: $(STS2GameDir)/$(STS2DataDir). Please set STS2_GAME_DIR environment variable or ensure Steam is installed in the default location." Condition="!Exists('$(STS2GameDir)/$(STS2DataDir)/sts2.dll')" />
+    <Message Text="Using game directory: $(STS2GameDir)/$(STS2DataDir)" Importance="high" />
   </Target>
 
   <!-- Direct references to game assemblies -->
   <ItemGroup>
     <!-- Main game assembly - direct reference enables strong typing -->
     <Reference Include="sts2">
-      <HintPath>$(STS2GameDir)/data_sts2_windows_x86_64/sts2.dll</HintPath>
+      <HintPath>$(STS2GameDir)/$(STS2DataDir)/sts2.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <!-- Godot C# API -->
     <Reference Include="GodotSharp">
-      <HintPath>$(STS2GameDir)/data_sts2_windows_x86_64/GodotSharp.dll</HintPath>
+      <HintPath>$(STS2GameDir)/$(STS2DataDir)/GodotSharp.dll</HintPath>
       <Private>false</Private>
     </Reference>
-
   </ItemGroup>
 
   <!-- Mod manifest file -->
