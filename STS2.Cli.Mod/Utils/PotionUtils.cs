@@ -68,28 +68,28 @@ public static class PotionUtils
     /// </summary>
     /// <param name="potionId">The potion ID.</param>
     /// <returns>Selection constraints.</returns>
-    public static SelectionConstraints GetSelectionConstraints(string potionId)
+    public static SelectionConstraintsDto GetSelectionConstraints(string potionId)
     {
         return potionId.ToUpperInvariant() switch
         {
             // Single select potions
             "ATTACK_POTION" or "SKILL_POTION" or "POWER_POTION" or
             "LIQUID_MEMORIES" or "DROPLET_OF_PRECOGNITION" or "TOUCH_OF_INSANITY"
-                => new SelectionConstraints(1, 1, false),
+                => new SelectionConstraintsDto { MinSelect = 1, MaxSelect = 1, CanSkip = false },
 
             // Single select with skip option
             "COLORLESS_POTION"
-                => new SelectionConstraints(0, 1, true),
+                => new SelectionConstraintsDto { MinSelect = 0, MaxSelect = 1, CanSkip = true },
 
             // Multi-select potions
             "GAMBLERS_BREW"
-                => new SelectionConstraints(0, 10, true), // Can select 0 (skip)
+                => new SelectionConstraintsDto { MinSelect = 0, MaxSelect = 10, CanSkip = true }, // Can select 0 (skip)
 
             "ASHWATER"
-                => new SelectionConstraints(1, 10, false), // Must select at least 1
+                => new SelectionConstraintsDto { MinSelect = 1, MaxSelect = 10, CanSkip = false }, // Must select at least 1
 
             // Default
-            _ => new SelectionConstraints(1, 1, false)
+            _ => new SelectionConstraintsDto { MinSelect = 1, MaxSelect = 1, CanSkip = false }
         };
     }
 

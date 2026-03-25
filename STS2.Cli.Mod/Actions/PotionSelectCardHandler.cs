@@ -189,20 +189,20 @@ public static class PotionSelectCardHandler
     ///     The screen's <c>_canSkip</c> field determines whether selection can be skipped.
     ///     The screen always selects exactly 1 card (MinSelect=0 or 1, MaxSelect=1).
     /// </summary>
-    private static SelectionConstraints GetScreenConstraints(NChooseACardSelectionScreen screen)
+    private static SelectionConstraintsDto GetScreenConstraints(NChooseACardSelectionScreen screen)
     {
         try
         {
             var field = typeof(NChooseACardSelectionScreen).GetField("_canSkip",
                 BindingFlags.NonPublic | BindingFlags.Instance);
             var canSkip = field?.GetValue(screen) as bool? ?? false;
-            return new SelectionConstraints(canSkip ? 0 : 1, 1, canSkip);
+            return new SelectionConstraintsDto { MinSelect = canSkip ? 0 : 1, MaxSelect = 1, CanSkip = canSkip };
         }
         catch (Exception ex)
         {
             Logger.Warning($"Failed to read _canSkip from screen: {ex.Message}");
             // Fallback: single select, cannot skip
-            return new SelectionConstraints(1, 1, false);
+            return new SelectionConstraintsDto { MinSelect = 1, MaxSelect = 1, CanSkip = false };
         }
     }
 }
