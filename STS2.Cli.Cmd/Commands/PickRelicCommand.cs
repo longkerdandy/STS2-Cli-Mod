@@ -1,5 +1,4 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Models.Messages;
 
 namespace STS2.Cli.Cmd.Commands;
 

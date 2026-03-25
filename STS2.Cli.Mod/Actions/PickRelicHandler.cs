@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Nodes;
-using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
@@ -46,8 +45,8 @@ public static class PickRelicHandler
                 return new { ok = false, error = "NOT_IN_TREASURE_ROOM", message = "Not currently in a treasure room" };
 
             // --- Guard: Check relics available ---
-            var synchronizer = RunManager.Instance?.TreasureRoomRelicSynchronizer;
-            var currentRelics = synchronizer?.CurrentRelics;
+            var synchronizer = RunManager.Instance.TreasureRoomRelicSynchronizer;
+            var currentRelics = synchronizer.CurrentRelics;
             if (currentRelics == null || currentRelics.Count == 0)
                 return new { ok = false, error = "NO_RELICS_AVAILABLE", message = "No relics available to pick (chest not opened or already picked)" };
 
@@ -65,7 +64,7 @@ public static class PickRelicHandler
             var relicId = relicModel.Id.Entry;
             Logger.Info($"Picking relic at index {relicIndex}: {relicId}");
 
-            synchronizer!.PickRelicLocally(relicIndex);
+            synchronizer.PickRelicLocally(relicIndex);
 
             // --- Poll for proceed button to become enabled ---
             // After picking, the game animates the relic pickup, then enables the proceed button.

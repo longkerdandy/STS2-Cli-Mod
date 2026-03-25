@@ -82,7 +82,7 @@ public static class OpenChestHandler
             await ActionUtils.PollUntilAsync(() =>
             {
                 // Relics appeared in the synchronizer
-                var relics = RunManager.Instance?.TreasureRoomRelicSynchronizer?.CurrentRelics;
+                var relics = RunManager.Instance.TreasureRoomRelicSynchronizer.CurrentRelics;
                 if (relics is { Count: > 0 })
                     return true;
 

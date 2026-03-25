@@ -38,12 +38,6 @@ public static class MapStateBuilder
             }
 
             var map = runState.Map;
-            if (map == null)
-            {
-                Logger.Warning("ActMap is null");
-                return null;
-            }
-
             var mapScreen = NMapScreen.Instance;
             if (mapScreen is not { IsOpen: true })
             {
@@ -89,23 +83,17 @@ public static class MapStateBuilder
 
             // Starting point (row 0)
             var startingPoint = map.StartingMapPoint;
-            if (startingPoint != null)
-            {
-                var startNode = BuildNode(startingPoint, pointStateMap);
+            var startNode = BuildNode(startingPoint, pointStateMap);
                 nodes.Add(startNode);
                 if (startNode.State == "TRAVELABLE")
                     travelableCoords.Add(new MapCoordDto { Col = startNode.Col, Row = startNode.Row });
-            }
 
             // Boss point (row = GetRowCount(), outside grid)
             var bossPoint = map.BossMapPoint;
-            if (bossPoint != null)
-            {
-                var bossNode = BuildNode(bossPoint, pointStateMap);
+            var bossNode = BuildNode(bossPoint, pointStateMap);
                 nodes.Add(bossNode);
                 if (bossNode.State == "TRAVELABLE")
                     travelableCoords.Add(new MapCoordDto { Col = bossNode.Col, Row = bossNode.Row });
-            }
 
             // Second boss point (optional, row = GetRowCount() + 1)
             var secondBossPoint = map.SecondBossMapPoint;
