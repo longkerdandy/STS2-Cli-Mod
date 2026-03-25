@@ -6,7 +6,6 @@ using System.Text;
 using System.Text.Json;
 using STS2.Cli.Mod.Actions;
 using STS2.Cli.Mod.Models.Messages;
-using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Server;
@@ -213,7 +212,7 @@ public static class PipeServer
                 "embark" => MainThreadExecutor.RunOnMainThread(() => EmbarkHandler.HandleRequest(request)),
 
                 // state is synchronous — single-frame game state extraction on the main thread
-                "state" => MainThreadExecutor.RunOnMainThread(HandleStateRequest),
+                "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 
                 _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
             };
@@ -222,20 +221,6 @@ public static class PipeServer
         {
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
         }
-    }
-
-    /// <summary>
-    ///     Handles the 'state' command by extracting the current game state.
-    /// </summary>
-    /// <returns>Response containing the game state DTO.</returns>
-    private static object HandleStateRequest()
-    {
-        var state = GameStateExtractor.GetState();
-
-        if (state.Error != null)
-            return new { ok = false, error = "STATE_EXTRACTION_ERROR", message = state.Error };
-
-        return new { ok = true, data = state };
     }
 
     /// <summary>
