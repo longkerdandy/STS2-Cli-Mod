@@ -71,6 +71,8 @@ Verify the mod works by:
 16. `sts2.exe embark` - confirms game start from character select screen
 17. `sts2.exe choose_map_node <col> <row>` - confirms map node selection and travel
 18. `sts2.exe choose_rest_option <option_id>` - confirms rest site option selection (HEAL, SMITH, etc.)
+19. `sts2.exe open_chest` - confirms treasure chest opening with relic reveal
+20. `sts2.exe pick_relic <index>` - confirms relic pick from treasure room
 
 ## Code Style Guidelines
 

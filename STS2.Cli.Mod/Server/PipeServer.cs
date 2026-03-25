@@ -220,6 +220,14 @@ public static class PipeServer
                 "choose_rest_option" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     ChooseRestOptionHandler.HandleRequestAsync(request)),
 
+                // open_chest is async — opens treasure chest with fire-and-forget, polls for relics
+                "open_chest" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    OpenChestHandler.HandleRequestAsync(request)),
+
+                // pick_relic is async — picks a relic in treasure room, polls for proceed button
+                "pick_relic" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    PickRelicHandler.HandleRequestAsync(request)),
+
                 // state is synchronous — single-frame game state extraction on the main thread
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 

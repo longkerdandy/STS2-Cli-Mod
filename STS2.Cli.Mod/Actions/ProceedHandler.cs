@@ -1,9 +1,11 @@
+using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Events.Custom;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
+using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
@@ -15,6 +17,7 @@ namespace STS2.Cli.Mod.Actions;
 ///     - Reward screen (NRewardsScreen with NProceedButton)
 ///     - FakeMerchant custom event (NFakeMerchant with NProceedButton)
 ///     - Rest site (NRestSiteRoom with NProceedButton, after choosing an option)
+///     - Treasure room (NTreasureRoom with NProceedButton, after picking/skipping relic)
 ///     Mimics the AutoSlayer / STS2MCP approach: finds the <see cref="NProceedButton" /> and calls
 ///     <see cref="NClickableControl.ForceClick" />, which triggers the full UI flow.
 /// </summary>
@@ -24,7 +27,7 @@ public static class ProceedHandler
 
     /// <summary>
     ///     Handles the proceed request.
-    ///     Automatically detects the current context (reward screen, FakeMerchant event, or rest site).
+    ///     Automatically detects the current context (reward screen, FakeMerchant event, rest site, or treasure room).
     /// </summary>
     public static async Task<object> HandleRequestAsync(Request request)
     {
@@ -79,13 +82,22 @@ public static class ProceedHandler
                 return await ExecuteRestSiteProceedAsync(restSiteRoom);
             }
 
+            // --- Try Treasure Room ---
+
+            var treasureRoom = NRun.Instance?.TreasureRoom;
+            if (treasureRoom != null && treasureRoom.IsInsideTree())
+            {
+                Logger.Info("Detected treasure room context");
+                return await ExecuteTreasureRoomProceedAsync(treasureRoom);
+            }
+
             // --- No valid context found ---
 
             return new
             {
                 ok = false,
                 error = "NO_PROCEED_AVAILABLE",
-                message = "Not on reward screen, FakeMerchant event, or rest site"
+                message = "Not on reward screen, FakeMerchant event, rest site, or treasure room"
             };
         }
         catch (Exception ex)
@@ -238,6 +250,69 @@ public static class ProceedHandler
             data = new
             {
                 context = "rest_site",
+                proceeded,
+                action = "PROCEED"
+            }
+        };
+    }
+
+    /// <summary>
+    ///     Proceeds from the treasure room after picking or skipping the relic.
+    ///     Handles both the "Proceed" state (relic picked) and the "Skip" state
+    ///     (skip button visible, calls <c>SkipRelicLocally</c> then proceeds).
+    ///     Mirrors the game's <c>OnProceedButtonPressed</c> logic.
+    /// </summary>
+    private static async Task<object> ExecuteTreasureRoomProceedAsync(NTreasureRoom treasureRoom)
+    {
+        var proceedButton = treasureRoom.ProceedButton;
+        if (proceedButton == null)
+        {
+            Logger.Warning("NProceedButton not found in NTreasureRoom");
+            return new
+            {
+                ok = false,
+                error = "PROCEED_BUTTON_NOT_FOUND",
+                message = "Proceed button not found on treasure room"
+            };
+        }
+
+        if (!proceedButton.IsEnabled)
+        {
+            Logger.Warning("NProceedButton is not enabled on treasure room");
+            return new
+            {
+                ok = false,
+                error = "PROCEED_NOT_ENABLED",
+                message = "Proceed button is not enabled (open chest and pick/skip relic first)"
+            };
+        }
+
+        // Mirrors OnProceedButtonPressed: if IsSkip, call SkipRelicLocally first
+        var isSkip = proceedButton.IsSkip;
+        if (isSkip)
+        {
+            Logger.Info("Skip button detected — skipping relic and proceeding");
+            RunManager.Instance?.TreasureRoomRelicSynchronizer.SkipRelicLocally();
+            NMapScreen.Instance?.SetTravelEnabled(enabled: true);
+        }
+        else
+        {
+            Logger.Info("Clicking proceed button on treasure room");
+        }
+
+        // ForceClick triggers OnProceedButtonPressed which calls
+        // ProceedFromTerminalRewardsScreen (same for both skip and proceed paths).
+        proceedButton.ForceClick();
+
+        var proceeded = await WaitForMapOpenAsync();
+
+        return new
+        {
+            ok = true,
+            data = new
+            {
+                context = "treasure_room",
+                skipped_relic = isSkip,
                 proceeded,
                 action = "PROCEED"
             }

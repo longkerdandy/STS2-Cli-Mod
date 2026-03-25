@@ -64,4 +64,9 @@ public class GameStateDto
     ///     Rest site (campfire) state if at a rest site, null otherwise.
     /// </summary>
     public RestSiteStateDto? RestSite { get; set; }
+
+    /// <summary>
+    ///     Treasure room state if at a treasure room, null otherwise.
+    /// </summary>
+    public TreasureStateDto? Treasure { get; set; }
 }

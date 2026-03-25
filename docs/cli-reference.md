@@ -75,7 +75,7 @@ Pick or skip a card reward. `--nth` selects which card reward when multiple exis
 ./sts2 proceed
 ```
 
-Leave reward screen, FakeMerchant event, or rest site (after choosing an option) and proceed to map.
+Leave reward screen, FakeMerchant event, rest site (after choosing an option), or treasure room (after picking/skipping relic) and proceed to map.
 
 ---
 
@@ -135,6 +135,24 @@ Choose a rest site (campfire) option by ID. Common options: `HEAL` (restore HP),
 
 ---
 
+### open_chest
+
+```
+./sts2 open_chest
+```
+
+Open the treasure chest in a treasure room. After opening, relics are revealed -- use `pick_relic` to pick one, or `proceed` to skip.
+
+### pick_relic
+
+```
+./sts2 pick_relic <index>
+```
+
+Pick a relic from an opened treasure chest by 0-based index. After picking, use `proceed` to leave the treasure room.
+
+---
+
 ### select_character
 
 ```
@@ -177,7 +195,7 @@ Returned by `state` in the `data` field. Only the relevant screen's data is popu
 ```
 data
 ├── screen              # COMBAT | REWARD | CARD_REWARD | EVENT | POTION_SELECTION
-│                       # MAP | CHARACTER_SELECT | DECK_CARD_SELECT | REST_SITE | MENU | UNKNOWN
+│                       # MAP | CHARACTER_SELECT | DECK_CARD_SELECT | REST_SITE | TREASURE | MENU | UNKNOWN
 ├── timestamp           # Unix ms
 ├── combat
 │   ├── encounter, turn_number, is_player_turn
@@ -221,6 +239,11 @@ data
 ├── rest_site
 │   ├── options[]           # [{index, option_id, name, description, is_enabled}]
 │   └── can_proceed         # bool, true after an option has been chosen
+├── treasure
+│   ├── is_chest_opened     # bool, whether the chest has been opened
+│   ├── relics[]            # [{index, id, name, description, rarity}] -- available after opening
+│   ├── can_proceed         # bool, true after picking/skipping relic
+│   └── can_skip            # bool, true if relic can be skipped via proceed
 ```
 
 ### Card Object (in hand)
@@ -274,6 +297,7 @@ data
 - **Character Option**: `{character_id, character_name, is_locked, is_selected}`
 - **Map Node**: `{col, row, type, state, children[], parents[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE|NONE`; children/parents are `[{col, row}]`
 - **Rest Site Option**: `{index, option_id, name, description, is_enabled}` -- option_id: `HEAL`, `SMITH`, `MEND`, `LIFT`, `DIG`, `HATCH`, `COOK`, `CLONE`
+- **Treasure Relic**: `{index, id, name, description, rarity}` -- relic available from an opened treasure chest
 
 ### Action Results
 
@@ -357,6 +381,15 @@ data
 | `OPTION_NOT_FOUND` | Option ID not available |
 | `OPTION_DISABLED` | Option is disabled (e.g., SMITH with no upgradable cards) |
 | `OPTION_CANCELLED` | Option was cancelled (e.g., SMITH card selection skipped) |
+
+**Treasure Room** (`open_chest`, `pick_relic`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_TREASURE_ROOM` | Not in a treasure room |
+| `CHEST_ALREADY_OPENED` | Chest already opened |
+| `NO_RELICS_AVAILABLE` | No relics to pick (not opened or already picked) |
+| `INVALID_RELIC_INDEX` | Relic index out of range |
 
 **Character Select** (`select_character`, `set_ascension`, `embark`):
 

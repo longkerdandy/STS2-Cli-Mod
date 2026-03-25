@@ -88,6 +88,10 @@ internal static class Program
         // Rest site commands
         rootCommand.Subcommands.Add(ChooseRestOptionCommand.Create(prettyOption));
 
+        // Treasure room commands
+        rootCommand.Subcommands.Add(OpenChestCommand.Create(prettyOption));
+        rootCommand.Subcommands.Add(PickRelicCommand.Create(prettyOption));
+
         return rootCommand.Parse(args).Invoke();
     }
 }

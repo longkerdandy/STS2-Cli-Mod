@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
@@ -77,6 +78,9 @@ public static class StateHandler
         // Extract rest site state if at a rest site
         if (state.Screen == "REST_SITE") state.RestSite = ExtractRestSiteState();
 
+        // Extract treasure room state if at a treasure room
+        if (state.Screen == "TREASURE") state.Treasure = ExtractTreasureState();
+
         return state;
         }
         catch (Exception ex)
@@ -95,7 +99,7 @@ public static class StateHandler
     /// <summary>
     ///     Detects which screen the player is currently on.
     ///     Priority order: CHARACTER_SELECT → COMBAT → MAP → overlay screens
-    ///     (CARD_REWARD, POTION_SELECTION, DECK_CARD_SELECT, REWARD) → EVENT → REST_SITE → UNKNOWN.
+    ///     (CARD_REWARD, POTION_SELECTION, DECK_CARD_SELECT, REWARD) → EVENT → REST_SITE → TREASURE → UNKNOWN.
     ///     Overlay screens take priority over EVENT because events can trigger overlays
     ///     (e.g., Neow's Lead Paperweight opens NCardRewardSelectionScreen while NEventRoom
     ///     is still in the scene tree).
@@ -192,6 +196,15 @@ public static class StateHandler
         {
             Logger.Info("Detected REST_SITE screen");
             return "REST_SITE";
+        }
+
+        // Check for treasure room.
+        // NRun.Instance?.TreasureRoom returns non-null if the current room is a treasure room.
+        var treasureRoom = NRun.Instance?.TreasureRoom;
+        if (treasureRoom is { } && treasureRoom.IsInsideTree())
+        {
+            Logger.Info("Detected TREASURE screen");
+            return "TREASURE";
         }
 
         return "UNKNOWN";
@@ -451,6 +464,22 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract rest site state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the treasure room state from <see cref="NTreasureRoom" />.
+    /// </summary>
+    private static TreasureStateDto? ExtractTreasureState()
+    {
+        try
+        {
+            return TreasureStateBuilder.Build();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract treasure state: {ex.Message}");
             return null;
         }
     }
