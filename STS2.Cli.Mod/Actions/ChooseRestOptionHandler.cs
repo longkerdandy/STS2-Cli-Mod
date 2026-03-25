@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Models.Messages;
+using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
 
@@ -10,9 +11,15 @@ namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
 ///     Handles choosing a rest site option by option ID (e.g., "HEAL", "SMITH").
-///     Uses <see cref="MegaCrit.Sts2.Core.Multiplayer.Game.RestSiteSynchronizer.ChooseLocalOption" />
-///     to execute the selection, then triggers UI updates via
-///     <see cref="NRestSiteRoom.AfterSelectingOption" />.
+///     Mirrors the game's <c>NRestSiteButton.SelectOption</c> flow:
+///     disables options, fires <c>ChooseLocalOption</c> (which awaits the option's
+///     <c>OnSelect</c>), then calls <c>AfterSelectingOption</c> on success.
+///     Because some options (SMITH, COOK) open a card selection overlay and block
+///     inside <c>OnSelect</c> until the player finishes, this handler uses a
+///     fire-and-forget pattern: it launches the option task, then polls for
+///     an observable state change (overlay appeared or proceed button enabled)
+///     and returns immediately so the CLI can issue follow-up commands
+///     (e.g., <c>deck_select_card</c>).
 /// </summary>
 public static class ChooseRestOptionHandler
 {
@@ -78,49 +85,43 @@ public static class ChooseRestOptionHandler
                     message = $"Rest site option '{optionId}' is disabled"
                 };
 
-            // --- Execute the option via RestSiteSynchronizer ---
-            Logger.Info($"Choosing rest site option '{optionId}' at index {optionIndex}");
-            var success = await RunManager.Instance.RestSiteSynchronizer.ChooseLocalOption(optionIndex);
+            // --- Disable options to prevent double-clicks (mirrors NRestSiteButton) ---
+            restSiteRoom.DisableOptions();
 
-            if (!success)
-            {
-                Logger.Warning($"ChooseLocalOption returned false for '{optionId}'");
-                return new
-                {
-                    ok = false,
-                    error = "OPTION_CANCELLED",
-                    message = $"Rest site option '{optionId}' was cancelled (e.g., SMITH card selection was skipped)"
-                };
-            }
+            // --- Fire-and-forget: launch the option execution ---
+            // Mirrors NRestSiteButton.SelectOption: await ChooseLocalOption, then
+            // call AfterSelectingOption on success, or re-enable on failure.
+            // We cannot await this because SMITH/COOK block inside OnSelect
+            // waiting for card selection overlay input.
+            // Important: do NOT use Task.Run — the entire chain must stay on the
+            // Godot main thread (OnSelect calls Godot APIs like CardSelectCmd).
+            // The discard (_) makes this fire-and-forget on the current thread.
+            _ = ExecuteOptionFireAndForgetAsync(restSiteRoom, optionIndex, selectedOption, optionId);
 
-            // --- Trigger UI update ---
-            Logger.Info($"Option '{optionId}' succeeded, triggering AfterSelectingOption");
-            restSiteRoom.AfterSelectingOption(selectedOption);
-
-            // --- Wait for UI to settle ---
-            // AfterSelectingOption triggers async animations (HideChoices, VFX, ShowProceedButton).
-            // For SMITH, the card selection overlay will have already been shown and closed by now
-            // (ChooseLocalOption awaits OnSelect which awaits CardSelectCmd.FromDeckForUpgrade).
-            // We wait for either the proceed button to become enabled or an overlay to appear.
+            // --- Poll for observable state change ---
+            // For immediate options (HEAL, LIFT, DIG, etc.): proceed button becomes enabled.
+            // For overlay options (SMITH, COOK): a card selection overlay appears.
+            // For HEAL with relic rewards: an overlay stack entry appears.
             await ActionUtils.PollUntilAsync(() =>
             {
-                // Check if proceed button is now enabled
+                // Proceed button enabled means option completed immediately
                 if (NRestSiteRoom.Instance?.ProceedButton is { IsEnabled: true })
                     return true;
 
-                // Check if an overlay appeared (e.g., rewards from HEAL with specific relics)
+                // An overlay appeared (card selection for SMITH/COOK, or reward overlay)
                 if (NOverlayStack.Instance?.Peek() is not null)
                     return true;
 
-                // Check if map opened (shouldn't happen but safety check)
+                // Map opened (safety)
                 if (NMapScreen.Instance is { IsOpen: true })
                     return true;
 
                 return false;
             }, ActionUtils.UiTimeoutMs);
 
-            // --- Build updated rest site state ---
-            var updatedState = RestSiteStateBuilder.Build();
+            // --- Detect resulting screen and return appropriate state ---
+            var screen = StateHandler.DetectCurrentScreen();
+            Logger.Info($"After choosing '{optionId}', detected screen: {screen}");
 
             return new
             {
@@ -128,8 +129,7 @@ public static class ChooseRestOptionHandler
                 data = new
                 {
                     option_id = optionId,
-                    success = true,
-                    rest_site = updatedState
+                    screen
                 }
             };
         }
@@ -137,6 +137,39 @@ public static class ChooseRestOptionHandler
         {
             Logger.Error($"Failed to choose rest site option: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
+        }
+    }
+
+    /// <summary>
+    ///     Fire-and-forget helper that mirrors <c>NRestSiteButton.SelectOption</c>.
+    ///     Awaits <c>ChooseLocalOption</c> (which blocks on SMITH/COOK card selection),
+    ///     then calls <c>AfterSelectingOption</c> on success or re-enables options on failure.
+    ///     Must run on the Godot main thread (caller uses discard <c>_</c>, not <c>Task.Run</c>).
+    /// </summary>
+    private static async Task ExecuteOptionFireAndForgetAsync(
+        NRestSiteRoom restSiteRoom, int optionIndex,
+        MegaCrit.Sts2.Core.Entities.RestSite.RestSiteOption option, string optionId)
+    {
+        try
+        {
+            var success = await RunManager.Instance.RestSiteSynchronizer
+                .ChooseLocalOption(optionIndex);
+
+            if (success)
+            {
+                Logger.Info($"Option '{optionId}' succeeded, triggering AfterSelectingOption");
+                restSiteRoom.AfterSelectingOption(option);
+            }
+            else
+            {
+                Logger.Warning($"ChooseLocalOption returned false for '{optionId}', re-enabling options");
+                restSiteRoom.EnableOptions();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Fire-and-forget option task failed: {ex.Message}");
+            try { restSiteRoom.EnableOptions(); } catch { /* best effort */ }
         }
     }
 }

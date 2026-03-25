@@ -87,6 +87,12 @@ public static class StateHandler
     }
 
     /// <summary>
+    ///     Public accessor for the current screen detection.
+    ///     Used by action handlers that need to report the resulting screen after an action.
+    /// </summary>
+    public static string DetectCurrentScreen() => DetectScreen();
+
+    /// <summary>
     ///     Detects which screen the player is currently on.
     ///     Priority order: CHARACTER_SELECT → COMBAT → MAP → overlay screens
     ///     (CARD_REWARD, POTION_SELECTION, DECK_CARD_SELECT, REWARD) → EVENT → REST_SITE → UNKNOWN.
