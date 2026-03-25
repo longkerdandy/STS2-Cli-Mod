@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace STS2.Cli.Mod.Models.Actions;
 
 /// <summary>
 ///     DTO for selectable cards in potion selection screens.
 /// </summary>
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class SelectableCardDto
 {
     /// <summary>
