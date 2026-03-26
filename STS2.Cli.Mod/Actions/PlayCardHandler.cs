@@ -71,32 +71,10 @@ public static class PlayCardHandler
                 };
 
             // Resolve target
-            Creature? target = null;
-            if (card.TargetType == TargetType.AnyEnemy)
-            {
-                if (targetCombatId == null)
-                    return new
-                    {
-                        ok = false, error = "TARGET_REQUIRED",
-                        message = "Card requires a target. Provide 'target' with an enemy combat_id."
-                    };
-
-                target = ActionUtils.ResolveEnemyTarget((uint)targetCombatId.Value);
-                if (target == null)
-                    return new
-                    {
-                        ok = false, error = "TARGET_NOT_FOUND",
-                        message = $"No hittable enemy found with combat_id {targetCombatId}"
-                    };
-            }
-            else if (targetCombatId != null)
-            {
-                return new
-                {
-                    ok = false, error = "TARGET_NOT_ALLOWED",
-                    message = $"Card '{card.Title}' has target type '{card.TargetType}' and does not accept a target"
-                };
-            }
+            var (target, targetError) = ActionUtils.ResolveTarget(
+                player, card.TargetType, targetCombatId, card.Title.ToString());
+            if (targetError != null)
+                return targetError;
 
             // --- Enqueue action and wait for completion ---
 

@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
@@ -173,6 +174,79 @@ public static class ActionUtils
         {
             Logger.Warning($"Failed to resolve ally target with combat_id {combatId}: {ex.Message}");
             return null;
+        }
+    }
+
+    /// <summary>
+    ///     Resolves a target creature based on the action's <see cref="TargetType" />.
+    ///     Handles <c>AnyEnemy</c>, <c>Self</c>, <c>AnyPlayer</c>, and non-targeted types
+    ///     (e.g. <c>AllEnemies</c>, <c>None</c>).
+    /// </summary>
+    /// <param name="player">The local player.</param>
+    /// <param name="targetType">The target type of the card or potion.</param>
+    /// <param name="targetCombatId">Optional combat ID supplied by the caller.</param>
+    /// <param name="itemTitle">Display name of the card/potion for error messages.</param>
+    /// <returns>
+    ///     A tuple of (resolved creature, error response).
+    ///     If error is non-null, the caller should return it immediately.
+    /// </returns>
+    public static (Creature? Target, object? Error) ResolveTarget(
+        Player player, TargetType targetType, int? targetCombatId, string itemTitle)
+    {
+        switch (targetType)
+        {
+            case TargetType.AnyEnemy:
+                if (targetCombatId == null)
+                    return (null, new
+                    {
+                        ok = false, error = "TARGET_REQUIRED",
+                        message = $"'{itemTitle}' requires a target. Provide 'target' with an enemy combat_id."
+                    });
+
+                var enemy = ResolveEnemyTarget((uint)targetCombatId.Value);
+                if (enemy == null)
+                    return (null, new
+                    {
+                        ok = false, error = "TARGET_NOT_FOUND",
+                        message = $"No hittable enemy found with combat_id {targetCombatId}"
+                    });
+
+                return (enemy, null);
+
+            case TargetType.Self:
+                if (targetCombatId != null)
+                    return (null, new
+                    {
+                        ok = false, error = "TARGET_NOT_ALLOWED",
+                        message = $"'{itemTitle}' is self-targeting and does not accept a target"
+                    });
+
+                return (player.Creature, null);
+
+            case TargetType.AnyPlayer:
+                if (targetCombatId == null)
+                    return (player.Creature, null); // Default to player
+
+                var ally = ResolveAllyTarget(player, (uint)targetCombatId.Value);
+                if (ally == null)
+                    return (null, new
+                    {
+                        ok = false, error = "TARGET_NOT_FOUND",
+                        message = $"No ally found with combat_id {targetCombatId}. Must be the player or a pet."
+                    });
+
+                return (ally, null);
+
+            default:
+                // AllEnemies, AllAllies, None, RandomEnemy, etc. — no target needed
+                if (targetCombatId != null)
+                    return (null, new
+                    {
+                        ok = false, error = "TARGET_NOT_ALLOWED",
+                        message = $"'{itemTitle}' has target type '{targetType}' and does not accept a target"
+                    });
+
+                return (null, null);
         }
     }
 

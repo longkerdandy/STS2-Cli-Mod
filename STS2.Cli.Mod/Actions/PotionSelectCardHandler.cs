@@ -53,7 +53,7 @@ public static class PotionSelectCardHandler
     private static object Execute(string[] cardIds, int[]? nthValues = null)
     {
         // Guard: Must be in the POTION_SELECTION screen
-        var selectionScreen = PotionUtils.FindSelectionScreen();
+        var selectionScreen = UiUtils.FindCardSelectionScreen();
         if (selectionScreen == null)
             return new
             {
@@ -98,7 +98,7 @@ public static class PotionSelectCardHandler
             var cardId = cardIds[i];
             var nth = nthValues != null && i < nthValues.Length ? nthValues[i] : 0;
 
-            var holder = PotionUtils.FindCardHolderById(selectionScreen, cardId, nth);
+            var holder = UiUtils.FindCardHolderById(selectionScreen, cardId, nth);
             if (holder == null)
                 return new
                 {
@@ -145,7 +145,7 @@ public static class PotionSelectCardHandler
     private static object ExecuteSkip()
     {
         // Guard: Must be in the POTION_SELECTION screen
-        var selectionScreen = PotionUtils.FindSelectionScreen();
+        var selectionScreen = UiUtils.FindCardSelectionScreen();
         if (selectionScreen == null)
             return new
             {
@@ -166,7 +166,7 @@ public static class PotionSelectCardHandler
             };
 
         // Find and click the skip button
-        var skipButton = PotionUtils.FindSkipButton(selectionScreen);
+        var skipButton = UiUtils.FindSkipButton(selectionScreen);
         if (skipButton == null)
             return new
             {

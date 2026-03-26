@@ -349,7 +349,7 @@ public static class StateHandler
     {
         try
         {
-            var screen = PotionUtils.FindSelectionScreen();
+            var screen = UiUtils.FindCardSelectionScreen();
             if (screen == null)
             {
                 Logger.Warning("POTION_SELECTION screen detected but no selection screen found");

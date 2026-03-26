@@ -1,17 +1,17 @@
-using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
-using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Models.Actions;
 
 namespace STS2.Cli.Mod.Utils;
 
 /// <summary>
-///     Utility class for potion-related operations and card selection handling.
+///     Utility class for potion-related metadata queries and response building.
+///     Provides potion card-selection classification (<see cref="RequiresCardSelection" />,
+///     <see cref="GetSelectionType" />, <see cref="GetSelectionConstraints" />)
+///     and a helper to build the selection response sent back to the CLI.
 /// </summary>
 public static class PotionUtils
 {
-    private static readonly ModLogger Logger = new("PotionUtils");
-
     /// <summary>
     ///     Potions that open card selection screens when used.
     /// </summary>
@@ -42,7 +42,7 @@ public static class PotionUtils
     ///     Gets the selection type category for a potion.
     /// </summary>
     /// <param name="potionId">The potion ID.</param>
-    /// <returns>Selection type string.</returns>
+    /// <returns>Selection type string describing the source of selectable cards.</returns>
     public static string GetSelectionType(string potionId)
     {
         return potionId.ToUpperInvariant() switch
@@ -67,7 +67,7 @@ public static class PotionUtils
     ///     Gets selection constraints (min/max select count, can skip) for a potion.
     /// </summary>
     /// <param name="potionId">The potion ID.</param>
-    /// <returns>Selection constraints.</returns>
+    /// <returns>Selection constraints DTO.</returns>
     public static SelectionConstraintsDto GetSelectionConstraints(string potionId)
     {
         return potionId.ToUpperInvariant() switch
@@ -94,64 +94,33 @@ public static class PotionUtils
     }
 
     /// <summary>
-    ///     Finds the currently open card selection screen.
+    ///     Builds a response object for potions that opened a card selection screen.
+    ///     Extracts selectable cards and selection constraints from the screen.
     /// </summary>
-    /// <returns>The selection screen if found, null otherwise.</returns>
-    public static NChooseACardSelectionScreen? FindSelectionScreen()
+    /// <param name="potion">The potion model that triggered the selection.</param>
+    /// <param name="slot">The potion belt slot index.</param>
+    /// <param name="selectionScreen">The card selection screen to extract data from.</param>
+    /// <returns>A success response with selection details.</returns>
+    public static object BuildSelectionResponse(
+        PotionModel potion, int slot, NChooseACardSelectionScreen selectionScreen)
     {
-        return UiUtils.FindScreenInOverlay<NChooseACardSelectionScreen>();
-    }
+        var cards = UiUtils.ExtractSelectableCards(selectionScreen);
+        var constraints = GetSelectionConstraints(potion.Id.Entry);
 
-    /// <summary>
-    ///     Finds a card holder in the selection screen by card ID and nth occurrence.
-    /// </summary>
-    /// <param name="screen">The selection screen.</param>
-    /// <param name="cardId">Card ID to find.</param>
-    /// <param name="nth">N-th occurrence (0-based).</param>
-    /// <returns>The card holder if found, null otherwise.</returns>
-    public static NCardHolder? FindCardHolderById(NChooseACardSelectionScreen screen, string cardId, int nth)
-    {
-        var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
-        var matchingHolders = new List<NCardHolder>();
-
-        foreach (var holder in cardHolders)
+        return new
         {
-            if (holder.CardModel?.Id.Entry.Equals(cardId, StringComparison.OrdinalIgnoreCase) == true)
+            ok = true,
+            data = new
             {
-                matchingHolders.Add(holder);
+                status = "selection_required",
+                selection_type = GetSelectionType(potion.Id.Entry),
+                potion_id = potion.Id.Entry,
+                potion_slot = slot,
+                min_select = constraints.MinSelect,
+                max_select = constraints.MaxSelect,
+                can_skip = constraints.CanSkip,
+                cards
             }
-        }
-
-        if (nth < 0 || nth >= matchingHolders.Count)
-        {
-            Logger.Warning($"Card '{cardId}' has {matchingHolders.Count} copies, but nth={nth} was requested");
-            return null;
-        }
-
-        return matchingHolders[nth];
-    }
-
-    /// <summary>
-    ///     Finds the skip button on a selection screen.
-    /// </summary>
-    /// <param name="screen">The selection screen.</param>
-    /// <returns>The skip button if found, null otherwise.</returns>
-    public static NButton? FindSkipButton(NChooseACardSelectionScreen screen)
-    {
-        // Try to find by common node names/patterns
-        var skipButton = screen.GetNodeOrNull<NButton>("%SkipButton");
-        if (skipButton != null) return skipButton;
-
-        // Search for any button with "skip" in its name
-        foreach (var child in screen.GetChildren())
-        {
-            if (child is NButton button && 
-                button.Name.ToString().Contains("Skip", StringComparison.OrdinalIgnoreCase))
-            {
-                return button;
-            }
-        }
-
-        return null;
+        };
     }
 }
