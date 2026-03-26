@@ -11,7 +11,7 @@ internal static class ChooseMapNodeCommand
     /// <summary>
     ///     Creates the choose_map_node subcommand.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
         var colArg = new Argument<int>("col") { Description = "Column index of the target node (0-based)" };
         var rowArg = new Argument<int>("row")
@@ -22,13 +22,12 @@ internal static class ChooseMapNodeCommand
         var command = new Command("choose_map_node", "Select a map node to travel to");
         command.Arguments.Add(colArg);
         command.Arguments.Add(rowArg);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var col = parseResult.GetValue(colArg);
             var row = parseResult.GetValue(rowArg);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

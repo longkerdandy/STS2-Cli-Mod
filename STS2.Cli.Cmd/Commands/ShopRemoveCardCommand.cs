@@ -13,14 +13,13 @@ internal static class ShopRemoveCardCommand
     /// <summary>
     ///     Creates the shop_remove_card command.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
         var command = new Command("shop_remove_card", "Buy card removal service from the shop");
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
             return CommandExecutor.ExecuteAsync(
                 () => new Request { Cmd = "shop_remove_card" },
                 pretty);

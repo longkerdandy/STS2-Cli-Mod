@@ -1,3 +1,5 @@
+using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.Text.Json;
 using STS2.Cli.Cmd.Client;
 using STS2.Cli.Cmd.Models.Messages;
@@ -16,6 +18,24 @@ internal static class CommandExecutor
     private const int ExitInvalidState = 2;
     private const int ExitInvalidParam = 3;
     private const int ExitTimeout = 4;
+
+    /// <summary>
+    ///     Global --pretty option shared by all commands.
+    ///     Registered as a global option on the root command so subcommands inherit it automatically.
+    /// </summary>
+    internal static readonly Option<bool> PrettyOption = new("--pretty", "-p")
+    {
+        Description = "Format JSON output with indentation for readability",
+        DefaultValueFactory = _ => false
+    };
+
+    /// <summary>
+    ///     Resolves the pretty flag from a <see cref="ParseResult" />.
+    /// </summary>
+    internal static bool IsPretty(ParseResult parseResult)
+    {
+        return parseResult.GetValue(PrettyOption);
+    }
 
     /// <summary>
     ///     Executes a command with the given request factory and returns exit code.

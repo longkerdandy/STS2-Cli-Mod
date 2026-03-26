@@ -23,22 +23,16 @@ internal static class Program
 
         var rootCommand = new RootCommand("STS2 CLI - Control Slay the Spire 2 via command line");
 
-        // Global --pretty option for formatted JSON output
-        var prettyOption = new Option<bool>("--pretty", "-p")
-        {
-            Description = "Format JSON output with indentation for readability",
-            DefaultValueFactory = _ => false
-        };
-        rootCommand.Options.Add(prettyOption);
+        // Global --pretty option inherited by all subcommands automatically
+        rootCommand.Options.Add(CommandExecutor.PrettyOption);
 
         // Simple commands (no arguments)
-        rootCommand.Subcommands.Add(SimpleCommand.Create("ping", "Test connection to the mod", prettyOption));
-        rootCommand.Subcommands.Add(SimpleCommand.Create("state", "Get current game state", prettyOption));
-        rootCommand.Subcommands.Add(SimpleCommand.Create("end_turn", "End the current turn", prettyOption));
-        rootCommand.Subcommands.Add(SimpleCommand.Create("proceed", "Leave current screen and proceed to map (reward screen or FakeMerchant event)",
-            prettyOption));
-        rootCommand.Subcommands.Add(
-            SimpleCommand.Create("embark", "Start the game from character select", prettyOption));
+        rootCommand.Subcommands.Add(SimpleCommand.Create("ping", "Test connection to the mod"));
+        rootCommand.Subcommands.Add(SimpleCommand.Create("state", "Get current game state"));
+        rootCommand.Subcommands.Add(SimpleCommand.Create("end_turn", "End the current turn"));
+        rootCommand.Subcommands.Add(SimpleCommand.Create("proceed",
+            "Leave current screen and proceed to map (reward screen or FakeMerchant event)"));
+        rootCommand.Subcommands.Add(SimpleCommand.Create("embark", "Start the game from character select"));
 
         // ID-based commands with an optional target
         var targetOption = IdBasedCommand.CreateTargetOption("Target enemy combat ID (for targeted cards)");
@@ -47,56 +41,53 @@ internal static class Program
             new Argument<string>("card_id") { Description = "Card ID (e.g., STRIKE_IRONCLAD, DEFEND_SILENT)" },
             new Option<int>("--nth")
                 { Description = "N-th occurrence when multiple copies exist (0-based)", DefaultValueFactory = _ => 0 },
-            targetOption,
-            prettyOption));
+            targetOption));
         rootCommand.Subcommands.Add(IdBasedCommand.Create(
             "use_potion", "Use a potion",
             new Argument<string>("potion_id") { Description = "Potion ID (e.g., FIRE_POTION, ENTROPIC_BREW)" },
             new Option<int>("--nth")
                 { Description = "N-th occurrence when multiple copies exist (0-based)", DefaultValueFactory = _ => 0 },
-            targetOption,
-            prettyOption));
+            targetOption));
 
         // Reward commands
         rootCommand.Subcommands.Add(RewardClaimCommand.Create(
-            "reward_claim", "Claim a reward by type (gold, potion, relic, special_card)", prettyOption));
+            "reward_claim", "Claim a reward by type (gold, potion, relic, special_card)"));
         rootCommand.Subcommands.Add(RewardChooseCardCommand.Create(
-            "reward_choose_card", "Pick a card from a card reward", prettyOption));
+            "reward_choose_card", "Pick a card from a card reward"));
         rootCommand.Subcommands.Add(RewardSkipCardCommand.Create(
-            "reward_skip_card", "Skip a card reward", prettyOption));
+            "reward_skip_card", "Skip a card reward"));
 
         // Event commands
         rootCommand.Subcommands.Add(IndexedCommand.Create(
             "choose_event", "Choose an option in an event room",
-            new Argument<int>("index") { Description = "Option index (0-based)" },
-            prettyOption));
+            new Argument<int>("index") { Description = "Option index (0-based)" }));
         rootCommand.Subcommands.Add(AdvanceDialogueCommand.Create(
-            "advance_dialogue", "Advance dialogue in an Ancient event", prettyOption));
+            "advance_dialogue", "Advance dialogue in an Ancient event"));
 
         // Selection commands
-        rootCommand.Subcommands.Add(PotionSelectCardCommand.Create(prettyOption));
-        rootCommand.Subcommands.Add(DeckSelectCardCommand.Create(prettyOption));
-        rootCommand.Subcommands.Add(DeckSelectSkipCommand.Create(prettyOption));
+        rootCommand.Subcommands.Add(PotionSelectCardCommand.Create());
+        rootCommand.Subcommands.Add(DeckSelectCardCommand.Create());
+        rootCommand.Subcommands.Add(DeckSelectSkipCommand.Create());
 
         // Character select commands
-        rootCommand.Subcommands.Add(SelectCharacterCommand.Create(prettyOption));
-        rootCommand.Subcommands.Add(SetAscensionCommand.Create(prettyOption));
+        rootCommand.Subcommands.Add(SelectCharacterCommand.Create());
+        rootCommand.Subcommands.Add(SetAscensionCommand.Create());
 
         // Map commands
-        rootCommand.Subcommands.Add(ChooseMapNodeCommand.Create(prettyOption));
+        rootCommand.Subcommands.Add(ChooseMapNodeCommand.Create());
 
         // Rest site commands
-        rootCommand.Subcommands.Add(ChooseRestOptionCommand.Create(prettyOption));
+        rootCommand.Subcommands.Add(ChooseRestOptionCommand.Create());
 
         // Treasure room commands
-        rootCommand.Subcommands.Add(OpenChestCommand.Create(prettyOption));
-        rootCommand.Subcommands.Add(PickRelicCommand.Create(prettyOption));
+        rootCommand.Subcommands.Add(OpenChestCommand.Create());
+        rootCommand.Subcommands.Add(PickRelicCommand.Create());
 
         // Shop commands
-        rootCommand.Subcommands.Add(ShopBuyCardCommand.Create(prettyOption));
-        rootCommand.Subcommands.Add(ShopBuyRelicCommand.Create(prettyOption));
-        rootCommand.Subcommands.Add(ShopBuyPotionCommand.Create(prettyOption));
-        rootCommand.Subcommands.Add(ShopRemoveCardCommand.Create(prettyOption));
+        rootCommand.Subcommands.Add(ShopBuyCardCommand.Create());
+        rootCommand.Subcommands.Add(ShopBuyRelicCommand.Create());
+        rootCommand.Subcommands.Add(ShopBuyPotionCommand.Create());
+        rootCommand.Subcommands.Add(ShopRemoveCardCommand.Create());
 
         return rootCommand.Parse(args).Invoke();
     }

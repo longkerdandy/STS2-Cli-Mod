@@ -10,11 +10,10 @@ internal static class PickRelicCommand
     /// <summary>
     ///     Creates the pick_relic command.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
         return IndexedCommand.Create(
             "pick_relic", "Pick a relic from the treasure chest",
-            new Argument<int>("index") { Description = "Relic index (0-based)" },
-            prettyOption);
+            new Argument<int>("index") { Description = "Relic index (0-based)" });
     }
 }

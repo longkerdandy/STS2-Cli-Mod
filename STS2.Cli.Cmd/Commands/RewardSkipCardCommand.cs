@@ -11,7 +11,7 @@ internal static class RewardSkipCardCommand
     /// <summary>
     ///     Creates the skip_card command for skipping a card reward.
     /// </summary>
-    public static Command Create(string name, string description, Option<bool> prettyOption)
+    public static Command Create(string name, string description)
     {
         // --type card (only card rewards can be skipped)
         var typeOption = new Option<string>("--type")
@@ -30,13 +30,12 @@ internal static class RewardSkipCardCommand
         var command = new Command(name, description);
         command.Options.Add(typeOption);
         command.Options.Add(nthOption);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var type = parseResult.GetValue(typeOption)!;
             var nth = parseResult.GetValue(nthOption);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

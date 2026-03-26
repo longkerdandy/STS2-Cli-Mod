@@ -13,17 +13,15 @@ internal static class IndexedCommand
     /// </summary>
     public static Command Create(
         string name, string description,
-        Argument<int> indexArg,
-        Option<bool> prettyOption)
+        Argument<int> indexArg)
     {
         var command = new Command(name, description);
         command.Arguments.Add(indexArg);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var index = parseResult.GetValue(indexArg);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

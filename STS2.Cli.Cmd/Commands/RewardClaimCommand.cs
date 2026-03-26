@@ -11,7 +11,7 @@ internal static class RewardClaimCommand
     /// <summary>
     ///     Creates the reward claim command with type, optional ID, and optional nth.
     /// </summary>
-    public static Command Create(string name, string description, Option<bool> prettyOption)
+    public static Command Create(string name, string description)
     {
         var typeOption = new Option<string>("--type")
         {
@@ -43,14 +43,13 @@ internal static class RewardClaimCommand
         command.Options.Add(typeOption);
         command.Options.Add(idOption);
         command.Options.Add(nthOption);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var type = parseResult.GetValue(typeOption)!;
             var id = parseResult.GetValue(idOption);
             var nth = parseResult.GetValue(nthOption);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             // Validate: potion, relic, special_card require --id
             if (type is "potion" or "relic" or "special_card" && string.IsNullOrEmpty(id))

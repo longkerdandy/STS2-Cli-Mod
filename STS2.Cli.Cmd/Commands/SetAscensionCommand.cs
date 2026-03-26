@@ -11,7 +11,7 @@ internal static class SetAscensionCommand
     /// <summary>
     ///     Creates the set_ascension command.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
         var command = new Command("set_ascension", "Set ascension level on the character select screen");
         var levelArg = new Argument<int>("level")
@@ -19,12 +19,11 @@ internal static class SetAscensionCommand
             Description = "Ascension level (0-20)"
         };
         command.Arguments.Add(levelArg);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var level = parseResult.GetValue(levelArg);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

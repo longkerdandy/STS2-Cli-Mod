@@ -15,21 +15,19 @@ internal static class IdBasedCommand
         string name, string description,
         Argument<string> idArg,
         Option<int> nthOption,
-        Option<int?> targetOption,
-        Option<bool> prettyOption)
+        Option<int?> targetOption)
     {
         var command = new Command(name, description);
         command.Arguments.Add(idArg);
         command.Options.Add(nthOption);
         command.Options.Add(targetOption);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var id = parseResult.GetValue(idArg)!;
             var nth = parseResult.GetValue(nthOption);
             var target = parseResult.GetValue(targetOption);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

@@ -11,7 +11,7 @@ internal static class ShopBuyRelicCommand
     /// <summary>
     ///     Creates the shop_buy_relic command.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
         var relicIdArg = new Argument<string>("relic_id")
         {
@@ -26,13 +26,12 @@ internal static class ShopBuyRelicCommand
         var command = new Command("shop_buy_relic", "Buy a relic from the shop");
         command.Arguments.Add(relicIdArg);
         command.Options.Add(nthOption);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var relicId = parseResult.GetValue(relicIdArg)!;
             var nth = parseResult.GetValue(nthOption);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

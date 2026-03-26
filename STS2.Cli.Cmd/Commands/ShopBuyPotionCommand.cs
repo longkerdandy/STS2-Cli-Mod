@@ -11,7 +11,7 @@ internal static class ShopBuyPotionCommand
     /// <summary>
     ///     Creates the shop_buy_potion command.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
         var potionIdArg = new Argument<string>("potion_id")
         {
@@ -26,13 +26,12 @@ internal static class ShopBuyPotionCommand
         var command = new Command("shop_buy_potion", "Buy a potion from the shop");
         command.Arguments.Add(potionIdArg);
         command.Options.Add(nthOption);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var potionId = parseResult.GetValue(potionIdArg)!;
             var nth = parseResult.GetValue(nthOption);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

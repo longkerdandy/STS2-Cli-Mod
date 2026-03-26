@@ -11,7 +11,7 @@ internal static class AdvanceDialogueCommand
     /// <summary>
     ///     Creates an advance_dialogue command for Ancient events.
     /// </summary>
-    public static Command Create(string name, string description, Option<bool> prettyOption)
+    public static Command Create(string name, string description)
     {
         // --auto (optional - auto-advance all dialogue lines)
         var autoOption = new Option<bool>("--auto")
@@ -22,12 +22,11 @@ internal static class AdvanceDialogueCommand
 
         var command = new Command(name, description);
         command.Options.Add(autoOption);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var auto = parseResult.GetValue(autoOption);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

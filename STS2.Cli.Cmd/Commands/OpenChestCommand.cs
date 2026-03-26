@@ -1,5 +1,4 @@
 using System.CommandLine;
-using STS2.Cli.Cmd.Models.Messages;
 
 namespace STS2.Cli.Cmd.Commands;
 
@@ -11,8 +10,8 @@ internal static class OpenChestCommand
     /// <summary>
     ///     Creates the open_chest command.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
-        return SimpleCommand.Create("open_chest", "Open the treasure chest in a treasure room", prettyOption);
+        return SimpleCommand.Create("open_chest", "Open the treasure chest in a treasure room");
     }
 }

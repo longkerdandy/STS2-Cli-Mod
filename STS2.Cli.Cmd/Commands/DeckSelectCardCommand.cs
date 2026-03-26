@@ -11,7 +11,7 @@ internal static class DeckSelectCardCommand
     /// <summary>
     ///     Creates the deck_select_card command for selecting cards from the deck card selection screen.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
         var command = new Command("deck_select_card",
             "Select cards from a deck card selection screen (remove, upgrade, transform, enchant)");
@@ -32,13 +32,12 @@ internal static class DeckSelectCardCommand
 
         command.Arguments.Add(cardIdsArg);
         command.Options.Add(nthOption);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var cardIds = parseResult.GetValue(cardIdsArg)!;
             var nthValues = parseResult.GetValue(nthOption);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

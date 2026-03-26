@@ -11,14 +11,13 @@ internal static class SimpleCommand
     /// <summary>
     ///     Creates a simple command.
     /// </summary>
-    public static Command Create(string name, string description, Option<bool> prettyOption)
+    public static Command Create(string name, string description)
     {
         var command = new Command(name, description);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
             return CommandExecutor.ExecuteAsync(
                 () => new Request { Cmd = name },
                 pretty);

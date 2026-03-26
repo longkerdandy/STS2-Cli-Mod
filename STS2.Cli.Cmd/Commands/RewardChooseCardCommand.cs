@@ -11,7 +11,7 @@ internal static class RewardChooseCardCommand
     /// <summary>
     ///     Creates the choose_card command for selecting a card from a card reward.
     /// </summary>
-    public static Command Create(string name, string description, Option<bool> prettyOption)
+    public static Command Create(string name, string description)
     {
         // --type card (only card rewards are supported)
         var typeOption = new Option<string>("--type")
@@ -38,14 +38,13 @@ internal static class RewardChooseCardCommand
         command.Options.Add(typeOption);
         command.Options.Add(cardIdOption);
         command.Options.Add(nthOption);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var type = parseResult.GetValue(typeOption)!;
             var cardId = parseResult.GetValue(cardIdOption)!;
             var nth = parseResult.GetValue(nthOption);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

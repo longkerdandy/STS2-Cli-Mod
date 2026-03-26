@@ -11,7 +11,7 @@ internal static class SelectCharacterCommand
     /// <summary>
     ///     Creates the select_character command.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
         var command = new Command("select_character", "Select a character on the character select screen");
         var characterIdArg = new Argument<string>("character_id")
@@ -19,12 +19,11 @@ internal static class SelectCharacterCommand
             Description = "Character identifier (e.g., ironclad, silent)"
         };
         command.Arguments.Add(characterIdArg);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var characterId = parseResult.GetValue(characterIdArg)!;
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

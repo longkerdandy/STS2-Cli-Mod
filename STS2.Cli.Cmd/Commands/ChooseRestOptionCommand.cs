@@ -11,7 +11,7 @@ internal static class ChooseRestOptionCommand
     /// <summary>
     ///     Creates the choose_rest_option command.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
         var command = new Command("choose_rest_option", "Choose a rest site option (e.g., HEAL, SMITH)");
         var optionIdArg = new Argument<string>("option_id")
@@ -19,12 +19,11 @@ internal static class ChooseRestOptionCommand
             Description = "Rest site option ID (e.g., HEAL, SMITH, MEND, LIFT, DIG, HATCH, COOK, CLONE)"
         };
         command.Arguments.Add(optionIdArg);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var optionId = parseResult.GetValue(optionIdArg)!;
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
                 () => new Request

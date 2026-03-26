@@ -11,7 +11,7 @@ internal static class PotionSelectCardCommand
     /// <summary>
     ///     Creates the potion_select_card command for selecting cards from the potion-opened card selection screen.
     /// </summary>
-    public static Command Create(Option<bool> prettyOption)
+    public static Command Create()
     {
         var command = new Command("potion_select_card",
             "Select cards from a potion-opened card selection screen");
@@ -40,14 +40,13 @@ internal static class PotionSelectCardCommand
         command.Arguments.Add(cardIdsArg);
         command.Options.Add(nthOption);
         command.Options.Add(skipOption);
-        command.Options.Add(prettyOption);
 
         command.SetAction(parseResult =>
         {
             var cardIds = parseResult.GetValue(cardIdsArg)!;
             var nthValues = parseResult.GetValue(nthOption);
             var skip = parseResult.GetValue(skipOption);
-            var pretty = parseResult.GetValue(prettyOption);
+            var pretty = CommandExecutor.IsPretty(parseResult);
 
             if (skip)
                 // Skip selection
