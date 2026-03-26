@@ -3,6 +3,7 @@ using Godot;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
+using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Rewards;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
@@ -46,7 +47,7 @@ public static class ClaimRewardHandler
         {
             // --- Validation ---
 
-            var screen = RewardUiHelper.FindRewardsScreen();
+            var screen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 

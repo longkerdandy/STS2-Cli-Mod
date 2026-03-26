@@ -72,7 +72,7 @@ public static class ChooseCardHandler
         {
             // --- Validation ---
 
-            var screen = RewardUiHelper.FindRewardsScreen();
+            var screen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 
@@ -93,20 +93,16 @@ public static class ChooseCardHandler
 
             var (rewardButton, cardReward) = cardRewards[nth];
 
-            // Find the specific card by ID within this reward
-            var cardChoice = FindCardById(cardReward, cardId);
-            if (cardChoice == null)
+            // Validate the card exists in this reward
+            var targetCard = FindCardById(cardReward, cardId);
+            if (targetCard == null)
             {
-                var availableCards = GetAvailableCardIds(cardReward);
-                Logger.Warning(
-                    $"Card '{cardId}' not found in card reward (nth={nth}). Available: {string.Join(", ", availableCards)}");
-
+                var availableCards = string.Join(", ", cardReward.Cards.Select(c => c.Id.Entry));
                 return new
                 {
                     ok = false,
                     error = "CARD_NOT_FOUND",
-                    message = $"Card '{cardId}' not found in the card reward",
-                    available_cards = availableCards
+                    message = $"Card '{cardId}' not found in reward. Available: [{availableCards}]"
                 };
             }
 
@@ -187,7 +183,7 @@ public static class ChooseCardHandler
         {
             // --- Validation ---
 
-            var screen = RewardUiHelper.FindRewardsScreen();
+            var screen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 

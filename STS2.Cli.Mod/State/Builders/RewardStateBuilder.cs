@@ -4,7 +4,6 @@ using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Rewards;
 using MegaCrit.Sts2.Core.Nodes.Screens;
-using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Rewards;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
@@ -41,7 +40,7 @@ public static class RewardStateBuilder
     /// </summary>
     public static RewardStateDto? Build()
     {
-        var screen = FindRewardsScreen();
+        var screen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
         if (screen == null)
         {
             Logger.Warning("NRewardsScreen not found in overlay stack");
@@ -92,29 +91,6 @@ public static class RewardStateBuilder
         // implemented in the game code but never instantiated in the current version.
         // No code path calls `new LinkedRewardSet(...)`, so we skip it for now.
         return result;
-    }
-
-    /// <summary>
-    ///     Finds the <see cref="NRewardsScreen" /> in the overlay stack.
-    ///     When the top overlay is <see cref="NRewardsScreen" />, returns it directly.
-    ///     Otherwise, searches overlay stack children (e.g., when card selection is on top).
-    /// </summary>
-    private static NRewardsScreen? FindRewardsScreen()
-    {
-        var overlayStack = NOverlayStack.Instance;
-        if (overlayStack == null) return null;
-
-        // Fast path: top overlay is the rewards screen
-        var top = overlayStack.Peek();
-        if (top is NRewardsScreen rewardsScreen)
-            return rewardsScreen;
-
-        // Slow path: search children (card selection may be on top of rewards)
-        foreach (var child in overlayStack.GetChildren())
-            if (child is NRewardsScreen found)
-                return found;
-
-        return null;
     }
 
     /// <summary>

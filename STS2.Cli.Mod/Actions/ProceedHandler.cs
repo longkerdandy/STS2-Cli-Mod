@@ -46,7 +46,7 @@ public static class ProceedHandler
         {
             // --- Try Reward Screen first ---
 
-            var rewardScreen = RewardUiHelper.FindRewardsScreen();
+            var rewardScreen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
             if (rewardScreen != null)
             {
                 Logger.Info("Detected reward screen context");
