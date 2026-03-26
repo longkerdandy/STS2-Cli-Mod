@@ -15,12 +15,15 @@ namespace STS2.Cli.Mod.Actions;
 ///     Handles proceeding to the map from various screens.
 ///     Supports:
 ///     - Reward screen (NRewardsScreen with NProceedButton)
+///     - Event room (any event with IsFinished, via NEventRoom.Proceed())
 ///     - FakeMerchant custom event (NFakeMerchant with NProceedButton)
 ///     - Rest site (NRestSiteRoom with NProceedButton, after choosing an option)
 ///     - Treasure room (NTreasureRoom with NProceedButton, after picking/skipping relic)
 ///     - Merchant room (NMerchantRoom with NProceedButton, shop proceed to map)
 ///     Mimics the AutoSlayer / STS2MCP approach: finds the <see cref="NProceedButton" /> and calls
 ///     <see cref="NClickableControl.ForceClick" />, which triggers the full UI flow.
+///     For events, calls <see cref="NEventRoom.Proceed" /> directly (events use
+///     <c>NEventOptionButton</c> with <c>IsProceed=true</c> instead of <c>NProceedButton</c>).
 /// </summary>
 public static class ProceedHandler
 {
@@ -54,6 +57,8 @@ public static class ProceedHandler
             }
 
             // --- Try FakeMerchant Event ---
+            // FakeMerchant is a special custom event node with its own NProceedButton,
+            // separate from the standard event option system. Check it first.
 
             var eventRoom = NEventRoom.Instance;
             if (eventRoom != null && eventRoom.IsInsideTree())
@@ -65,13 +70,10 @@ public static class ProceedHandler
                     return await ExecuteFakeMerchantProceedAsync(fakeMerchant);
                 }
 
-                // Event room exists but not FakeMerchant
-                return new
-                {
-                    ok = false,
-                    error = "UNSUPPORTED_EVENT",
-                    message = "Current event is not FakeMerchant and does not support proceed"
-                };
+                // --- Try standard/Ancient event proceed ---
+                // All events (including Neow) use NEventOptionButton with IsProceed=true
+                // instead of NProceedButton. When IsFinished, call NEventRoom.Proceed() directly.
+                return await ExecuteEventProceedAsync(eventRoom);
             }
 
             // --- Try Rest Site ---
@@ -107,7 +109,7 @@ public static class ProceedHandler
             {
                 ok = false,
                 error = "NO_PROCEED_AVAILABLE",
-                message = "Not on reward screen, FakeMerchant event, rest site, treasure room, or merchant room"
+                message = "Not on reward screen, event room, rest site, treasure room, or merchant room"
             };
         }
         catch (Exception ex)
@@ -157,6 +159,52 @@ public static class ProceedHandler
             data = new
             {
                 context = "reward_screen",
+                action = "PROCEED"
+            }
+        };
+    }
+
+    /// <summary>
+    ///     Proceeds from a standard or Ancient event (e.g., Neow) after it has finished.
+    ///     Events do not use <see cref="NProceedButton" />; instead, <see cref="NEventRoom.SetOptions" />
+    ///     injects a synthetic <c>EventOption</c> with <c>IsProceed=true</c> when <c>IsFinished</c>.
+    ///     We call <see cref="NEventRoom.Proceed" /> directly to trigger the map transition.
+    /// </summary>
+    private static async Task<object> ExecuteEventProceedAsync(NEventRoom eventRoom)
+    {
+        var eventModel = EventUtils.GetEventModel(eventRoom);
+        if (eventModel == null)
+            return new
+            {
+                ok = false,
+                error = "INTERNAL_ERROR",
+                message = "Failed to access event model"
+            };
+
+        if (!eventModel.IsFinished)
+        {
+            var eventId = eventModel.Id?.Entry ?? "unknown";
+            Logger.Warning($"Event '{eventId}' is not finished, cannot proceed");
+            return new
+            {
+                ok = false,
+                error = "EVENT_NOT_FINISHED",
+                message = $"Event '{eventId}' is not finished. Use 'choose_event' to select an option first."
+            };
+        }
+
+        Logger.Info("Event is finished, calling NEventRoom.Proceed()");
+        await NEventRoom.Proceed();
+
+        var proceeded = await WaitForMapOpenAsync();
+
+        return new
+        {
+            ok = true,
+            data = new
+            {
+                context = "event",
+                proceeded,
                 action = "PROCEED"
             }
         };

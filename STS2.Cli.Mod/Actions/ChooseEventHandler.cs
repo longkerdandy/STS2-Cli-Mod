@@ -1,4 +1,3 @@
-using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -53,7 +52,7 @@ public static class ChooseEventHandler
                 return new { ok = false, error = "NO_EVENT_LAYOUT", message = "Event layout not found" };
 
             // --- Guard: Get the event model and validate the option index ---
-            var eventModel = GetEventModel(eventRoom);
+            var eventModel = EventUtils.GetEventModel(eventRoom);
             if (eventModel == null)
                 return new { ok = false, error = "INTERNAL_ERROR", message = "Failed to access event model" };
 
@@ -185,24 +184,6 @@ public static class ChooseEventHandler
     }
 
     /// <summary>
-    ///     Gets the EventModel from NEventRoom using reflection.
-    /// </summary>
-    private static EventModel? GetEventModel(NEventRoom eventRoom)
-    {
-        try
-        {
-            var field = typeof(NEventRoom).GetField("_event",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(eventRoom) as EventModel;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get EventModel: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
     ///     Waits for the Proceed transition (map opens or event room leaves the tree).
     /// </summary>
     private static async Task<bool> WaitForProceed(NEventRoom originalEventRoom)
@@ -225,7 +206,7 @@ public static class ChooseEventHandler
             if (NOverlayStack.Instance?.Peek() is not null) return true;
             if (NMapScreen.Instance is { IsOpen: true }) return true;
 
-            var eventModel = GetEventModel(eventRoom);
+            var eventModel = EventUtils.GetEventModel(eventRoom);
             if (eventModel == null) return true;
 
             return HasEventStateChanged(eventModel, snapshot);

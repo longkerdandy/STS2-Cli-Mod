@@ -18,12 +18,6 @@ public static class EventStateBuilder
     private static readonly ModLogger Logger = new("EventStateBuilder");
 
     /// <summary>
-    ///     Cached reflection field for <see cref="NEventRoom" />._event (private).
-    /// </summary>
-    private static readonly FieldInfo? EventRoomEventField =
-        typeof(NEventRoom).GetField("_event", BindingFlags.NonPublic | BindingFlags.Instance);
-
-    /// <summary>
     ///     Cached reflection field for <see cref="NAncientEventLayout" />._dialogue (private).
     /// </summary>
     private static readonly FieldInfo? AncientDialogueField =
@@ -50,8 +44,9 @@ public static class EventStateBuilder
                 return null;
             }
 
-            // Access private _event field via reflection
-            if (EventRoomEventField?.GetValue(eventRoom) is not EventModel eventModel)
+            // Access EventModel via shared reflection utility
+            var eventModel = EventUtils.GetEventModel(eventRoom);
+            if (eventModel == null)
             {
                 Logger.Warning("Failed to access EventModel from NEventRoom");
                 return null;
