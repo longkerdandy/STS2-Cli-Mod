@@ -74,4 +74,10 @@ public class GameStateDto
     ///     Shop (merchant room) state if at a shop, null otherwise.
     /// </summary>
     public ShopStateDto? Shop { get; set; }
+
+    /// <summary>
+    ///     Hand card selection state if the player is selecting cards from their hand
+    ///     (e.g., discard, exhaust, upgrade prompts during combat), null otherwise.
+    /// </summary>
+    public HandSelectStateDto? HandSelect { get; set; }
 }

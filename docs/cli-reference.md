@@ -213,6 +213,24 @@ Start a run from the character select screen. Requires a character to be selecte
 
 ---
 
+### hand_select_card
+
+```
+./sts2 hand_select_card <card_id> [<card_id>...] [--nth <n>...]
+```
+
+Select cards from hand during combat selection mode (discard, exhaust, upgrade prompts). When `MinSelect == MaxSelect`, selection auto-completes after selecting the required number of cards. Otherwise, use `hand_confirm_selection` to finalize.
+
+### hand_confirm_selection
+
+```
+./sts2 hand_confirm_selection
+```
+
+Confirm the current hand card selection. Only needed when `hand_select.require_manual_confirmation` is true (i.e., `MinSelect != MaxSelect`).
+
+---
+
 ### deck_select_card / deck_select_skip
 
 ```
@@ -228,7 +246,7 @@ Returned by `state` in the `data` field. Only the relevant screen's data is popu
 
 ```
 data
-├── screen              # COMBAT | REWARD | CARD_REWARD | EVENT | POTION_SELECTION
+├── screen              # COMBAT | HAND_SELECT | REWARD | CARD_REWARD | EVENT | POTION_SELECTION
 │                       # MAP | CHARACTER_SELECT | DECK_CARD_SELECT | REST_SITE | TREASURE | SHOP | MENU | UNKNOWN
 ├── timestamp           # Unix ms
 ├── combat
@@ -264,6 +282,14 @@ data
 │   ├── selection_type          # remove, upgrade, transform, enchant, generic, unknown
 │   ├── prompt, min_select, max_select, cancelable
 │   └── cards[]
+├── hand_select                 # Only when screen is HAND_SELECT (combat sub-state)
+│   ├── mode                    # SimpleSelect or UpgradeSelect
+│   ├── prompt                  # e.g., "Choose 1 card to discard."
+│   ├── min_select, max_select
+│   ├── cancelable, require_manual_confirmation
+│   ├── can_confirm, selected_count
+│   ├── selectable_cards[]      # Cards available to select from hand
+│   └── selected_cards[]        # Cards already selected
 └── map
     ├── act_index, act_floor, total_floor
     ├── columns, rows
@@ -335,6 +361,7 @@ data
 - **Event Option**: `{index, title, description, is_locked, is_proceed, relic_id?}`
 - **Selectable Card** (potion selection): `{index, card_id, card_name, description, card_type, cost}`
 - **Selectable Card** (deck selection): `{index, card_id, card_name, description, card_type, cost}` -- same structure as potion selection
+- **Hand Select Card**: `{index, card_id, card_name, card_type, cost, description}` -- card in hand selection mode
 - **Character Option**: `{character_id, character_name, is_locked, is_selected}`
 - **Map Node**: `{col, row, type, state, children[], parents[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE|NONE`; children/parents are `[{col, row}]`
 - **Rest Site Option**: `{index, option_id, name, description, is_enabled}` -- option_id: `HEAL`, `SMITH`, `MEND`, `LIFT`, `DIG`, `HATCH`, `COOK`, `CLONE`
@@ -467,5 +494,15 @@ data
 | `INVALID_SELECTION_COUNT` | Wrong number of cards selected |
 | `CARD_NOT_FOUND` | Card ID not in selection |
 | `CANNOT_SKIP` | Selection is not cancelable |
+
+**Hand Select** (`hand_select_card`, `hand_confirm_selection`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_HAND_SELECT` | Not in hand card selection mode |
+| `INVALID_SELECTION_COUNT` | Would exceed max selection count |
+| `CARD_NOT_FOUND` | Card ID not in selectable hand |
+| `CANNOT_CONFIRM` | Not enough cards selected to confirm |
+| `UI_NOT_FOUND` | Confirm button not found |
 
 **General**: `CONNECTION_ERROR` -- game disconnected.

@@ -68,6 +68,8 @@ internal static class Program
         rootCommand.Subcommands.Add(PotionSelectCardCommand.Create());
         rootCommand.Subcommands.Add(DeckSelectCardCommand.Create());
         rootCommand.Subcommands.Add(DeckSelectSkipCommand.Create());
+        rootCommand.Subcommands.Add(HandSelectCardCommand.Create());
+        rootCommand.Subcommands.Add(HandConfirmSelectionCommand.Create());
 
         // Character select commands
         rootCommand.Subcommands.Add(SelectCharacterCommand.Create());

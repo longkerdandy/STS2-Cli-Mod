@@ -77,6 +77,8 @@ Verify the mod works by:
 22. `sts2.exe shop_buy_relic <relic_id> [--nth <n>]` - confirms relic purchase from shop
 23. `sts2.exe shop_buy_potion <potion_id> [--nth <n>]` - confirms potion purchase from shop
 24. `sts2.exe shop_remove_card` - confirms card removal service purchase (opens deck select)
+25. `sts2.exe hand_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from hand during combat (discard, exhaust, upgrade)
+26. `sts2.exe hand_confirm_selection` - confirms hand card selection when manual confirmation is required
 
 ## Code Style Guidelines
 

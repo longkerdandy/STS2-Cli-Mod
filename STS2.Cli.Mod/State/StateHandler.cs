@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
+using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
@@ -56,6 +57,14 @@ public static class StateHandler
 
             // Extract combat state if in combat
             if (state.Screen == "COMBAT") state.Combat = ExtractCombatState();
+
+            // Extract hand selection state if in hand card selection (combat sub-state)
+            // Also include combat state so the AI has full context
+            if (state.Screen == "HAND_SELECT")
+            {
+                state.Combat = ExtractCombatState();
+                state.HandSelect = ExtractHandSelectState();
+            }
 
             // Extract map state if on map screen
             if (state.Screen == "MAP") state.Map = ExtractMapState();
@@ -122,7 +131,18 @@ public static class StateHandler
         if (!RunManager.Instance.IsInProgress) return "MENU";
 
         // Check CombatManager for active combat
-        if (CombatManager.Instance.IsInProgress) return "COMBAT";
+        // Hand selection is a sub-state of combat — detected here before generic COMBAT
+        // because it requires different commands (hand_select_card vs play_card)
+        if (CombatManager.Instance.IsInProgress)
+        {
+            if (NPlayerHand.Instance is { IsInCardSelection: true })
+            {
+                Logger.Info("Detected HAND_SELECT screen (combat sub-state)");
+                return "HAND_SELECT";
+            }
+
+            return "COMBAT";
+        }
 
         // Check NMapScreen.IsOpen BEFORE overlay stack.
         // After proceeding from rewards, the map opens but NRewardsScreen may linger
@@ -508,6 +528,22 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract shop state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the hand card selection state from <see cref="NPlayerHand" />.
+    /// </summary>
+    private static HandSelectStateDto? ExtractHandSelectState()
+    {
+        try
+        {
+            return HandSelectStateBuilder.Build();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract hand select state: {ex.Message}");
             return null;
         }
     }

@@ -244,6 +244,14 @@ public static class PipeServer
                 "shop_remove_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     ShopRemoveCardHandler.HandleRequestAsync(request)),
 
+                // hand_select_card is async — select cards from hand during combat selection mode
+                "hand_select_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    HandSelectCardHandler.HandleRequestAsync(request)),
+
+                // hand_confirm_selection is async — confirm hand card selection
+                "hand_confirm_selection" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    HandSelectCardHandler.HandleConfirmRequestAsync(request)),
+
                 // state is synchronous — single-frame game state extraction on the main thread
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 
