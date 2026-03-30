@@ -1,7 +1,6 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Nodes;
-using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
@@ -75,8 +74,15 @@ public static class StateHandler
         // Extract event state if at an event
         if (state.Screen == "EVENT") state.Event = ExtractEventState();
 
-        // Extract potion selection state if in potion card selection
-        if (state.Screen == "POTION_SELECTION") state.PotionSelection = ExtractPotionSelectionState();
+        // Extract tri-select (choose-a-card) state if on tri-select screen
+        // Also include combat state when tri-select is triggered during combat
+        // so the AI has full context (e.g., Discovery/Quasar/Splash mid-combat)
+        if (state.Screen == "TRI_SELECT")
+        {
+            state.TriSelect = ExtractTriSelectState();
+            if (CombatManager.Instance.IsInProgress)
+                state.Combat = ExtractCombatState();
+        }
 
         // Extract character select state if on character select screen
         if (state.Screen == "CHARACTER_SELECT") state.CharacterSelect = ExtractCharacterSelectState();
@@ -117,9 +123,9 @@ public static class StateHandler
 
     /// <summary>
     ///     Detects which screen the player is currently on.
-    ///     Priority order: CHARACTER_SELECT → COMBAT (with HAND_SELECT and GRID_CARD_SELECT sub-states)
-    ///     → MAP → overlay screens (CARD_REWARD, POTION_SELECTION, GRID_CARD_SELECT, REWARD)
-    ///     → EVENT → REST_SITE → TREASURE → SHOP → UNKNOWN.
+    ///     Priority order: CHARACTER_SELECT → COMBAT (with HAND_SELECT, GRID_CARD_SELECT,
+    ///     and TRI_SELECT sub-states) → MAP → overlay screens (CARD_REWARD, TRI_SELECT,
+    ///     GRID_CARD_SELECT, REWARD) → EVENT → REST_SITE → TREASURE → SHOP → UNKNOWN.
     ///     Overlay screens take priority over EVENT because events can trigger overlays
     ///     (e.g., Neow's Lead Paperweight opens NCardRewardSelectionScreen while NEventRoom
     ///     is still in the scene tree).
@@ -162,6 +168,13 @@ public static class StateHandler
                     return "GRID_CARD_SELECT";
                 }
 
+                // Cards like Discovery, Quasar, Splash open NChooseACardSelectionScreen during combat
+                if (topOverlay is NChooseACardSelectionScreen)
+                {
+                    Logger.Info("Detected TRI_SELECT screen during combat");
+                    return "TRI_SELECT";
+                }
+
                 // Also check children in case it's not on top
                 foreach (var child in combatOverlay.GetChildren())
                 {
@@ -169,6 +182,12 @@ public static class StateHandler
                     {
                         Logger.Info($"Detected GRID_CARD_SELECT screen during combat in children ({child.GetType().Name})");
                         return "GRID_CARD_SELECT";
+                    }
+
+                    if (child is NChooseACardSelectionScreen)
+                    {
+                        Logger.Info("Detected TRI_SELECT screen during combat in children");
+                        return "TRI_SELECT";
                     }
                 }
             }
@@ -200,8 +219,8 @@ public static class StateHandler
 
                 if (overlay is NChooseACardSelectionScreen)
                 {
-                    Logger.Info("Detected POTION_SELECTION screen");
-                    return "POTION_SELECTION";
+                    Logger.Info("Detected TRI_SELECT screen");
+                    return "TRI_SELECT";
                 }
 
                 if (overlay is NCardGridSelectionScreen)
@@ -216,8 +235,8 @@ public static class StateHandler
             {
                 if (child is NChooseACardSelectionScreen)
                 {
-                    Logger.Info("Detected POTION_SELECTION screen (in children)");
-                    return "POTION_SELECTION";
+                    Logger.Info("Detected TRI_SELECT screen (in children)");
+                    return "TRI_SELECT";
                 }
 
                 if (child is NCardGridSelectionScreen)
@@ -395,101 +414,20 @@ public static class StateHandler
     }
 
     /// <summary>
-    ///     Extracts the potion card selection state from <see cref="NChooseACardSelectionScreen" />.
+    ///     Extracts the tri-select (choose-a-card) state from <see cref="NChooseACardSelectionScreen" />.
+    ///     Delegates to <see cref="TriSelectStateBuilder" /> for the actual extraction.
     /// </summary>
-    private static PotionSelectionStateDto? ExtractPotionSelectionState()
+    private static TriSelectStateDto? ExtractTriSelectState()
     {
         try
         {
-            var screen = UiUtils.FindCardSelectionScreen();
-            if (screen == null)
-            {
-                Logger.Warning("POTION_SELECTION screen detected but no selection screen found");
-                return null;
-            }
-
-            var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
-            var constraints = InferSelectionConstraints(cardHolders);
-            var cards = new List<SelectableCardDto>();
-
-            for (int i = 0; i < cardHolders.Count; i++)
-            {
-                var holder = cardHolders[i];
-                var card = holder.CardModel;
-                if (card == null) continue;
-
-                cards.Add(new SelectableCardDto
-                {
-                    Index = i,
-                    CardId = card.Id.Entry,
-                    CardName = TextUtils.StripGameTags(card.Title),
-                    CardType = card.Type.ToString(),
-                    Cost = card.EnergyCost.Canonical,
-                    Description = TextUtils.StripGameTags(card.Description.GetFormattedText())
-                });
-            }
-
-            return new PotionSelectionStateDto
-            {
-                SelectionType = InferSelectionType(cards),
-                MinSelect = constraints.MinSelect,
-                MaxSelect = constraints.MaxSelect,
-                CanSkip = constraints.CanSkip,
-                Cards = cards
-            };
+            return TriSelectStateBuilder.Build();
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to extract potion selection state: {ex.Message}");
+            Logger.Error($"Failed to extract tri-select state: {ex.Message}");
             return null;
         }
-    }
-
-    /// <summary>
-    ///     Infers selection constraints from the number and type of available cards.
-    /// </summary>
-    private static (int MinSelect, int MaxSelect, bool CanSkip) InferSelectionConstraints(List<NCardHolder> cardHolders)
-    {
-        var cardCount = cardHolders.Count;
-
-        // If we have exactly 3 cards, it's likely a "choose 1 of 3" potion
-        if (cardCount == 3)
-        {
-            return (0, 1, true); // Can skip (Colorless Potion allows skip)
-        }
-
-        // If we have many cards, it's likely a hand-based selection
-        if (cardCount > 3)
-        {
-            return (0, cardCount, true);
-        }
-
-        // Default: single select, cannot skip
-        return (1, 1, false);
-    }
-
-    /// <summary>
-    ///     Infers selection type from available cards.
-    /// </summary>
-    private static string InferSelectionType(List<SelectableCardDto> cards)
-    {
-        if (cards.Count == 3)
-        {
-            // Check if all same type for pool selection
-            var types = cards.Select(c => c.CardType).Distinct().ToList();
-            if (types.Count == 1)
-            {
-                return $"choose_from_pool_{types[0]?.ToLower()}";
-            }
-            return "choose_from_pool";
-        }
-
-        if (cards.Count > 3)
-        {
-            return "choose_from_hand";
-        }
-
-        return "unknown";
     }
 
     /// <summary>

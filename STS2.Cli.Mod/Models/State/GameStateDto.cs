@@ -40,9 +40,10 @@ public class GameStateDto
     public EventStateDto? Event { get; set; }
 
     /// <summary>
-    ///     Potion card selection state if a potion has opened a selection screen, null otherwise.
+    ///     Tri-select (choose-a-card) state if a <c>NChooseACardSelectionScreen</c> is open, null otherwise.
+    ///     Triggered by potions, cards (Discovery, Quasar, Splash), relics, or monsters.
     /// </summary>
-    public PotionSelectionStateDto? PotionSelection { get; set; }
+    public TriSelectStateDto? TriSelect { get; set; }
 
     /// <summary>
     ///     Character selection state if on character select screen, null otherwise.

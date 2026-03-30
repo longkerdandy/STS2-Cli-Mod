@@ -186,13 +186,13 @@ public static class PipeServer
                 "proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     ProceedHandler.HandleRequestAsync(request)),
 
-                // potion_select_card is synchronous — runs on main thread and returns immediately
-                "potion_select_card" => MainThreadExecutor.RunOnMainThread(() =>
-                    PotionSelectCardHandler.HandleRequest(request)),
+                // tri_select_card is synchronous — runs on main thread and returns immediately
+                "tri_select_card" => MainThreadExecutor.RunOnMainThread(() =>
+                    TriSelectCardHandler.HandleRequest(request)),
 
-                // potion_select_skip is synchronous — runs on main thread and returns immediately
-                "potion_select_skip" => MainThreadExecutor.RunOnMainThread(() =>
-                    PotionSelectCardHandler.HandleSkipRequest(request)),
+                // tri_select_skip is synchronous — runs on main thread and returns immediately
+                "tri_select_skip" => MainThreadExecutor.RunOnMainThread(() =>
+                    TriSelectCardHandler.HandleSkipRequest(request)),
 
                 // grid_select_card is async — multi-step: select cards, confirm/preview, poll for removal
                 "grid_select_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>

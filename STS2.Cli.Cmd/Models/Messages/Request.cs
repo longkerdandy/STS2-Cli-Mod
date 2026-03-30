@@ -57,19 +57,19 @@ public class Request
     public string? CardId { get; set; }
 
     /// <summary>
-    ///     Card IDs for potion_select_card command (multiple cards to select).
+    ///     Card IDs for tri_select_card, grid_select_card, and hand_select_card commands (multiple cards to select).
     /// </summary>
     [JsonPropertyName("card_ids")]
     public string[]? CardIds { get; set; }
 
     /// <summary>
-    ///     N-th values for each card in CardIds (for potion_select_card).
+    ///     N-th values for each card in CardIds (for tri_select_card, grid_select_card, hand_select_card).
     /// </summary>
     [JsonPropertyName("nth_values")]
     public int[]? NthValues { get; set; }
 
     /// <summary>
-    ///     The skip flag for potion_select_card command.
+    ///     The skip flag for commands that support skipping.
     /// </summary>
     [JsonPropertyName("skip")]
     public bool? Skip { get; set; }

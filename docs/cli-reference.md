@@ -40,7 +40,7 @@ Play a card from hand. `--target` required for enemy-targeting cards only.
 ./sts2 use_potion <potion_id> [--nth <n>] [--target <combat_id>]
 ```
 
-Use a potion. `--target` required for enemy-targeting potions. Some potions open a card selection screen (screen becomes `POTION_SELECTION`) -- use `potion_select_card` or `potion_select_skip` to complete.
+Use a potion. `--target` required for enemy-targeting potions. Some potions open a card selection screen (screen becomes `TRI_SELECT`) -- use `tri_select_card` or `tri_select_skip` to complete.
 
 ### end_turn
 
@@ -97,21 +97,21 @@ Advance Ancient event dialogue. Use `--auto` to skip all dialogue lines until op
 
 ---
 
-### potion_select_card
+### tri_select_card
 
 ```
-./sts2 potion_select_card <card_id> [<card_id>...] [--nth <n>...]
+./sts2 tri_select_card <card_id> [<card_id>...] [--nth <n>...]
 ```
 
-Select cards from potion-opened selection screen. Check `potion_selection.min_select` / `max_select` in state for how many to pick.
+Select cards from a three-choose-one card selection screen (triggered by potions, cards like Discovery/Quasar/Splash, relics like Toolbox, and monsters). Check `tri_select.min_select` / `max_select` in state for how many to pick.
 
-### potion_select_skip
+### tri_select_skip
 
 ```
-./sts2 potion_select_skip
+./sts2 tri_select_skip
 ```
 
-Skip potion card selection (only if `potion_selection.can_skip` is true).
+Skip three-choose-one card selection (only if `tri_select.can_skip` is true).
 
 ---
 
@@ -246,7 +246,7 @@ Returned by `state` in the `data` field. Only the relevant screen's data is popu
 
 ```
 data
-├── screen              # COMBAT | HAND_SELECT | REWARD | CARD_REWARD | EVENT | POTION_SELECTION
+├── screen              # COMBAT | HAND_SELECT | REWARD | CARD_REWARD | EVENT | TRI_SELECT
 │                       # MAP | CHARACTER_SELECT | GRID_CARD_SELECT | REST_SITE | TREASURE | SHOP | MENU | UNKNOWN
 ├── timestamp           # Unix ms
 ├── combat
@@ -270,7 +270,7 @@ data
 │   ├── is_finished, is_in_dialogue
 │   ├── current_dialogue_line, total_dialogue_lines  # Ancient only
 │   └── options[]
-├── potion_selection
+├── tri_select
 │   ├── selection_type, min_select, max_select, can_skip
 │   └── cards[]
 ├── character_select
@@ -359,8 +359,8 @@ data
 - **Reward Item**: `{index, type, description, gold_amount?, potion_id?, potion_name?, potion_rarity?, relic_id?, relic_name?, relic_description?, relic_rarity?, card_choices[]?, card_id?, card_name?}` -- type is `Gold`, `Potion`, `Relic`, `Card`, `SpecialCard`, `CardRemoval`
 - **Card Choice** (in reward): `{index, id, name, description, type, rarity, cost, is_upgraded}`
 - **Event Option**: `{index, title, description, is_locked, is_proceed, relic_id?}`
-- **Selectable Card** (potion selection): `{index, card_id, card_name, description, card_type, cost}`
-- **Selectable Card** (grid selection): `{index, card_id, card_name, description, card_type, cost}` -- same structure as potion selection
+- **Selectable Card** (tri select): `{index, card_id, card_name, description, card_type, cost}`
+- **Selectable Card** (grid selection): `{index, card_id, card_name, description, card_type, cost}` -- same structure as tri select
 - **Hand Select Card**: `{index, card_id, card_name, card_type, cost, description}` -- card in hand selection mode
 - **Character Option**: `{character_id, character_name, is_locked, is_selected}`
 - **Map Node**: `{col, row, type, state, children[], parents[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE|NONE`; children/parents are `[{col, row}]`
@@ -424,11 +424,11 @@ data
 | `NOT_ANCIENT_EVENT` | `advance_dialogue` on non-Ancient event |
 | `NOT_IN_DIALOGUE` | Dialogue already finished |
 
-**Potion Selection** (`potion_select_card`, `potion_select_skip`):
+**Tri Select** (`tri_select_card`, `tri_select_skip`):
 
 | Error | Cause |
 |-------|-------|
-| `NOT_IN_POTION_SELECTION` | Not on selection screen |
+| `NOT_IN_TRI_SELECT` | Not on selection screen |
 | `CANNOT_SKIP` | Selection cannot be skipped |
 | `SKIP_BUTTON_NOT_FOUND` | Skip button unavailable |
 | `INVALID_SELECTION_COUNT` | Wrong number of cards |

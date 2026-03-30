@@ -65,7 +65,8 @@ internal static class Program
             "advance_dialogue", "Advance dialogue in an Ancient event"));
 
         // Selection commands
-        rootCommand.Subcommands.Add(PotionSelectCardCommand.Create());
+        rootCommand.Subcommands.Add(TriSelectCardCommand.Create());
+        rootCommand.Subcommands.Add(TriSelectSkipCommand.Create());
         rootCommand.Subcommands.Add(GridSelectCardCommand.Create());
         rootCommand.Subcommands.Add(GridSelectSkipCommand.Create());
         rootCommand.Subcommands.Add(HandSelectCardCommand.Create());

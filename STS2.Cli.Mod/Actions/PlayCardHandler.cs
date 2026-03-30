@@ -1,9 +1,11 @@
+using System.Reflection;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
@@ -87,7 +89,34 @@ public static class PlayCardHandler
             var targetMsg = targetName != null ? $" targeting {targetName}" : "";
             Logger.Info($"PlayCardAction enqueued: '{card.Title}'{targetMsg}");
 
-            var finalState = await ActionUtils.EnqueueAndAwaitAsync(action, ActionUtils.ActionTimeoutMs);
+            // Start the action and keep the Task reference for the fallback path
+            var enqueueTask = ActionUtils.EnqueueAndAwaitAsync(action, ActionUtils.ActionTimeoutMs);
+
+            // Poll for either card selection screen appearance or action completion.
+            // Cards like Discovery, Quasar, and Splash open an NChooseACardSelectionScreen
+            // during execution; the action pauses in GatheringPlayerChoice state until the
+            // player picks a card. Without this detection, EnqueueAndAwaitAsync would timeout.
+            var elapsedMs = 0;
+            while (elapsedMs < ActionUtils.UiTimeoutMs)
+            {
+                await Task.Delay(ActionUtils.DefaultPollIntervalMs);
+                elapsedMs += ActionUtils.DefaultPollIntervalMs;
+
+                var selectionScreen = UiUtils.FindCardSelectionScreen();
+                if (selectionScreen != null)
+                {
+                    Logger.Info($"Card selection screen detected for card '{card.Title}'");
+                    return BuildCardSelectionResponse(card, cardIndex, targetCombatId, selectionScreen);
+                }
+
+                // Action finished normally before any selection screen appeared
+                if (action.State is not (GameActionState.WaitingForExecution or GameActionState.Executing
+                    or GameActionState.GatheringPlayerChoice))
+                    break;
+            }
+
+            // Normal path: await the enqueue task for final state
+            var finalState = await enqueueTask;
             if (finalState == null)
             {
                 Logger.Warning("PlayCardAction timed out waiting for completion");
@@ -175,5 +204,53 @@ public static class PlayCardHandler
             $"Found card '{cardId}' at hand index {selected.Index} (nth={nth}, total matches={matchingCards.Count})");
 
         return (selected.Card, selected.Index, null);
+    }
+
+    /// <summary>
+    ///     Builds a <c>selection_required</c> response when a played card opens
+    ///     an <see cref="NChooseACardSelectionScreen" /> (e.g., Discovery, Quasar, Splash).
+    ///     The agent should then use <c>tri_select_card</c> or <c>tri_select_skip</c>
+    ///     to complete the selection.
+    /// </summary>
+    private static object BuildCardSelectionResponse(
+        CardModel card, int cardIndex, int? targetCombatId, NChooseACardSelectionScreen selectionScreen)
+    {
+        var cards = UiUtils.ExtractSelectableCards(selectionScreen);
+        var canSkip = ReadCanSkip(selectionScreen);
+
+        return new
+        {
+            ok = true,
+            data = new
+            {
+                status = "selection_required",
+                card_index = cardIndex,
+                card_id = card.Id.Entry,
+                target = targetCombatId,
+                min_select = canSkip ? 0 : 1,
+                max_select = 1,
+                can_skip = canSkip,
+                cards
+            }
+        };
+    }
+
+    /// <summary>
+    ///     Reads the private <c>_canSkip</c> field from an <see cref="NChooseACardSelectionScreen" />
+    ///     via reflection to determine if the selection can be skipped.
+    /// </summary>
+    private static bool ReadCanSkip(NChooseACardSelectionScreen screen)
+    {
+        try
+        {
+            var field = typeof(NChooseACardSelectionScreen).GetField("_canSkip",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return field?.GetValue(screen) as bool? ?? false;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to read _canSkip from screen: {ex.Message}");
+            return false;
+        }
     }
 }

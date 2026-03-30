@@ -4,6 +4,9 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
+using MegaCrit.Sts2.Core.Nodes.Combat;
+using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
@@ -116,33 +119,42 @@ public static class UsePotionHandler
 
     /// <summary>
     ///     Enqueues a potion action that opens a card selection screen.
-    ///     Polls for the selection screen to appear; falls back to normal completion if it doesn't.
+    ///     Determines the expected UI type via <see cref="PotionUtils.GetSelectionUiType" />,
+    ///     polls for that specific screen to appear, and builds the appropriate
+    ///     <c>selection_required</c> response. Falls back to normal completion if the
+    ///     expected screen does not appear (e.g., auto-select when eligible cards ≤ MinSelect).
     /// </summary>
     private static async Task<object> EnqueueWithCardSelectionAsync(
         PotionModel potion, int slot, Creature? target, int? targetCombatId)
     {
         var historyBefore = CombatManager.Instance.History.Entries.Count();
+        var uiType = PotionUtils.GetSelectionUiType(potion.Id.Entry);
         var action = CreateAndLogAction(potion, slot, target, selectionType: true);
+
+        Logger.Info($"Potion '{potion.Title}' expects UI type '{uiType}'");
 
         // Start the action and keep the Task reference for the fallback path
         var enqueueTask = ActionUtils.EnqueueAndAwaitAsync(action, ActionUtils.ActionTimeoutMs);
 
-        // Poll for the selection screen to appear
+        // Poll for the expected selection screen to appear
         var elapsedMs = 0;
         while (elapsedMs < ActionUtils.UiTimeoutMs)
         {
             await Task.Delay(ActionUtils.DefaultPollIntervalMs);
             elapsedMs += ActionUtils.DefaultPollIntervalMs;
 
-            var selectionScreen = UiUtils.FindCardSelectionScreen();
-            if (selectionScreen != null)
+            // Check for the expected UI type
+            var selectionResponse = DetectSelectionScreen(uiType, potion, slot);
+            if (selectionResponse != null)
             {
-                Logger.Info($"Card selection screen detected for potion '{potion.Title}'");
-                return PotionUtils.BuildSelectionResponse(potion, slot, selectionScreen);
+                Logger.Info($"Selection screen ({uiType}) detected for potion '{potion.Title}'");
+                return selectionResponse;
             }
 
-            // Action finished before the selection screen appeared (unexpected for these potions)
-            if (action.State != GameActionState.WaitingForExecution && action.State != GameActionState.Executing)
+            // Action finished before the selection screen appeared
+            // (can happen when auto-select kicks in, e.g., eligible cards ≤ MinSelect)
+            if (action.State is not (GameActionState.WaitingForExecution or GameActionState.Executing
+                or GameActionState.GatheringPlayerChoice))
                 break;
         }
 
@@ -151,6 +163,45 @@ public static class UsePotionHandler
         var finalState = await enqueueTask;
 
         return HandleActionResult(finalState, potion, slot, targetCombatId, historyBefore);
+    }
+
+    /// <summary>
+    ///     Checks whether the expected card selection screen is currently open and builds
+    ///     the corresponding <c>selection_required</c> response.
+    /// </summary>
+    /// <param name="uiType">Expected UI type: <c>"tri_select"</c>, <c>"hand_select"</c>, or <c>"grid_select"</c>.</param>
+    /// <param name="potion">The potion model that triggered the selection.</param>
+    /// <param name="slot">The potion belt slot index.</param>
+    /// <returns>A response object if the screen is detected, or <c>null</c> if not yet visible.</returns>
+    private static object? DetectSelectionScreen(string? uiType, PotionModel potion, int slot)
+    {
+        switch (uiType)
+        {
+            case "tri_select":
+            {
+                var screen = UiUtils.FindCardSelectionScreen();
+                if (screen != null)
+                    return PotionUtils.BuildTriSelectResponse(potion, slot, screen);
+                break;
+            }
+
+            case "hand_select":
+            {
+                if (NPlayerHand.Instance is { IsInCardSelection: true })
+                    return PotionUtils.BuildHandSelectResponse(potion, slot);
+                break;
+            }
+
+            case "grid_select":
+            {
+                var gridScreen = UiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
+                if (gridScreen != null)
+                    return PotionUtils.BuildGridSelectResponse(potion, slot, gridScreen);
+                break;
+            }
+        }
+
+        return null;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────
