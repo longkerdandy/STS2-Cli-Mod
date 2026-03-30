@@ -66,8 +66,8 @@ internal static class Program
 
         // Selection commands
         rootCommand.Subcommands.Add(PotionSelectCardCommand.Create());
-        rootCommand.Subcommands.Add(DeckSelectCardCommand.Create());
-        rootCommand.Subcommands.Add(DeckSelectSkipCommand.Create());
+        rootCommand.Subcommands.Add(GridSelectCardCommand.Create());
+        rootCommand.Subcommands.Add(GridSelectSkipCommand.Create());
         rootCommand.Subcommands.Add(HandSelectCardCommand.Create());
         rootCommand.Subcommands.Add(HandConfirmSelectionCommand.Create());
 

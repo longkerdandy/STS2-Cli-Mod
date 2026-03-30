@@ -50,10 +50,10 @@ public class GameStateDto
     public CharacterSelectStateDto? CharacterSelect { get; set; }
 
     /// <summary>
-    ///     Deck card selection state if on a grid-based card selection screen
-    ///     (remove, upgrade, transform, enchant), null otherwise.
+    ///     Grid card selection state if on a grid-based card selection screen
+    ///     (remove, upgrade, transform, enchant, combat grid overlays), null otherwise.
     /// </summary>
-    public DeckCardSelectStateDto? DeckCardSelect { get; set; }
+    public GridCardSelectStateDto? GridCardSelect { get; set; }
 
     /// <summary>
     ///     Map state if on the map screen, null otherwise.

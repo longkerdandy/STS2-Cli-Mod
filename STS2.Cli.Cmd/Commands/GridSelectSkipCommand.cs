@@ -4,24 +4,24 @@ using STS2.Cli.Cmd.Models.Messages;
 namespace STS2.Cli.Cmd.Commands;
 
 /// <summary>
-///     Creates the deck_select_skip command for cancelling a deck card selection.
+///     Creates the grid_select_skip command for cancelling a grid card selection.
 /// </summary>
-internal static class DeckSelectSkipCommand
+internal static class GridSelectSkipCommand
 {
     /// <summary>
-    ///     Creates the deck_select_skip command for cancelling a deck card selection.
+    ///     Creates the grid_select_skip command for cancelling a grid card selection.
     /// </summary>
     public static Command Create()
     {
-        var command = new Command("deck_select_skip",
-            "Cancel/skip a deck card selection (if allowed)");
+        var command = new Command("grid_select_skip",
+            "Cancel/skip a grid card selection (if allowed)");
 
         command.SetAction(parseResult =>
         {
             var pretty = CommandExecutor.IsPretty(parseResult);
 
             return CommandExecutor.ExecuteAsync(
-                () => new Request { Cmd = "deck_select_skip" },
+                () => new Request { Cmd = "grid_select_skip" },
                 pretty,
                 10000);
         });

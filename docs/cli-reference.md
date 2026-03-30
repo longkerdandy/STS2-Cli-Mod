@@ -131,7 +131,7 @@ Travel to a map node. Only nodes with state `TRAVELABLE` can be selected -- chec
 ./sts2 choose_rest_option <option_id>
 ```
 
-Choose a rest site (campfire) option by ID. Common options: `HEAL` (restore HP), `SMITH` (upgrade a card). SMITH opens a card selection overlay (screen becomes `DECK_CARD_SELECT`) -- use `deck_select_card` to complete. After choosing, use `proceed` to leave the rest site if `rest_site.can_proceed` is true.
+Choose a rest site (campfire) option by ID. Common options: `HEAL` (restore HP), `SMITH` (upgrade a card). SMITH opens a card selection overlay (screen becomes `GRID_CARD_SELECT`) -- use `grid_select_card` to complete. After choosing, use `proceed` to leave the rest site if `rest_site.can_proceed` is true.
 
 ---
 
@@ -183,7 +183,7 @@ Buy a potion from the shop by potion ID. Fails if the potion belt is full.
 ./sts2 shop_remove_card
 ```
 
-Buy the card removal service from the shop. Opens a deck card selection screen (screen becomes `DECK_CARD_SELECT`) -- use `deck_select_card` to pick a card to remove, or `deck_select_skip` to cancel. After the shop, use `proceed` to leave.
+Buy the card removal service from the shop. Opens a grid card selection screen (screen becomes `GRID_CARD_SELECT`) -- use `grid_select_card` to pick a card to remove, or `grid_select_skip` to cancel. After the shop, use `proceed` to leave.
 
 ---
 
@@ -231,14 +231,14 @@ Confirm the current hand card selection. Only needed when `hand_select.require_m
 
 ---
 
-### deck_select_card / deck_select_skip
+### grid_select_card / grid_select_skip
 
 ```
-./sts2 deck_select_card <card_id> [<card_id>...] [--nth <n>...]
-./sts2 deck_select_skip
+./sts2 grid_select_card <card_id> [<card_id>...] [--nth <n>...]
+./sts2 grid_select_skip
 ```
 
-Select or skip cards from a grid-style deck selection screen (card removal, upgrade, transform, enchant). Check `deck_card_select.min_select` / `max_select` in state for how many to pick. Skip only works when `deck_card_select.cancelable` is true.
+Select or skip cards from a grid-style card selection screen (card removal, upgrade, transform, enchant, combat grid overlays). Check `grid_card_select.min_select` / `max_select` in state for how many to pick. Skip only works when `grid_card_select.cancelable` is true.
 
 ## Game State Structure
 
@@ -247,7 +247,7 @@ Returned by `state` in the `data` field. Only the relevant screen's data is popu
 ```
 data
 ├── screen              # COMBAT | HAND_SELECT | REWARD | CARD_REWARD | EVENT | POTION_SELECTION
-│                       # MAP | CHARACTER_SELECT | DECK_CARD_SELECT | REST_SITE | TREASURE | SHOP | MENU | UNKNOWN
+│                       # MAP | CHARACTER_SELECT | GRID_CARD_SELECT | REST_SITE | TREASURE | SHOP | MENU | UNKNOWN
 ├── timestamp           # Unix ms
 ├── combat
 │   ├── encounter, turn_number, is_player_turn
@@ -278,7 +278,7 @@ data
 │   ├── selected_character      # string?, null if none selected
 │   ├── current_ascension, max_ascension
 │   └── can_embark
-├── deck_card_select
+├── grid_card_select
 │   ├── selection_type          # remove, upgrade, transform, enchant, generic, unknown
 │   ├── prompt, min_select, max_select, cancelable
 │   └── cards[]
@@ -360,7 +360,7 @@ data
 - **Card Choice** (in reward): `{index, id, name, description, type, rarity, cost, is_upgraded}`
 - **Event Option**: `{index, title, description, is_locked, is_proceed, relic_id?}`
 - **Selectable Card** (potion selection): `{index, card_id, card_name, description, card_type, cost}`
-- **Selectable Card** (deck selection): `{index, card_id, card_name, description, card_type, cost}` -- same structure as potion selection
+- **Selectable Card** (grid selection): `{index, card_id, card_name, description, card_type, cost}` -- same structure as potion selection
 - **Hand Select Card**: `{index, card_id, card_name, card_type, cost, description}` -- card in hand selection mode
 - **Character Option**: `{character_id, character_name, is_locked, is_selected}`
 - **Map Node**: `{col, row, type, state, children[], parents[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE|NONE`; children/parents are `[{col, row}]`
@@ -486,11 +486,11 @@ data
 | `NO_CHARACTER_SELECTED` | Embark without selecting character |
 | `EMBARK_NOT_AVAILABLE` | Embark button disabled |
 
-**Deck Card Select** (`deck_select_card`, `deck_select_skip`):
+**Grid Card Select** (`grid_select_card`, `grid_select_skip`):
 
 | Error | Cause |
 |-------|-------|
-| `NOT_IN_DECK_CARD_SELECT` | Not on deck selection screen |
+| `NOT_IN_GRID_CARD_SELECT` | Not on grid selection screen |
 | `INVALID_SELECTION_COUNT` | Wrong number of cards selected |
 | `CARD_NOT_FOUND` | Card ID not in selection |
 | `CANNOT_SKIP` | Selection is not cancelable |

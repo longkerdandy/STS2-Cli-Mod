@@ -18,7 +18,7 @@ namespace STS2.Cli.Mod.Actions;
 ///     fire-and-forget pattern: it launches the option task, then polls for
 ///     an observable state change (overlay appeared or proceed button enabled)
 ///     and returns immediately so the CLI can issue follow-up commands
-///     (e.g., <c>deck_select_card</c>).
+///     (e.g., <c>grid_select_card</c>).
 /// </summary>
 public static class ChooseRestOptionHandler
 {

@@ -4,17 +4,17 @@ using STS2.Cli.Cmd.Models.Messages;
 namespace STS2.Cli.Cmd.Commands;
 
 /// <summary>
-///     Creates the deck_select_card command for selecting cards from deck grid selection screens.
+///     Creates the grid_select_card command for selecting cards from grid-based card selection screens.
 /// </summary>
-internal static class DeckSelectCardCommand
+internal static class GridSelectCardCommand
 {
     /// <summary>
-    ///     Creates the deck_select_card command for selecting cards from the deck card selection screen.
+    ///     Creates the grid_select_card command for selecting cards from a grid card selection screen.
     /// </summary>
     public static Command Create()
     {
-        var command = new Command("deck_select_card",
-            "Select cards from a deck card selection screen (remove, upgrade, transform, enchant)");
+        var command = new Command("grid_select_card",
+            "Select cards from a grid card selection screen (remove, upgrade, transform, enchant, combat)");
 
         // Card IDs (one or more)
         var cardIdsArg = new Argument<string[]>("card_ids")
@@ -42,7 +42,7 @@ internal static class DeckSelectCardCommand
             return CommandExecutor.ExecuteAsync(
                 () => new Request
                 {
-                    Cmd = "deck_select_card",
+                    Cmd = "grid_select_card",
                     CardIds = cardIds,
                     NthValues = nthValues
                 },

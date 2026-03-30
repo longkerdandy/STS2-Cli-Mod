@@ -81,8 +81,15 @@ public static class StateHandler
         // Extract character select state if on character select screen
         if (state.Screen == "CHARACTER_SELECT") state.CharacterSelect = ExtractCharacterSelectState();
 
-        // Extract deck card selection state if on a grid-based card selection screen
-        if (state.Screen == "DECK_CARD_SELECT") state.DeckCardSelect = ExtractDeckCardSelectState();
+        // Extract grid card selection state if on a grid-based card selection screen
+        // Also include combat state when grid select is triggered during combat
+        // so the AI has full context (e.g., Headbutt selecting from discard pile)
+        if (state.Screen == "GRID_CARD_SELECT")
+        {
+            state.GridCardSelect = ExtractGridCardSelectState();
+            if (CombatManager.Instance.IsInProgress)
+                state.Combat = ExtractCombatState();
+        }
 
         // Extract rest site state if at a rest site
         if (state.Screen == "REST_SITE") state.RestSite = ExtractRestSiteState();
@@ -110,8 +117,9 @@ public static class StateHandler
 
     /// <summary>
     ///     Detects which screen the player is currently on.
-    ///     Priority order: CHARACTER_SELECT → COMBAT → MAP → overlay screens
-    ///     (CARD_REWARD, POTION_SELECTION, DECK_CARD_SELECT, REWARD) → EVENT → REST_SITE → TREASURE → SHOP → UNKNOWN.
+    ///     Priority order: CHARACTER_SELECT → COMBAT (with HAND_SELECT and GRID_CARD_SELECT sub-states)
+    ///     → MAP → overlay screens (CARD_REWARD, POTION_SELECTION, GRID_CARD_SELECT, REWARD)
+    ///     → EVENT → REST_SITE → TREASURE → SHOP → UNKNOWN.
     ///     Overlay screens take priority over EVENT because events can trigger overlays
     ///     (e.g., Neow's Lead Paperweight opens NCardRewardSelectionScreen while NEventRoom
     ///     is still in the scene tree).
@@ -131,14 +139,38 @@ public static class StateHandler
         if (!RunManager.Instance.IsInProgress) return "MENU";
 
         // Check CombatManager for active combat
-        // Hand selection is a sub-state of combat — detected here before generic COMBAT
-        // because it requires different commands (hand_select_card vs play_card)
+        // Hand selection and grid card selection are sub-states of combat — detected here
+        // before generic COMBAT because they require different commands.
+        // Grid overlays (NSimpleCardSelectScreen) can appear during combat when cards like
+        // Headbutt, Hologram, SecretWeapon etc. trigger selection from draw/discard pile.
         if (CombatManager.Instance.IsInProgress)
         {
             if (NPlayerHand.Instance is { IsInCardSelection: true })
             {
                 Logger.Info("Detected HAND_SELECT screen (combat sub-state)");
                 return "HAND_SELECT";
+            }
+
+            // Check overlay stack for grid selection screens triggered during combat
+            var combatOverlay = NOverlayStack.Instance;
+            if (combatOverlay != null)
+            {
+                var topOverlay = combatOverlay.Peek();
+                if (topOverlay is NCardGridSelectionScreen)
+                {
+                    Logger.Info($"Detected GRID_CARD_SELECT screen during combat ({topOverlay.GetType().Name})");
+                    return "GRID_CARD_SELECT";
+                }
+
+                // Also check children in case it's not on top
+                foreach (var child in combatOverlay.GetChildren())
+                {
+                    if (child is NCardGridSelectionScreen)
+                    {
+                        Logger.Info($"Detected GRID_CARD_SELECT screen during combat in children ({child.GetType().Name})");
+                        return "GRID_CARD_SELECT";
+                    }
+                }
             }
 
             return "COMBAT";
@@ -174,8 +206,8 @@ public static class StateHandler
 
                 if (overlay is NCardGridSelectionScreen)
                 {
-                    Logger.Info($"Detected DECK_CARD_SELECT screen ({overlay.GetType().Name})");
-                    return "DECK_CARD_SELECT";
+                    Logger.Info($"Detected GRID_CARD_SELECT screen ({overlay.GetType().Name})");
+                    return "GRID_CARD_SELECT";
                 }
             }
 
@@ -190,8 +222,8 @@ public static class StateHandler
 
                 if (child is NCardGridSelectionScreen)
                 {
-                    Logger.Info($"Detected DECK_CARD_SELECT screen in children ({child.GetType().Name})");
-                    return "DECK_CARD_SELECT";
+                    Logger.Info($"Detected GRID_CARD_SELECT screen in children ({child.GetType().Name})");
+                    return "GRID_CARD_SELECT";
                 }
             }
         }
@@ -461,25 +493,25 @@ public static class StateHandler
     }
 
     /// <summary>
-    ///     Extracts the deck card selection state from a <see cref="NCardGridSelectionScreen" />.
+    ///     Extracts the grid card selection state from a <see cref="NCardGridSelectionScreen" />.
     ///     Checks the overlay stack for any grid-based card selection screen subtype.
     /// </summary>
-    private static DeckCardSelectStateDto? ExtractDeckCardSelectState()
+    private static GridCardSelectStateDto? ExtractGridCardSelectState()
     {
         try
         {
             var screen = FindGridSelectionScreen();
             if (screen == null)
             {
-                Logger.Warning("DECK_CARD_SELECT screen detected but no grid selection screen found");
+                Logger.Warning("GRID_CARD_SELECT screen detected but no grid selection screen found");
                 return null;
             }
 
-            return DeckCardSelectStateBuilder.Build(screen);
+            return GridCardSelectStateBuilder.Build(screen);
         }
         catch (Exception ex)
         {
-            Logger.Error($"Failed to extract deck card select state: {ex.Message}");
+            Logger.Error($"Failed to extract grid card select state: {ex.Message}");
             return null;
         }
     }

@@ -14,7 +14,7 @@ Triggered via: `CardSelectCmd.FromHand()`, `CardSelectCmd.FromHandForDiscard()`,
 
 ### Type B — Grid Overlay (`NSimpleCardSelectScreen`)
 
-A fullscreen overlay pops up showing cards from draw pile, discard pile, or generated pools in a grid layout. May share logic with existing `deck_select_card`.
+A fullscreen overlay pops up showing cards from draw pile, discard pile, or generated pools in a grid layout. Handled by `grid_select_card` / `grid_select_skip`.
 
 Triggered via: `CardSelectCmd.FromSimpleGrid()`
 
@@ -179,6 +179,6 @@ Generated cards displayed in a reward-style selection screen. All are skippable.
 ## Implementation Notes
 
 - **Type A** needs a new handler. Detect `NPlayerHand` entering `SimpleSelect` / `UpgradeSelect` mode. State must include: selection mode, prompt text, selectable cards, already-selected cards, min/max constraints, confirm button availability.
-- **Type B** may reuse existing `deck_select_card` / `deck_select_skip` if `NSimpleCardSelectScreen` shares the same base class or node structure as the deck selection screen.
+- **Type B** is handled by `grid_select_card` / `grid_select_skip`. `NSimpleCardSelectScreen` shares the base class `NCardGridSelectionScreen` with deck selection screens, so the same handler works for both combat and non-combat grid overlays.
 - **Type C** may reuse existing `potion_select_card` / `potion_select_skip` if `NChooseACardSelectionScreen` is already handled by those commands. Verify coverage for card-triggered instances (Discovery, Quasar, Splash).
 - Powers and relics trigger these UIs automatically during combat flow — the agent must detect and respond to them even when no explicit action was taken.

@@ -13,8 +13,8 @@ namespace STS2.Cli.Mod.Actions;
 ///     <see cref="MegaCrit.Sts2.Core.Entities.Merchant.MerchantCardRemovalEntry.OnTryPurchaseWrapper(MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory?, bool, bool)" />
 ///     calls <c>DoLocalMerchantCardRemoval</c> which opens a card selection screen
 ///     and blocks until the player picks a card.
-///     After the fire-and-forget launch, polls for the DECK_CARD_SELECT overlay
-///     to appear, then returns so the CLI can issue <c>deck_select_card</c>.
+///     After the fire-and-forget launch, polls for the GRID_CARD_SELECT overlay
+///     to appear, then returns so the CLI can issue <c>grid_select_card</c>.
 /// </summary>
 public static class ShopRemoveCardHandler
 {
@@ -61,12 +61,12 @@ public static class ShopRemoveCardHandler
 
             // --- Fire-and-forget: launch the card removal purchase ---
             // OnTryPurchaseWrapper calls DoLocalMerchantCardRemoval which opens a
-            // card selection screen (DECK_CARD_SELECT) and blocks until the player
+            // card selection screen (GRID_CARD_SELECT) and blocks until the player
             // picks a card or cancels.
             // Important: do NOT use Task.Run — must stay on Godot main thread.
             _ = ExecuteRemovalFireAndForgetAsync(entry, inventory);
 
-            // --- Poll for DECK_CARD_SELECT overlay to appear ---
+            // --- Poll for GRID_CARD_SELECT overlay to appear ---
             await ActionUtils.PollUntilAsync(() =>
             {
                 var overlay = NOverlayStack.Instance?.Peek();
