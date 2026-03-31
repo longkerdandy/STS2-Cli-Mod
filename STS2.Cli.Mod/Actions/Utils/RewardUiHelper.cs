@@ -5,7 +5,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Utils;
 
-namespace STS2.Cli.Mod.Actions;
+namespace STS2.Cli.Mod.Actions.Utils;
 
 /// <summary>
 ///     Shared UI helper methods for reward-related handlers.

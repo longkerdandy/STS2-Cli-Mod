@@ -4,7 +4,7 @@ using MegaCrit.Sts2.Core.Combat.History.Entries;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using STS2.Cli.Mod.Utils;
 
-namespace STS2.Cli.Mod.Actions;
+namespace STS2.Cli.Mod.Actions.Utils;
 
 /// <summary>
 ///     Converts <see cref="CombatHistoryEntry" /> objects into JSON-friendly anonymous objects

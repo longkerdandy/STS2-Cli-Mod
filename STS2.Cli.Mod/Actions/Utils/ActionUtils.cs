@@ -7,7 +7,7 @@ using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Utils;
 
-namespace STS2.Cli.Mod.Actions;
+namespace STS2.Cli.Mod.Actions.Utils;
 
 /// <summary>
 ///     Common utilities for action handlers.
