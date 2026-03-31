@@ -120,7 +120,7 @@ public static class PlayCardHandler
                 }
 
                 // Type C — Tri Select: choose 1 of up to 3 generated cards
-                var triScreen = UiUtils.FindCardSelectionScreen();
+                var triScreen = CardSelectionUtils.FindCardSelectionScreen();
                 if (triScreen != null)
                 {
                     Logger.Info($"Tri select screen detected for card '{card.Title}'");
@@ -128,7 +128,7 @@ public static class PlayCardHandler
                 }
 
                 // Type B — Grid Overlay: fullscreen grid showing draw/discard pile cards
-                var gridScreen = UiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
+                var gridScreen = CommonUiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
                 if (gridScreen != null)
                 {
                     Logger.Info($"Grid select screen detected for card '{card.Title}'");

@@ -70,7 +70,7 @@ public static class SelectCharacterHandler
         }
 
         // Find all character buttons
-        var buttons = UiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
+        var buttons = CommonUiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
 
         // Find the target button
         NCharacterSelectButton? targetBtn = null;

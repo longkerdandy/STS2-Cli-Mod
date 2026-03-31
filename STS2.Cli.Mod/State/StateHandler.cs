@@ -595,7 +595,7 @@ public static class StateHandler
                 return null;
             }
 
-            var buttons = UiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
+            var buttons = CommonUiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
             var characters = new List<CharacterOptionDto>();
             string? selectedCharacter = null;
 

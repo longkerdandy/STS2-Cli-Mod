@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
 
@@ -16,12 +17,12 @@ public static class TriSelectStateBuilder
 
     /// <summary>
     ///     Builds the tri-select state from the currently open <see cref="NChooseACardSelectionScreen" />.
-    ///     Finds the screen via <see cref="UiUtils.FindCardSelectionScreen" />.
+    ///     Finds the screen via <see cref="CardSelectionUtils.FindCardSelectionScreen" />.
     ///     Returns null if no screen is found.
     /// </summary>
     public static TriSelectStateDto? Build()
     {
-        var screen = UiUtils.FindCardSelectionScreen();
+        var screen = CardSelectionUtils.FindCardSelectionScreen();
         if (screen == null)
         {
             Logger.Warning("No NChooseACardSelectionScreen found in overlay stack");
@@ -40,8 +41,8 @@ public static class TriSelectStateBuilder
     {
         try
         {
-            var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
-            var canSkip = UiUtils.ReadCanSkip(screen);
+            var cardHolders = CommonUiUtils.FindAll<NCardHolder>(screen);
+            var canSkip = CardSelectionUtils.ReadCanSkip(screen);
             var cards = new List<SelectableCardDto>();
 
             for (var i = 0; i < cardHolders.Count; i++)

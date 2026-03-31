@@ -185,7 +185,7 @@ public static class UsePotionHandler
         {
             case "tri_select":
             {
-                var screen = UiUtils.FindCardSelectionScreen();
+                var screen = CardSelectionUtils.FindCardSelectionScreen();
                 if (screen != null)
                     return PotionUtils.BuildTriSelectResponse(potion, slot, screen);
                 break;
@@ -200,7 +200,7 @@ public static class UsePotionHandler
 
             case "grid_select":
             {
-                var gridScreen = UiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
+                var gridScreen = CommonUiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
                 if (gridScreen != null)
                     return PotionUtils.BuildGridSelectResponse(potion, slot, gridScreen);
                 break;

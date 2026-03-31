@@ -53,11 +53,11 @@ public static class RewardClaimHandler
         {
             // --- Validation ---
 
-            var screen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
+            var screen = CommonUiUtils.FindScreenInOverlay<NRewardsScreen>();
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 
-            var rewardButtons = RewardUiUtils.FindRewardButtons(screen);
+            var rewardButtons = RewardCommonUiUtils.FindRewardButtons(screen);
 
             // Find rewards of the requested type
             var matchingRewards = FindRewardsByType(rewardButtons, rewardType, itemId);

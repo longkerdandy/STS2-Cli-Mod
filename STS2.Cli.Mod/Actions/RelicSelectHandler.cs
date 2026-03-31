@@ -61,7 +61,7 @@ public static class RelicSelectHandler
         try
         {
             // --- Guard: Check relic selection screen ---
-            var screen = UiUtils.FindScreenInOverlay<NChooseARelicSelection>();
+            var screen = CommonUiUtils.FindScreenInOverlay<NChooseARelicSelection>();
             if (screen == null)
                 return new
                 {
@@ -71,7 +71,7 @@ public static class RelicSelectHandler
                 };
 
             // --- Guard: Find relic holders ---
-            var holders = UiUtils.FindAll<NRelicBasicHolder>(screen);
+            var holders = CommonUiUtils.FindAll<NRelicBasicHolder>(screen);
             if (holders.Count == 0)
                 return new
                 {
@@ -100,7 +100,7 @@ public static class RelicSelectHandler
             // --- Poll for the overlay to be removed ---
             await ActionUtils.PollUntilAsync(() =>
             {
-                var current = UiUtils.FindScreenInOverlay<NChooseARelicSelection>();
+                var current = CommonUiUtils.FindScreenInOverlay<NChooseARelicSelection>();
                 return current == null;
             }, ActionUtils.UiTimeoutMs);
 
@@ -135,7 +135,7 @@ public static class RelicSelectHandler
         try
         {
             // --- Guard: Check relic selection screen ---
-            var screen = UiUtils.FindScreenInOverlay<NChooseARelicSelection>();
+            var screen = CommonUiUtils.FindScreenInOverlay<NChooseARelicSelection>();
             if (screen == null)
                 return new
                 {
@@ -146,7 +146,7 @@ public static class RelicSelectHandler
 
             // --- Find and click the skip button ---
             // NChooseARelicSelection has a NChoiceSelectionSkipButton at node path "SkipButton"
-            var skipButton = UiUtils.FindFirst<NChoiceSelectionSkipButton>(screen);
+            var skipButton = CommonUiUtils.FindFirst<NChoiceSelectionSkipButton>(screen);
             if (skipButton == null)
                 return new
                 {
@@ -161,7 +161,7 @@ public static class RelicSelectHandler
             // --- Poll for the overlay to be removed ---
             await ActionUtils.PollUntilAsync(() =>
             {
-                var current = UiUtils.FindScreenInOverlay<NChooseARelicSelection>();
+                var current = CommonUiUtils.FindScreenInOverlay<NChooseARelicSelection>();
                 return current == null;
             }, ActionUtils.UiTimeoutMs);
 

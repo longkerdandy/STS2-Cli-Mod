@@ -56,7 +56,7 @@ public static class ProceedHandler
         {
             // --- Try Reward Screen first ---
 
-            var rewardScreen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
+            var rewardScreen = CommonUiUtils.FindScreenInOverlay<NRewardsScreen>();
             if (rewardScreen != null)
             {
                 Logger.Info("Detected reward screen context");
@@ -70,7 +70,7 @@ public static class ProceedHandler
             var eventRoom = NEventRoom.Instance;
             if (eventRoom != null && eventRoom.IsInsideTree())
             {
-                var fakeMerchant = UiUtils.FindFirst<NFakeMerchant>(eventRoom);
+                var fakeMerchant = CommonUiUtils.FindFirst<NFakeMerchant>(eventRoom);
                 if (fakeMerchant != null)
                 {
                     Logger.Info("Detected FakeMerchant event context");
@@ -131,7 +131,7 @@ public static class ProceedHandler
     /// </summary>
     private static object ExecuteRewardProceed(NRewardsScreen screen)
     {
-        var proceedButton = UiUtils.FindFirst<NProceedButton>(screen);
+        var proceedButton = CommonUiUtils.FindFirst<NProceedButton>(screen);
         if (proceedButton == null)
         {
             Logger.Warning("NProceedButton not found in NRewardsScreen");

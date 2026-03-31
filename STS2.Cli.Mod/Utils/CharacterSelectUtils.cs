@@ -26,7 +26,7 @@ public static class CharacterSelectUtils
             var currentScene = game.RootSceneContainer.CurrentScene;
             if (currentScene != null)
             {
-                var charSelect = UiUtils.FindFirst<NCharacterSelectScreen>(currentScene);
+                var charSelect = CommonUiUtils.FindFirst<NCharacterSelectScreen>(currentScene);
                 if (charSelect != null && charSelect.IsInsideTree())
                     return charSelect;
             }
@@ -35,7 +35,7 @@ public static class CharacterSelectUtils
             var root = game.GetTree()?.Root;
             if (root != null)
             {
-                return UiUtils.FindFirst<NCharacterSelectScreen>(root);
+                return CommonUiUtils.FindFirst<NCharacterSelectScreen>(root);
             }
 
             return null;

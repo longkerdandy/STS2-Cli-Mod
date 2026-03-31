@@ -17,12 +17,12 @@ public static class RelicSelectStateBuilder
 
     /// <summary>
     ///     Builds the relic selection state from the currently open <see cref="NChooseARelicSelection" />.
-    ///     Finds the screen via <see cref="UiUtils.FindScreenInOverlay{T}" />.
+    ///     Finds the screen via <see cref="CommonUiUtils.FindScreenInOverlay{T}" />.
     ///     Returns null if no screen is found.
     /// </summary>
     public static RelicSelectStateDto? Build()
     {
-        var screen = UiUtils.FindScreenInOverlay<NChooseARelicSelection>();
+        var screen = CommonUiUtils.FindScreenInOverlay<NChooseARelicSelection>();
         if (screen == null)
         {
             Logger.Warning("No NChooseARelicSelection found in overlay stack");
@@ -41,7 +41,7 @@ public static class RelicSelectStateBuilder
     {
         try
         {
-            var holders = UiUtils.FindAll<NRelicBasicHolder>(screen);
+            var holders = CommonUiUtils.FindAll<NRelicBasicHolder>(screen);
             var relics = new List<SelectableRelicDto>();
 
             for (var i = 0; i < holders.Count; i++)

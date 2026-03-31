@@ -65,7 +65,7 @@ public static class TriSelectCardHandler
     private static object Execute(string[] cardIds, int[]? nthValues = null)
     {
         // Guard: Must be in the TRI_SELECT screen
-        var selectionScreen = UiUtils.FindCardSelectionScreen();
+        var selectionScreen = CardSelectionUtils.FindCardSelectionScreen();
         if (selectionScreen == null)
             return new
             {
@@ -110,7 +110,7 @@ public static class TriSelectCardHandler
             var cardId = cardIds[i];
             var nth = nthValues != null && i < nthValues.Length ? nthValues[i] : 0;
 
-            var holder = UiUtils.FindCardHolderById(selectionScreen, cardId, nth);
+            var holder = CardSelectionUtils.FindCardHolderById(selectionScreen, cardId, nth);
             if (holder == null)
                 return new
                 {
@@ -157,7 +157,7 @@ public static class TriSelectCardHandler
     private static object ExecuteSkip()
     {
         // Guard: Must be in the TRI_SELECT screen
-        var selectionScreen = UiUtils.FindCardSelectionScreen();
+        var selectionScreen = CardSelectionUtils.FindCardSelectionScreen();
         if (selectionScreen == null)
             return new
             {
@@ -178,7 +178,7 @@ public static class TriSelectCardHandler
             };
 
         // Find and click the skip button
-        var skipButton = UiUtils.FindSkipButton(selectionScreen);
+        var skipButton = CardSelectionUtils.FindSkipButton(selectionScreen);
         if (skipButton == null)
             return new
             {
@@ -204,7 +204,7 @@ public static class TriSelectCardHandler
     /// </summary>
     private static SelectionConstraintsDto GetScreenConstraints(NChooseACardSelectionScreen screen)
     {
-        var canSkip = UiUtils.ReadCanSkip(screen);
+        var canSkip = CardSelectionUtils.ReadCanSkip(screen);
         return new SelectionConstraintsDto { MinSelect = canSkip ? 0 : 1, MaxSelect = 1, CanSkip = canSkip };
     }
 }
