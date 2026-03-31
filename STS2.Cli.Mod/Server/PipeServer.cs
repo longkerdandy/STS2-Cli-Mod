@@ -252,6 +252,14 @@ public static class PipeServer
                 "hand_confirm_selection" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     HandSelectCardHandler.HandleConfirmRequestAsync(request)),
 
+                // relic_select is async — select a relic from the boss/event relic selection screen
+                "relic_select" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    RelicSelectHandler.HandleRequestAsync(request)),
+
+                // relic_skip is async — skip relic selection on the boss/event relic selection screen
+                "relic_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    RelicSelectHandler.HandleSkipRequestAsync(request)),
+
                 // state is synchronous — single-frame game state extraction on the main thread
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 

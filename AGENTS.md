@@ -79,6 +79,8 @@ Verify the mod works by:
 24. `sts2.exe shop_remove_card` - confirms card removal service purchase (opens deck select)
 25. `sts2.exe hand_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from hand during combat (discard, exhaust, upgrade)
 26. `sts2.exe hand_confirm_selection` - confirms hand card selection when manual confirmation is required
+27. `sts2.exe relic_select <index>` - confirms relic selection from boss/event relic choice screen
+28. `sts2.exe relic_skip` - confirms skipping relic selection on boss/event relic choice screen
 
 ## Code Style Guidelines
 

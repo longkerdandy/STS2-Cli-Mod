@@ -81,4 +81,10 @@ public class GameStateDto
     ///     (e.g., discard, exhaust, upgrade prompts during combat), null otherwise.
     /// </summary>
     public HandSelectStateDto? HandSelect { get; set; }
+
+    /// <summary>
+    ///     Relic selection state if a "choose a relic" overlay is open
+    ///     (e.g., after boss fights or certain events), null otherwise.
+    /// </summary>
+    public RelicSelectStateDto? RelicSelect { get; set; }
 }

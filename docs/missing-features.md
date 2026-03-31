@@ -8,18 +8,9 @@ Features identified by comparing with [STS2MCP](https://github.com/Gennadiyev/ST
 
 Implemented as `hand_select_card` and `hand_confirm_selection` commands. Screen detection returns `HAND_SELECT` when `NPlayerHand.IsInCardSelection` is true (combat sub-state). State includes mode, prompt, selectable/selected cards, min/max constraints, and confirm button status. Selection done by emitting `Pressed` signal on hand card holders; confirmation by `ForceClick()` on `%SelectModeConfirmButton`.
 
-### 1.2 Relic Select Screen (`relic_select` / `relic_skip`)
+### 1.2 ~~Relic Select Screen (`relic_select` / `relic_skip`)~~ ✅ DONE
 
-After defeating a boss, players choose one of several boss relics. Some events also present relic choices. This is a distinct UI from treasure room relic pickup.
-
-**Current gap**: `pick_relic` handles treasure room relics only. Boss relic rewards and event relic choices are not supported.
-
-**STS2MCP reference**: `relic_select(relic_index)` to pick, `relic_skip()` to skip. State includes available relics and whether skipping is allowed.
-
-**Needed**:
-- Detect relic selection overlay/screen
-- State extraction: available relics with names/descriptions, skip availability
-- Action: select relic by index, skip selection
+Implemented as `relic_select` and `relic_skip` commands. Screen detection returns `RELIC_SELECT` when `NChooseARelicSelection` is found in the overlay stack. State includes available relics (id, name, description, rarity) and skip availability. Selection done by `ForceClick()` on `NRelicBasicHolder`; skip by `ForceClick()` on `NChoiceSelectionSkipButton`. Handler polls for overlay removal after action.
 
 ### 1.3 Bundle Select (`bundle_select` / `bundle_confirm` / `bundle_cancel`)
 

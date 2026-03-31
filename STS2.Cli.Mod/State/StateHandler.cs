@@ -106,6 +106,9 @@ public static class StateHandler
         // Extract shop state if at a merchant room
         if (state.Screen == "SHOP") state.Shop = ExtractShopState();
 
+        // Extract relic selection state if a "choose a relic" overlay is open
+        if (state.Screen == "RELIC_SELECT") state.RelicSelect = ExtractRelicSelectState();
+
         return state;
         }
         catch (Exception ex)
@@ -125,7 +128,7 @@ public static class StateHandler
     ///     Detects which screen the player is currently on.
     ///     Priority order: CHARACTER_SELECT → COMBAT (with HAND_SELECT, GRID_CARD_SELECT,
     ///     and TRI_SELECT sub-states) → MAP → overlay screens (CARD_REWARD, TRI_SELECT,
-    ///     GRID_CARD_SELECT, REWARD) → EVENT → REST_SITE → TREASURE → SHOP → UNKNOWN.
+    ///     GRID_CARD_SELECT, RELIC_SELECT, REWARD) → EVENT → REST_SITE → TREASURE → SHOP → UNKNOWN.
     ///     Overlay screens take priority over EVENT because events can trigger overlays
     ///     (e.g., Neow's Lead Paperweight opens NCardRewardSelectionScreen while NEventRoom
     ///     is still in the scene tree).
@@ -228,6 +231,12 @@ public static class StateHandler
                     Logger.Info($"Detected GRID_CARD_SELECT screen ({overlay.GetType().Name})");
                     return "GRID_CARD_SELECT";
                 }
+
+                if (overlay is NChooseARelicSelection)
+                {
+                    Logger.Info("Detected RELIC_SELECT screen");
+                    return "RELIC_SELECT";
+                }
             }
 
             // Check children for screens that may not be on top
@@ -243,6 +252,12 @@ public static class StateHandler
                 {
                     Logger.Info($"Detected GRID_CARD_SELECT screen in children ({child.GetType().Name})");
                     return "GRID_CARD_SELECT";
+                }
+
+                if (child is NChooseARelicSelection)
+                {
+                    Logger.Info("Detected RELIC_SELECT screen (in children)");
+                    return "RELIC_SELECT";
                 }
             }
         }
@@ -498,6 +513,23 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract shop state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the relic selection state from <see cref="NChooseARelicSelection" />.
+    ///     Delegates to <see cref="RelicSelectStateBuilder" /> for the actual extraction.
+    /// </summary>
+    private static RelicSelectStateDto? ExtractRelicSelectState()
+    {
+        try
+        {
+            return RelicSelectStateBuilder.Build();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract relic select state: {ex.Message}");
             return null;
         }
     }

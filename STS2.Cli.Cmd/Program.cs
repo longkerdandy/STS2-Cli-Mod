@@ -86,6 +86,11 @@ internal static class Program
         rootCommand.Subcommands.Add(OpenChestCommand.Create());
         rootCommand.Subcommands.Add(PickRelicCommand.Create());
 
+        // Relic selection commands (boss/event relic choice)
+        rootCommand.Subcommands.Add(RelicSelectCommand.Create());
+        rootCommand.Subcommands.Add(SimpleCommand.Create("relic_skip",
+            "Skip relic selection on the boss/event relic selection screen"));
+
         // Shop commands
         rootCommand.Subcommands.Add(ShopBuyCardCommand.Create());
         rootCommand.Subcommands.Add(ShopBuyRelicCommand.Create());
