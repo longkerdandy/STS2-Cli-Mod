@@ -118,6 +118,7 @@ public static class HandSelectStateBuilder
 
     /// <summary>
     ///     Checks if the confirm button is currently enabled.
+    ///     Uses the public <c>IsEnabled</c> property inherited from <c>NClickableControl</c>.
     /// </summary>
     private static bool IsConfirmEnabled(NPlayerHand hand)
     {
@@ -126,15 +127,11 @@ public static class HandSelectStateBuilder
             var confirmButton = hand.GetNodeOrNull<Godot.Control>("%SelectModeConfirmButton");
             if (confirmButton == null) return false;
 
-            // NConfirmButton.IsEnabled is not directly accessible; check if Disabled property is false
-            // NConfirmButton inherits from NClickableControl which has a _disabled field
-            var disabledField = confirmButton.GetType().GetField("_disabled",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            if (disabledField != null)
-            {
-                var disabled = disabledField.GetValue(confirmButton) as bool?;
-                return disabled == false;
-            }
+            // NClickableControl exposes a public IsEnabled property (backed by protected _isEnabled field)
+            var isEnabledProp = confirmButton.GetType().GetProperty("IsEnabled",
+                BindingFlags.Public | BindingFlags.Instance);
+            if (isEnabledProp != null)
+                return isEnabledProp.GetValue(confirmButton) as bool? ?? false;
 
             return false;
         }

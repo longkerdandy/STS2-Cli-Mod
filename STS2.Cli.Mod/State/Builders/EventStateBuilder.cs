@@ -143,8 +143,9 @@ public static class EventStateBuilder
                 // Not an Ancient event, leave dialogue fields as default (false/null)
                 return;
 
-            // Access IsDialogueOnLastLine property
-            var isDialogueOnLastLineProperty = typeof(NAncientEventLayout).GetProperty("IsDialogueOnLastLine");
+            // Access IsDialogueOnLastLine property (private, requires NonPublic binding flags)
+            var isDialogueOnLastLineProperty = typeof(NAncientEventLayout).GetProperty("IsDialogueOnLastLine",
+                BindingFlags.NonPublic | BindingFlags.Instance);
             var isDialogueOnLastLine = isDialogueOnLastLineProperty?.GetValue(ancientLayout) as bool? ?? true;
 
             // We're in dialogue phase if not on the last line

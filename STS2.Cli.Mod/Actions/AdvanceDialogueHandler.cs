@@ -241,12 +241,14 @@ public static class AdvanceDialogueHandler
 
     /// <summary>
     ///     Checks if dialogue has finished (options are available).
+    ///     Uses the private <c>IsDialogueOnLastLine</c> property from <see cref="NAncientEventLayout" />.
     /// </summary>
     private static bool IsDialogueFinished(NAncientEventLayout ancientLayout)
     {
         try
         {
-            var property = typeof(NAncientEventLayout).GetProperty("IsDialogueOnLastLine");
+            var property = typeof(NAncientEventLayout).GetProperty("IsDialogueOnLastLine",
+                BindingFlags.NonPublic | BindingFlags.Instance);
             return property?.GetValue(ancientLayout) as bool? ?? true;
         }
         catch

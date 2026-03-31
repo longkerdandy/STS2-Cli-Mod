@@ -1,4 +1,3 @@
-using System.Reflection;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
@@ -197,24 +196,19 @@ public static class HandSelectCardHandler
                 };
 
             // Check if confirm is enabled (enough cards selected)
-            var disabledField = confirmButton.GetType().GetField("_disabled",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            if (disabledField != null)
+            // NClickableControl exposes a public IsEnabled property (backed by protected _isEnabled field)
+            if (!confirmButton.IsEnabled)
             {
-                var disabled = disabledField.GetValue(confirmButton) as bool?;
-                if (disabled == true)
+                var prefs = HandSelectStateBuilder.GetPrefs(hand);
+                var selectedCards = HandSelectStateBuilder.GetSelectedCards(hand);
+                var count = selectedCards?.Count ?? 0;
+                return new
                 {
-                    var prefs = HandSelectStateBuilder.GetPrefs(hand);
-                    var selectedCards = HandSelectStateBuilder.GetSelectedCards(hand);
-                    var count = selectedCards?.Count ?? 0;
-                    return new
-                    {
-                        ok = false,
-                        error = "CANNOT_CONFIRM",
-                        message =
-                            $"Cannot confirm: {count} card(s) selected, but {prefs?.MinSelect ?? 0}-{prefs?.MaxSelect ?? 0} required."
-                    };
-                }
+                    ok = false,
+                    error = "CANNOT_CONFIRM",
+                    message =
+                        $"Cannot confirm: {count} card(s) selected, but {prefs?.MinSelect ?? 0}-{prefs?.MaxSelect ?? 0} required."
+                };
             }
 
             // Click the confirm button — this calls OnSelectModeConfirmButtonPressed
