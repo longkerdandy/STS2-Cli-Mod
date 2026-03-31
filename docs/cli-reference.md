@@ -153,6 +153,43 @@ Pick a relic from an opened treasure chest by 0-based index. After picking, use 
 
 ---
 
+### relic_select / relic_skip
+
+```
+./sts2 relic_select <index>
+./sts2 relic_skip
+```
+
+Select or skip a relic from the boss/event relic choice screen. Index is 0-based.
+
+---
+
+### bundle_select
+
+```
+./sts2 bundle_select <index>
+```
+
+Preview a bundle on the bundle selection screen (triggered by the Scroll Boxes relic). Index is 0-based. Opens a preview showing the cards in the selected bundle.
+
+### bundle_confirm
+
+```
+./sts2 bundle_confirm
+```
+
+Confirm the currently previewed bundle. The bundle's cards are added to the deck and the selection screen closes.
+
+### bundle_cancel
+
+```
+./sts2 bundle_cancel
+```
+
+Cancel the current bundle preview and return to bundle selection. Allows previewing a different bundle.
+
+---
+
 ### shop_buy_card
 
 ```
@@ -247,7 +284,8 @@ Returned by `state` in the `data` field. Only the relevant screen's data is popu
 ```
 data
 ├── screen              # COMBAT | HAND_SELECT | REWARD | CARD_REWARD | EVENT | TRI_SELECT
-│                       # MAP | CHARACTER_SELECT | GRID_CARD_SELECT | REST_SITE | TREASURE | SHOP | MENU | UNKNOWN
+│                       # MAP | CHARACTER_SELECT | GRID_CARD_SELECT | REST_SITE | TREASURE | SHOP
+│                       # RELIC_SELECT | BUNDLE_SELECT | MENU | UNKNOWN
 ├── timestamp           # Unix ms
 ├── combat
 │   ├── encounter, turn_number, is_player_turn
@@ -311,6 +349,15 @@ data
 │   ├── card_removal        # {cost, is_used} or null
 │   ├── player_gold         # int
 │   └── can_proceed         # bool, true when proceed button is enabled
+├── relic_select
+│   ├── relics[]            # [{index, id, name, description, rarity}]
+│   └── can_skip            # bool, true if selection can be skipped
+├── bundle_select
+│   ├── bundles[]           # [{index, card_count, cards[]}] -- cards are selectable cards
+│   ├── preview_showing     # bool, true when a bundle preview is open
+│   ├── preview_cards[]     # [{index, card_id, card_name, description, card_type, cost}] -- shown during preview
+│   ├── can_confirm         # bool, true when confirm button is enabled
+│   └── can_cancel          # bool, true when cancel button is enabled
 ```
 
 ### Card Object (in hand)
@@ -370,6 +417,8 @@ data
 - **Shop Relic**: `{index, relic_id, relic_name, description, rarity, cost, is_stocked}` -- relic for sale in shop
 - **Shop Potion**: `{index, potion_id, potion_name, description, rarity, cost, is_stocked}` -- potion for sale in shop
 - **Shop Card Removal**: `{cost, is_used}` -- card removal service info
+- **Selectable Relic** (relic select): `{index, id, name, description, rarity}` -- relic available on boss/event relic choice screen
+- **Bundle**: `{index, card_count, cards[]}` -- a bundle of cards in the bundle selection screen; `cards[]` uses the same selectable card format
 
 ### Action Results
 
@@ -462,6 +511,26 @@ data
 | `CHEST_ALREADY_OPENED` | Chest already opened |
 | `NO_RELICS_AVAILABLE` | No relics to pick (not opened or already picked) |
 | `INVALID_RELIC_INDEX` | Relic index out of range |
+
+**Relic Select** (`relic_select`, `relic_skip`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_RELIC_SELECT` | Not on relic selection screen |
+| `NO_RELICS_AVAILABLE` | No relics in selection |
+| `INVALID_RELIC_INDEX` | Relic index out of range |
+| `SKIP_BUTTON_NOT_FOUND` | Skip button unavailable |
+
+**Bundle Select** (`bundle_select`, `bundle_confirm`, `bundle_cancel`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_BUNDLE_SELECT` | Not on bundle selection screen |
+| `PREVIEW_ALREADY_OPEN` | Bundle preview already showing (confirm or cancel first) |
+| `NO_BUNDLES_AVAILABLE` | No bundles in selection |
+| `INVALID_BUNDLE_INDEX` | Bundle index out of range |
+| `CANNOT_CONFIRM` | Confirm button disabled (no bundle previewed) |
+| `CANNOT_CANCEL` | Cancel button disabled (no preview open) |
 
 **Shop** (`shop_buy_card`, `shop_buy_relic`, `shop_buy_potion`, `shop_remove_card`):
 

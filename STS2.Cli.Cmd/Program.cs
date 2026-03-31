@@ -91,6 +91,13 @@ internal static class Program
         rootCommand.Subcommands.Add(SimpleCommand.Create("relic_skip",
             "Skip relic selection on the boss/event relic selection screen"));
 
+        // Bundle selection commands (Scroll Boxes relic)
+        rootCommand.Subcommands.Add(BundleSelectCommand.Create());
+        rootCommand.Subcommands.Add(SimpleCommand.Create("bundle_confirm",
+            "Confirm the previewed bundle selection"));
+        rootCommand.Subcommands.Add(SimpleCommand.Create("bundle_cancel",
+            "Cancel bundle preview and return to selection"));
+
         // Shop commands
         rootCommand.Subcommands.Add(ShopBuyCardCommand.Create());
         rootCommand.Subcommands.Add(ShopBuyRelicCommand.Create());

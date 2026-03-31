@@ -260,6 +260,18 @@ public static class PipeServer
                 "relic_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     RelicSelectHandler.HandleSkipRequestAsync(request)),
 
+                // bundle_select is async — preview a bundle by clicking its hitbox
+                "bundle_select" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    BundleSelectHandler.HandleSelectAsync(request)),
+
+                // bundle_confirm is async — confirm the previewed bundle, polls for screen removal
+                "bundle_confirm" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    BundleSelectHandler.HandleConfirmAsync(request)),
+
+                // bundle_cancel is async — cancel bundle preview and return to selection
+                "bundle_cancel" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    BundleSelectHandler.HandleCancelAsync(request)),
+
                 // state is synchronous — single-frame game state extraction on the main thread
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 

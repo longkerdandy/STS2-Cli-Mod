@@ -87,4 +87,10 @@ public class GameStateDto
     ///     (e.g., after boss fights or certain events), null otherwise.
     /// </summary>
     public RelicSelectStateDto? RelicSelect { get; set; }
+
+    /// <summary>
+    ///     Bundle selection state if a "choose a bundle" overlay is open
+    ///     (triggered by the Scroll Boxes relic), null otherwise.
+    /// </summary>
+    public BundleSelectStateDto? BundleSelect { get; set; }
 }

@@ -109,6 +109,9 @@ public static class StateHandler
         // Extract relic selection state if a "choose a relic" overlay is open
         if (state.Screen == "RELIC_SELECT") state.RelicSelect = ExtractRelicSelectState();
 
+        // Extract bundle selection state if a "choose a bundle" overlay is open
+        if (state.Screen == "BUNDLE_SELECT") state.BundleSelect = ExtractBundleSelectState();
+
         return state;
         }
         catch (Exception ex)
@@ -127,8 +130,9 @@ public static class StateHandler
     /// <summary>
     ///     Detects which screen the player is currently on.
     ///     Priority order: CHARACTER_SELECT → COMBAT (with HAND_SELECT, GRID_CARD_SELECT,
-    ///     and TRI_SELECT sub-states) → MAP → overlay screens (CARD_REWARD, TRI_SELECT,
-    ///     GRID_CARD_SELECT, RELIC_SELECT, REWARD) → EVENT → REST_SITE → TREASURE → SHOP → UNKNOWN.
+    ///     TRI_SELECT, and BUNDLE_SELECT sub-states) → MAP → overlay screens (CARD_REWARD,
+    ///     TRI_SELECT, GRID_CARD_SELECT, RELIC_SELECT, BUNDLE_SELECT, REWARD) → EVENT →
+    ///     REST_SITE → TREASURE → SHOP → UNKNOWN.
     ///     Overlay screens take priority over EVENT because events can trigger overlays
     ///     (e.g., Neow's Lead Paperweight opens NCardRewardSelectionScreen while NEventRoom
     ///     is still in the scene tree).
@@ -178,6 +182,12 @@ public static class StateHandler
                     return "TRI_SELECT";
                 }
 
+                if (topOverlay is NChooseABundleSelectionScreen)
+                {
+                    Logger.Info("Detected BUNDLE_SELECT screen during combat");
+                    return "BUNDLE_SELECT";
+                }
+
                 // Also check children in case it's not on top
                 foreach (var child in combatOverlay.GetChildren())
                 {
@@ -191,6 +201,12 @@ public static class StateHandler
                     {
                         Logger.Info("Detected TRI_SELECT screen during combat in children");
                         return "TRI_SELECT";
+                    }
+
+                    if (child is NChooseABundleSelectionScreen)
+                    {
+                        Logger.Info("Detected BUNDLE_SELECT screen during combat in children");
+                        return "BUNDLE_SELECT";
                     }
                 }
             }
@@ -237,6 +253,12 @@ public static class StateHandler
                     Logger.Info("Detected RELIC_SELECT screen");
                     return "RELIC_SELECT";
                 }
+
+                if (overlay is NChooseABundleSelectionScreen)
+                {
+                    Logger.Info("Detected BUNDLE_SELECT screen");
+                    return "BUNDLE_SELECT";
+                }
             }
 
             // Check children for screens that may not be on top
@@ -258,6 +280,12 @@ public static class StateHandler
                 {
                     Logger.Info("Detected RELIC_SELECT screen (in children)");
                     return "RELIC_SELECT";
+                }
+
+                if (child is NChooseABundleSelectionScreen)
+                {
+                    Logger.Info("Detected BUNDLE_SELECT screen (in children)");
+                    return "BUNDLE_SELECT";
                 }
             }
         }
@@ -530,6 +558,23 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract relic select state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the bundle selection state from <see cref="NChooseABundleSelectionScreen" />.
+    ///     Delegates to <see cref="BundleSelectStateBuilder" /> for the actual extraction.
+    /// </summary>
+    private static BundleSelectStateDto? ExtractBundleSelectState()
+    {
+        try
+        {
+            return BundleSelectStateBuilder.Build();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract bundle select state: {ex.Message}");
             return null;
         }
     }

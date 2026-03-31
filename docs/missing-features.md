@@ -12,18 +12,9 @@ Implemented as `hand_select_card` and `hand_confirm_selection` commands. Screen 
 
 Implemented as `relic_select` and `relic_skip` commands. Screen detection returns `RELIC_SELECT` when `NChooseARelicSelection` is found in the overlay stack. State includes available relics (id, name, description, rarity) and skip availability. Selection done by `ForceClick()` on `NRelicBasicHolder`; skip by `ForceClick()` on `NChoiceSelectionSkipButton`. Handler polls for overlay removal after action.
 
-### 1.3 Bundle Select (`bundle_select` / `bundle_confirm` / `bundle_cancel`)
+### 1.3 ~~Bundle Select (`bundle_select` / `bundle_confirm` / `bundle_cancel`)~~ ✅ DONE
 
-Some game mechanics offer card bundle packs (groups of cards presented as bundles). The player can preview each bundle and choose one.
-
-**Current gap**: Not implemented at all.
-
-**STS2MCP reference**: `bundle_select(bundle_index)` to preview, `bundle_confirm_selection()` to confirm, `bundle_cancel_selection()` to cancel. State includes bundle list with cards in each bundle and preview status.
-
-**Needed**:
-- Detect bundle selection screen
-- State extraction: bundle list, cards within each bundle, preview state
-- Action: preview bundle, confirm, cancel
+Implemented as `bundle_select`, `bundle_confirm`, and `bundle_cancel` commands. Screen detection returns `BUNDLE_SELECT` when `NChooseABundleSelectionScreen` is found in the overlay stack (both combat and non-combat contexts). State includes bundle list with cards in each bundle, preview visibility, preview card details, and confirm/cancel button availability. Selection is a two-step flow: `bundle_select <index>` clicks the bundle hitbox to open preview, then `bundle_confirm` clicks the confirm button (or `bundle_cancel` to go back). Handler polls for overlay removal after confirm.
 
 ## Priority 2 — Important (affects specific scenarios or AI decision quality)
 
