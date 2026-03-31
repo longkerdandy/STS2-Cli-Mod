@@ -1,12 +1,13 @@
-using System.Reflection;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Models.Messages;
+using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -92,21 +93,40 @@ public static class PlayCardHandler
             // Start the action and keep the Task reference for the fallback path
             var enqueueTask = ActionUtils.EnqueueAndAwaitAsync(action, ActionUtils.ActionTimeoutMs);
 
-            // Poll for either card selection screen appearance or action completion.
-            // Cards like Discovery, Quasar, and Splash open an NChooseACardSelectionScreen
-            // during execution; the action pauses in GatheringPlayerChoice state until the
-            // player picks a card. Without this detection, EnqueueAndAwaitAsync would timeout.
+            // Poll for card selection screen appearance or action completion.
+            // Many cards open a selection UI during execution; the action pauses in
+            // GatheringPlayerChoice state until the player makes a choice. Without this
+            // detection, EnqueueAndAwaitAsync would timeout. Three UI types are checked:
+            //   Type A — Hand Select: cards like Acrobatics, BurningPact, Survivor
+            //   Type B — Grid Overlay: cards like Headbutt, Hologram, SecretWeapon
+            //   Type C — Tri Select:   cards like Discovery, Quasar, Splash
             var elapsedMs = 0;
             while (elapsedMs < ActionUtils.UiTimeoutMs)
             {
                 await Task.Delay(ActionUtils.DefaultPollIntervalMs);
                 elapsedMs += ActionUtils.DefaultPollIntervalMs;
 
-                var selectionScreen = UiUtils.FindCardSelectionScreen();
-                if (selectionScreen != null)
+                // Type A — Hand Select: player selects cards from hand
+                if (NPlayerHand.Instance is { IsInCardSelection: true })
                 {
-                    Logger.Info($"Card selection screen detected for card '{card.Title}'");
-                    return BuildCardSelectionResponse(card, cardIndex, targetCombatId, selectionScreen);
+                    Logger.Info($"Hand select screen detected for card '{card.Title}'");
+                    return BuildHandSelectResponse(card, cardIndex, targetCombatId);
+                }
+
+                // Type C — Tri Select: choose 1 of up to 3 generated cards
+                var triScreen = UiUtils.FindCardSelectionScreen();
+                if (triScreen != null)
+                {
+                    Logger.Info($"Tri select screen detected for card '{card.Title}'");
+                    return BuildTriSelectResponse(card, cardIndex, targetCombatId, triScreen);
+                }
+
+                // Type B — Grid Overlay: fullscreen grid showing draw/discard pile cards
+                var gridScreen = UiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
+                if (gridScreen != null)
+                {
+                    Logger.Info($"Grid select screen detected for card '{card.Title}'");
+                    return BuildGridSelectResponse(card, cardIndex, targetCombatId, gridScreen);
                 }
 
                 // Action finished normally before any selection screen appeared
@@ -207,50 +227,76 @@ public static class PlayCardHandler
     }
 
     /// <summary>
-    ///     Builds a <c>selection_required</c> response when a played card opens
-    ///     an <see cref="NChooseACardSelectionScreen" /> (e.g., Discovery, Quasar, Splash).
-    ///     The agent should then use <c>tri_select_card</c> or <c>tri_select_skip</c>
-    ///     to complete the selection.
+    ///     Builds a <c>selection_required</c> response when a played card triggers a
+    ///     Hand Select UI (Type A) — e.g., Acrobatics (discard), BurningPact (exhaust),
+    ///     Armaments (upgrade). The agent should use <c>hand_select_card</c> and optionally
+    ///     <c>hand_confirm_selection</c> to complete the selection.
     /// </summary>
-    private static object BuildCardSelectionResponse(
-        CardModel card, int cardIndex, int? targetCombatId, NChooseACardSelectionScreen selectionScreen)
+    private static object BuildHandSelectResponse(CardModel card, int cardIndex, int? targetCombatId)
     {
-        var cards = UiUtils.ExtractSelectableCards(selectionScreen);
-        var canSkip = ReadCanSkip(selectionScreen);
-
+        var handState = HandSelectStateBuilder.Build();
         return new
         {
             ok = true,
             data = new
             {
                 status = "selection_required",
+                next_action = "hand_select_card",
                 card_index = cardIndex,
                 card_id = card.Id.Entry,
                 target = targetCombatId,
-                min_select = canSkip ? 0 : 1,
-                max_select = 1,
-                can_skip = canSkip,
-                cards
+                hand_select = handState
             }
         };
     }
 
     /// <summary>
-    ///     Reads the private <c>_canSkip</c> field from an <see cref="NChooseACardSelectionScreen" />
-    ///     via reflection to determine if the selection can be skipped.
+    ///     Builds a <c>selection_required</c> response when a played card triggers a
+    ///     Grid Overlay UI (Type B) — e.g., Headbutt (from discard), Hologram (from discard),
+    ///     SecretWeapon (from draw pile). The agent should use <c>grid_select_card</c> or
+    ///     <c>grid_select_skip</c> to complete the selection.
     /// </summary>
-    private static bool ReadCanSkip(NChooseACardSelectionScreen screen)
+    private static object BuildGridSelectResponse(
+        CardModel card, int cardIndex, int? targetCombatId, NCardGridSelectionScreen gridScreen)
     {
-        try
+        var gridState = GridCardSelectStateBuilder.Build(gridScreen);
+        return new
         {
-            var field = typeof(NChooseACardSelectionScreen).GetField("_canSkip",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(screen) as bool? ?? false;
-        }
-        catch (Exception ex)
+            ok = true,
+            data = new
+            {
+                status = "selection_required",
+                next_action = "grid_select_card",
+                card_index = cardIndex,
+                card_id = card.Id.Entry,
+                target = targetCombatId,
+                grid_card_select = gridState
+            }
+        };
+    }
+
+    /// <summary>
+    ///     Builds a <c>selection_required</c> response when a played card opens
+    ///     an <see cref="NChooseACardSelectionScreen" /> (Type C) — e.g., Discovery, Quasar, Splash.
+    ///     The agent should use <c>tri_select_card</c> or <c>tri_select_skip</c>
+    ///     to complete the selection.
+    /// </summary>
+    private static object BuildTriSelectResponse(
+        CardModel card, int cardIndex, int? targetCombatId, NChooseACardSelectionScreen selectionScreen)
+    {
+        var triState = TriSelectStateBuilder.Build(selectionScreen);
+        return new
         {
-            Logger.Warning($"Failed to read _canSkip from screen: {ex.Message}");
-            return false;
-        }
+            ok = true,
+            data = new
+            {
+                status = "selection_required",
+                next_action = "tri_select_card",
+                card_index = cardIndex,
+                card_id = card.Id.Entry,
+                target = targetCombatId,
+                tri_select = triState
+            }
+        };
     }
 }

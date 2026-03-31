@@ -1,9 +1,5 @@
-using System.Reflection;
-using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
-using STS2.Cli.Mod.Models.Actions;
 using STS2.Cli.Mod.State.Builders;
 
 namespace STS2.Cli.Mod.Utils;
@@ -113,9 +109,7 @@ public static class PotionUtils
     public static object BuildTriSelectResponse(
         PotionModel potion, int slot, NChooseACardSelectionScreen selectionScreen)
     {
-        var cards = UiUtils.ExtractSelectableCards(selectionScreen);
-        var canSkip = ReadCanSkip(selectionScreen);
-
+        var triState = TriSelectStateBuilder.Build(selectionScreen);
         return new
         {
             ok = true,
@@ -126,10 +120,7 @@ public static class PotionUtils
                 selection_type = GetSelectionType(potion.Id.Entry),
                 potion_id = potion.Id.Entry,
                 potion_slot = slot,
-                min_select = canSkip ? 0 : 1,
-                max_select = 1,
-                can_skip = canSkip,
-                cards
+                tri_select = triState
             }
         };
     }
@@ -182,25 +173,5 @@ public static class PotionUtils
                 grid_card_select = gridState
             }
         };
-    }
-
-    // ── Private helpers ─────────────────────────────────────────────
-
-    /// <summary>
-    ///     Reads the private <c>_canSkip</c> field from an <see cref="NChooseACardSelectionScreen" />
-    ///     via reflection to determine if the selection can be skipped.
-    /// </summary>
-    private static bool ReadCanSkip(NChooseACardSelectionScreen screen)
-    {
-        try
-        {
-            var field = typeof(NChooseACardSelectionScreen).GetField("_canSkip",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(screen) as bool? ?? false;
-        }
-        catch
-        {
-            return false;
-        }
     }
 }

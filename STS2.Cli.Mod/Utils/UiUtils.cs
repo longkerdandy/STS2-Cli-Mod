@@ -1,3 +1,4 @@
+using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
@@ -169,6 +170,26 @@ public static class UiUtils
         }
 
         return null;
+    }
+
+    /// <summary>
+    ///     Reads the private <c>_canSkip</c> field from an <see cref="NChooseACardSelectionScreen" />
+    ///     via reflection to determine if the selection can be skipped.
+    /// </summary>
+    /// <param name="screen">The card selection screen to check.</param>
+    /// <returns><c>true</c> if the selection can be skipped; <c>false</c> otherwise.</returns>
+    public static bool ReadCanSkip(NChooseACardSelectionScreen screen)
+    {
+        try
+        {
+            var field = typeof(NChooseACardSelectionScreen).GetField("_canSkip",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return field?.GetValue(screen) as bool? ?? false;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     // ── Private helpers ──────────────────────────────────────────────

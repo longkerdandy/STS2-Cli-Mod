@@ -1,4 +1,3 @@
-using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
@@ -195,18 +194,7 @@ public static class TriSelectCardHandler
     /// </summary>
     private static SelectionConstraintsDto GetScreenConstraints(NChooseACardSelectionScreen screen)
     {
-        try
-        {
-            var field = typeof(NChooseACardSelectionScreen).GetField("_canSkip",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            var canSkip = field?.GetValue(screen) as bool? ?? false;
-            return new SelectionConstraintsDto { MinSelect = canSkip ? 0 : 1, MaxSelect = 1, CanSkip = canSkip };
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read _canSkip from screen: {ex.Message}");
-            // Fallback: single select, cannot skip
-            return new SelectionConstraintsDto { MinSelect = 1, MaxSelect = 1, CanSkip = false };
-        }
+        var canSkip = UiUtils.ReadCanSkip(screen);
+        return new SelectionConstraintsDto { MinSelect = canSkip ? 0 : 1, MaxSelect = 1, CanSkip = canSkip };
     }
 }
