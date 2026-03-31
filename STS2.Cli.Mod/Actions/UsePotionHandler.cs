@@ -250,7 +250,7 @@ public static class UsePotionHandler
             };
         }
 
-        var results = CombatHistoryBuilder.BuildFromHistory(historyBefore);
+        var results = CombatHistoryUtils.BuildFromHistory(historyBefore);
         Logger.Info($"UsePotionAction completed with {results.Count} result entries");
 
         return new

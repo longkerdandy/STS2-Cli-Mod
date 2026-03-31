@@ -8,15 +8,15 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions.Utils;
 
 /// <summary>
-///     Shared UI helper methods for reward-related handlers.
+///     Shared UI utility methods for reward-related handlers.
 ///     Provides node traversal and polling utilities for reward screens
-///     used by <see cref="ClaimRewardHandler" />, <see cref="ChooseCardHandler" />,
+///     used by <see cref="RewardClaimHandler" />, <see cref="RewardCardHandler" />,
 ///     and <see cref="ProceedHandler" />.
 ///     For generic screen discovery, use <see cref="UiUtils.FindScreenInOverlay{T}" /> directly.
 /// </summary>
-public static class RewardUiHelper
+public static class RewardUiUtils
 {
-    private static readonly ModLogger Logger = new("RewardUiHelper");
+    private static readonly ModLogger Logger = new("RewardUiUtils");
 
     /// <summary>
     ///     Collects all <see cref="NRewardButton" /> instances from the rewards container.

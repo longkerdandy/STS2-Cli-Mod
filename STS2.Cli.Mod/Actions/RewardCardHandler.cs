@@ -122,7 +122,7 @@ public static class RewardCardHandler
             rewardButton.ForceClick();
 
             // Wait for NCardRewardSelectionScreen to appear
-            var cardScreen = await RewardUiHelper.WaitForCardRewardScreen();
+            var cardScreen = await RewardUiUtils.WaitForCardRewardScreen();
             if (cardScreen == null)
                 return new
                 {
@@ -135,7 +135,7 @@ public static class RewardCardHandler
 
             // --- Find and select the target card ---
 
-            var cardHolders = RewardUiHelper.FindCardHolders(cardScreen);
+            var cardHolders = RewardUiUtils.FindCardHolders(cardScreen);
             var targetHolder = FindCardHolderById(cardHolders, cardId);
 
             if (targetHolder == null)
@@ -219,7 +219,7 @@ public static class RewardCardHandler
             rewardButton.ForceClick();
 
             // Wait for NCardRewardSelectionScreen to appear
-            var cardScreen = await RewardUiHelper.WaitForCardRewardScreen();
+            var cardScreen = await RewardUiUtils.WaitForCardRewardScreen();
             if (cardScreen == null)
                 return new
                 {
@@ -232,7 +232,7 @@ public static class RewardCardHandler
 
             // --- Find and click the Skip button ---
 
-            var altButtons = RewardUiHelper.FindAlternativeButtons(cardScreen);
+            var altButtons = RewardUiUtils.FindAlternativeButtons(cardScreen);
             if (altButtons.Count == 0)
                 return new
                 {
@@ -276,7 +276,7 @@ public static class RewardCardHandler
     private static List<(NRewardButton Button, CardReward CardReward)> FindCardRewards(NRewardsScreen screen)
     {
         var result = new List<(NRewardButton Button, CardReward CardReward)>();
-        var rewardButtons = RewardUiHelper.FindRewardButtons(screen);
+        var rewardButtons = RewardUiUtils.FindRewardButtons(screen);
 
         foreach (var button in rewardButtons)
             if (button.Reward is CardReward cardReward)

@@ -90,7 +90,7 @@ public static class EndTurnHandler
 
                 // --- Collect results from CombatHistory ---
 
-                var results = CombatHistoryBuilder.BuildFromHistory(historyBefore);
+                var results = CombatHistoryUtils.BuildFromHistory(historyBefore);
                 Logger.Info($"EndTurn completed with {results.Count} result entries");
 
                 return new

@@ -161,7 +161,7 @@ public static class PlayCardHandler
 
             // --- Collect results from CombatHistory ---
 
-            var results = CombatHistoryBuilder.BuildFromHistory(historyBefore);
+            var results = CombatHistoryUtils.BuildFromHistory(historyBefore);
             Logger.Info($"PlayCardAction completed with {results.Count} result entries");
 
             return new

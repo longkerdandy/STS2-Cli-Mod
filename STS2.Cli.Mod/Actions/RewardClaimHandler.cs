@@ -57,7 +57,7 @@ public static class RewardClaimHandler
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 
-            var rewardButtons = RewardUiHelper.FindRewardButtons(screen);
+            var rewardButtons = RewardUiUtils.FindRewardButtons(screen);
 
             // Find rewards of the requested type
             var matchingRewards = FindRewardsByType(rewardButtons, rewardType, itemId);
