@@ -10,9 +10,14 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles choosing an event option by index via ForceClick.
+///     Handles the <c>choose_event</c> CLI command.
+///     Chooses an event option by index via ForceClick.
 ///     Returns the updated event state after the option resolves.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 choose_event &lt;index&gt;</c></para>
+///     <para><b>Scene:</b> Event room with available options (standard events, Ancient events after dialogue).</para>
+/// </remarks>
 public static class ChooseEventHandler
 {
     private static readonly ModLogger Logger = new("ChooseEventHandler");

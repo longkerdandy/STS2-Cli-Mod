@@ -5,8 +5,13 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles clicking the Embark button to start the game from character select.
+///     Handles the <c>embark</c> CLI command.
+///     Clicks the Embark button to start the game from character select.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 embark</c></para>
+///     <para><b>Scene:</b> Character select screen, after selecting a character and ascension level.</para>
+/// </remarks>
 public static class EmbarkHandler
 {
     private static readonly ModLogger Logger = new("EmbarkHandler");

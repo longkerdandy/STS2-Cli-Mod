@@ -8,10 +8,15 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles the 'choose_map_node' command by traveling to a selected map node.
+///     Handles the <c>choose_map_node</c> CLI command.
+///     Travels to a selected map node by column and row coordinates.
 ///     Validates that the map screen is open, the target node exists, and is travelable,
 ///     then calls <see cref="NMapScreen.TravelToMapCoord" /> for full UI travel with animations.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 choose_map_node &lt;col&gt; &lt;row&gt;</c></para>
+///     <para><b>Scene:</b> Map screen, when the player needs to choose the next node to travel to.</para>
+/// </remarks>
 public static class ChooseMapNodeHandler
 {
     private static readonly ModLogger Logger = new("ChooseMapNodeHandler");

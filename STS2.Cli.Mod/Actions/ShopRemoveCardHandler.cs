@@ -8,7 +8,8 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles buying the card removal service from the shop.
+///     Handles the <c>shop_remove_card</c> CLI command.
+///     Buys the card removal service from the shop.
 ///     Uses the fire-and-forget pattern (like SMITH in rest sites) because
 ///     <see cref="MegaCrit.Sts2.Core.Entities.Merchant.MerchantCardRemovalEntry.OnTryPurchaseWrapper(MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory?, bool, bool)" />
 ///     calls <c>DoLocalMerchantCardRemoval</c> which opens a card selection screen
@@ -16,6 +17,10 @@ namespace STS2.Cli.Mod.Actions;
 ///     After the fire-and-forget launch, polls for the GRID_CARD_SELECT overlay
 ///     to appear, then returns so the CLI can issue <c>grid_select_card</c>.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 shop_remove_card</c></para>
+///     <para><b>Scene:</b> Merchant room (shop), when the card removal service is available.</para>
+/// </remarks>
 public static class ShopRemoveCardHandler
 {
     private static readonly ModLogger Logger = new("ShopRemoveCardHandler");

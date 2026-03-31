@@ -164,15 +164,15 @@ public static class PipeServer
 
                 // reward_claim is async — uses type + id + nth for stable identification
                 "reward_claim" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ClaimRewardHandler.HandleRequestAsync(request)),
+                    RewardClaimHandler.HandleRequestAsync(request)),
 
                 // reward_choose_card is async — uses reward type + card_id + nth
                 "reward_choose_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ChooseCardHandler.HandleRequestAsync(request)),
+                    RewardCardHandler.HandleRequestAsync(request)),
 
                 // reward_skip_card is async — uses reward type + nth
                 "reward_skip_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ChooseCardHandler.HandleSkipRequestAsync(request)),
+                    RewardCardHandler.HandleSkipRequestAsync(request)),
 
                 // choose_event is async — ForceClick option button + polling for state change
                 "choose_event" => await MainThreadExecutor.RunOnMainThreadAsync(() =>

@@ -8,11 +8,16 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles buying a card from the shop by card_id + nth.
+///     Handles the <c>shop_buy_card</c> CLI command.
+///     Buys a card from the shop by card_id + nth.
 ///     Finds the matching <see cref="MerchantCardEntry" /> in the
 ///     <see cref="MerchantInventory.CardEntries" /> list and calls
 ///     <see cref="MerchantEntry.OnTryPurchaseWrapper" /> to purchase it.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 shop_buy_card &lt;card_id&gt; [--nth &lt;n&gt;]</c></para>
+///     <para><b>Scene:</b> Merchant room (shop).</para>
+/// </remarks>
 public static class ShopBuyCardHandler
 {
     private static readonly ModLogger Logger = new("ShopBuyCardHandler");

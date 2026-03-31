@@ -11,11 +11,20 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles hand card selection commands: select cards from hand during combat
-///     (e.g., discard, exhaust, upgrade prompts).
+///     Handles the <c>hand_select_card</c> and <c>hand_confirm_selection</c> CLI commands.
+///     Selects cards from hand during combat (e.g., discard, exhaust, upgrade prompts)
+///     or confirms the current hand selection.
 ///     Unlike deck/potion selection, hand selection happens inline in <see cref="NPlayerHand" />
 ///     without overlay screens.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI commands:</b></para>
+///     <list type="bullet">
+///         <item><c>sts2 hand_select_card &lt;card_id&gt; [&lt;card_id&gt;...] [--nth &lt;n&gt;...]</c></item>
+///         <item><c>sts2 hand_confirm_selection</c></item>
+///     </list>
+///     <para><b>Scene:</b> Combat, when a card or effect requires the player to select cards from hand.</para>
+/// </remarks>
 public static class HandSelectCardHandler
 {
     private static readonly ModLogger Logger = new("HandSelectCardHandler");

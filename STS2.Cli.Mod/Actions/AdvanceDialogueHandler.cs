@@ -12,9 +12,14 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles advancing dialogue in Ancient events via ForceClick on the dialogue hitbox.
+///     Handles the <c>advance_dialogue</c> CLI command.
+///     Advances dialogue in Ancient events via ForceClick on the dialogue hitbox.
 ///     Can advance a single line or auto-advance until options appear.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 advance_dialogue [--auto]</c></para>
+///     <para><b>Scene:</b> Ancient event room with active dialogue (e.g., Neow, Act bosses with dialogue).</para>
+/// </remarks>
 public static class AdvanceDialogueHandler
 {
     /// <summary>

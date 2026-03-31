@@ -7,10 +7,15 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles picking a relic in the treasure room.
+///     Handles the <c>pick_relic</c> CLI command.
+///     Picks a relic in the treasure room by index.
 ///     Calls <see cref="MegaCrit.Sts2.Core.Multiplayer.Game.TreasureRoomRelicSynchronizer.PickRelicLocally" />
 ///     with the resolved relic index, then polls for the proceed button to become enabled.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 pick_relic &lt;index&gt;</c></para>
+///     <para><b>Scene:</b> Treasure room, after the chest has been opened and relics are displayed.</para>
+/// </remarks>
 public static class PickRelicHandler
 {
     private static readonly ModLogger Logger = new("PickRelicHandler");

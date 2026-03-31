@@ -12,15 +12,24 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles card selection from grid-based card selection screens
+///     Handles the <c>grid_select_card</c> and <c>grid_select_skip</c> CLI commands.
+///     Selects or skips cards from grid-based card selection screens
 ///     (<see cref="NSimpleCardSelectScreen" />, <see cref="NDeckCardSelectScreen" />,
 ///     <see cref="NDeckUpgradeSelectScreen" />, etc.).
 ///     Supports single and multi-select flows.
 ///     <see cref="NDeckCardSelectScreen" /> and <see cref="NDeckUpgradeSelectScreen" /> use a
-///     preview + confirm flow (select → preview appears → click preview confirm).
+///     preview + confirm flow (select -> preview appears -> click preview confirm).
 ///     <see cref="NSimpleCardSelectScreen" /> has no preview: when MinSelect == MaxSelect,
 ///     selection auto-completes; otherwise a confirm button enables after selecting enough cards.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI commands:</b></para>
+///     <list type="bullet">
+///         <item><c>sts2 grid_select_card &lt;card_id&gt; [&lt;card_id&gt;...] [--nth &lt;n&gt;...]</c></item>
+///         <item><c>sts2 grid_select_skip</c></item>
+///     </list>
+///     <para><b>Scene:</b> Grid card selection overlay (rest site SMITH/COOK, shop card removal, potion card selection, etc.).</para>
+/// </remarks>
 public static class GridSelectCardHandler
 {
     private static readonly ModLogger Logger = new("GridSelectCardHandler");

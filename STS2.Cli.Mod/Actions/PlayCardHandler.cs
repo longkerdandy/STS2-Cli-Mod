@@ -13,10 +13,15 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles play card action using the game's native ActionQueue.
+///     Handles the <c>play_card</c> CLI command.
+///     Plays a card from the player's hand using the game's native ActionQueue.
 ///     After enqueuing the action, waits for completion and collects execution results
 ///     (damage dealt, block gained, powers applied) from <c>CombatHistory</c>.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 play_card &lt;card_id&gt; [--nth &lt;n&gt;] [--target &lt;combat_id&gt;]</c></para>
+///     <para><b>Scene:</b> Combat, during the player's turn.</para>
+/// </remarks>
 public static class PlayCardHandler
 {
     private static readonly ModLogger Logger = new("PlayCardHandler");

@@ -11,16 +11,21 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles claiming a non-card reward (gold, potion, relic, special card) by type + ID.
+///     Handles the <c>reward_claim</c> CLI command.
+///     Claims a non-card reward (gold, potion, relic, special card) by type + ID.
 ///     Uses <see cref="NClickableControl.ForceClick" /> on the <see cref="NRewardButton" />
 ///     to trigger the full game UI flow: claim animation, signal emission, and button removal.
 /// </summary>
-public static class ClaimRewardHandler
+/// <remarks>
+///     <para><b>CLI commands:</b> <c>sts2 reward_claim --type &lt;type&gt; [--id &lt;id&gt;] [--nth &lt;n&gt;]</c></para>
+///     <para><b>Scene:</b> Reward screen (<see cref="NRewardsScreen" />) after combat or events.</para>
+/// </remarks>
+public static class RewardClaimHandler
 {
-    private static readonly ModLogger Logger = new("ClaimRewardHandler");
+    private static readonly ModLogger Logger = new("RewardClaimHandler");
 
     /// <summary>
-    ///     Handles the claim_reward request.
+    ///     Handles the <c>reward_claim</c> request.
     ///     Validates parameters and delegates to ExecuteAsync.
     /// </summary>
     public static async Task<object> HandleRequestAsync(Request request)

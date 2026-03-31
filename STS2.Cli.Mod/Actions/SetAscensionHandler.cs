@@ -6,8 +6,13 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles setting ascension level on the character select screen.
+///     Handles the <c>set_ascension</c> CLI command.
+///     Sets the ascension level on the character select screen.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 set_ascension &lt;level&gt;</c></para>
+///     <para><b>Scene:</b> Character select screen.</para>
+/// </remarks>
 public static class SetAscensionHandler
 {
     private static readonly ModLogger Logger = new("SetAscensionHandler");

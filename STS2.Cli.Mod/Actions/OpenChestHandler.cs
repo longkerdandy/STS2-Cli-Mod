@@ -11,13 +11,18 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles opening the treasure chest in a treasure room.
+///     Handles the <c>open_chest</c> CLI command.
+///     Opens the treasure chest in a treasure room.
 ///     Mirrors the game's <c>OnChestButtonReleased</c> flow: disables the chest button,
 ///     then calls <c>OpenChest()</c> via <c>TaskHelper.RunSafely</c> (fire-and-forget).
 ///     Because <c>OpenChest()</c> is async and blocks waiting for relic picking,
 ///     this handler uses fire-and-forget, then polls for the relics to appear
 ///     before returning the updated state.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 open_chest</c></para>
+///     <para><b>Scene:</b> Treasure room, before the chest has been opened.</para>
+/// </remarks>
 public static class OpenChestHandler
 {
     private static readonly ModLogger Logger = new("OpenChestHandler");

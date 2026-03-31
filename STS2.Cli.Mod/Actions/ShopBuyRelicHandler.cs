@@ -8,11 +8,16 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles buying a relic from the shop by relic_id + nth.
+///     Handles the <c>shop_buy_relic</c> CLI command.
+///     Buys a relic from the shop by relic_id + nth.
 ///     Finds the matching <see cref="MerchantRelicEntry" /> in the
 ///     <see cref="MerchantInventory.RelicEntries" /> list and calls
 ///     <see cref="MerchantEntry.OnTryPurchaseWrapper" /> to purchase it.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 shop_buy_relic &lt;relic_id&gt; [--nth &lt;n&gt;]</c></para>
+///     <para><b>Scene:</b> Merchant room (shop).</para>
+/// </remarks>
 public static class ShopBuyRelicHandler
 {
     private static readonly ModLogger Logger = new("ShopBuyRelicHandler");

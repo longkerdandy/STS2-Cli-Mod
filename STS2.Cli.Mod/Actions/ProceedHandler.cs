@@ -12,7 +12,8 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles proceeding to the map from various screens.
+///     Handles the <c>proceed</c> CLI command.
+///     Proceeds to the map from various screens.
 ///     Supports:
 ///     - Reward screen (NRewardsScreen with NProceedButton)
 ///     - Event room (any event with IsFinished, via NEventRoom.Proceed())
@@ -25,6 +26,11 @@ namespace STS2.Cli.Mod.Actions;
 ///     For events, calls <see cref="NEventRoom.Proceed" /> directly (events use
 ///     <c>NEventOptionButton</c> with <c>IsProceed=true</c> instead of <c>NProceedButton</c>).
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 proceed</c></para>
+///     <para><b>Scene:</b> Reward screen, finished event room, FakeMerchant event, rest site (after option chosen),
+///     treasure room (after relic picked/skipped), or merchant room (shop).</para>
+/// </remarks>
 public static class ProceedHandler
 {
     private static readonly ModLogger Logger = new("ProceedHandler");

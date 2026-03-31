@@ -7,13 +7,18 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles the end turn action using the game's native PlayerCmd.
+///     Handles the <c>end_turn</c> CLI command.
+///     Ends the player's turn using the game's native PlayerCmd.
 ///     After ending the turn, waits for the enemy turn to complete and collects
 ///     execution results (damage, block, powers) from <c>CombatHistory</c>.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 end_turn</c></para>
+///     <para><b>Scene:</b> Combat, during the player's turn.</para>
+/// </remarks>
 public static class EndTurnHandler
 {
-    private static readonly ModLogger Logger = new("EndTurnAction");
+    private static readonly ModLogger Logger = new("EndTurnHandler");
 
     /// <summary>
     ///     Handles the end_turn request.

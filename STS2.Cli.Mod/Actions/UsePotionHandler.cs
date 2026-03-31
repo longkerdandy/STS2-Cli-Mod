@@ -13,11 +13,16 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles the use potion action by constructing a <see cref="UsePotionAction" />
+///     Handles the <c>use_potion</c> CLI command.
+///     Uses a potion by constructing a <see cref="UsePotionAction" />
 ///     and enqueuing it through the game's native ActionQueue.
 ///     After enqueuing, waits for completion and collects execution results
 ///     (damage dealt, block gained, powers applied) from <c>CombatHistory</c>.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 use_potion &lt;potion_id&gt; [--nth &lt;n&gt;] [--target &lt;combat_id&gt;]</c></para>
+///     <para><b>Scene:</b> Combat, during the player's turn (or outside combat for non-combat potions).</para>
+/// </remarks>
 public static class UsePotionHandler
 {
     private static readonly ModLogger Logger = new("UsePotionHandler");

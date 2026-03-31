@@ -6,8 +6,13 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles character selection on the character select screen.
+///     Handles the <c>select_character</c> CLI command.
+///     Selects a character on the character select screen by character ID.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 select_character &lt;character_id&gt;</c></para>
+///     <para><b>Scene:</b> Character select screen.</para>
+/// </remarks>
 public static class SelectCharacterHandler
 {
     private static readonly ModLogger Logger = new("SelectCharacterHandler");

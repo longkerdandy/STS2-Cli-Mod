@@ -8,11 +8,20 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles relic selection from the "choose a relic" screen (<see cref="NChooseARelicSelection" />).
+///     Handles the <c>relic_select</c> and <c>relic_skip</c> CLI commands.
+///     Selects or skips a relic from the "choose a relic" screen (<see cref="NChooseARelicSelection" />).
 ///     This overlay appears after boss fights and certain events, presenting relics for the player
 ///     to pick one (or skip). Selection is done by calling <c>ForceClick()</c> on the target
-///     <see cref="NRelicBasicHolder" />, which emits <c>Released</c> → <c>SelectHolder()</c>.
+///     <see cref="NRelicBasicHolder" />, which emits <c>Released</c> -> <c>SelectHolder()</c>.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI commands:</b></para>
+///     <list type="bullet">
+///         <item><c>sts2 relic_select &lt;index&gt;</c></item>
+///         <item><c>sts2 relic_skip</c></item>
+///     </list>
+///     <para><b>Scene:</b> Boss relic choice screen or event relic choice screen.</para>
+/// </remarks>
 public static class RelicSelectHandler
 {
     private static readonly ModLogger Logger = new("RelicSelectHandler");

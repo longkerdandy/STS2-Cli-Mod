@@ -13,15 +13,24 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles choosing a card from a <see cref="CardReward" /> or skipping the card reward entirely.
+///     Handles the <c>reward_choose_card</c> and <c>reward_skip_card</c> CLI commands.
+///     Chooses a card from a <see cref="CardReward" /> or skips the card reward entirely.
 ///     Uses reward type + card ID + nth for stable identification.
 /// </summary>
-public static class ChooseCardHandler
+/// <remarks>
+///     <para><b>CLI commands:</b></para>
+///     <list type="bullet">
+///         <item><c>sts2 reward_choose_card --type card --card_id &lt;card_id&gt; [--nth &lt;n&gt;]</c></item>
+///         <item><c>sts2 reward_skip_card --type card [--nth &lt;n&gt;]</c></item>
+///     </list>
+///     <para><b>Scene:</b> Reward screen (<see cref="NRewardsScreen" />) after combat, when a card reward is available.</para>
+/// </remarks>
+public static class RewardCardHandler
 {
-    private static readonly ModLogger Logger = new("ChooseCardHandler");
+    private static readonly ModLogger Logger = new("RewardCardHandler");
 
     /// <summary>
-    ///     Handles the choose_card request.
+    ///     Handles the <c>reward_choose_card</c> request.
     ///     Validates parameters and delegates to ExecuteAsync.
     /// </summary>
     public static async Task<object> HandleRequestAsync(Request request)
@@ -42,7 +51,7 @@ public static class ChooseCardHandler
     }
 
     /// <summary>
-    ///     Handles the skip_card request.
+    ///     Handles the <c>reward_skip_card</c> request.
     ///     Validates parameters and delegates to ExecuteSkipAsync.
     /// </summary>
     public static async Task<object> HandleSkipRequestAsync(Request request)

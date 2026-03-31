@@ -8,13 +8,18 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles buying a potion from the shop by potion_id + nth.
+///     Handles the <c>shop_buy_potion</c> CLI command.
+///     Buys a potion from the shop by potion_id + nth.
 ///     Finds the matching <see cref="MerchantPotionEntry" /> in the
 ///     <see cref="MerchantInventory.PotionEntries" /> list and calls
 ///     <see cref="MerchantEntry.OnTryPurchaseWrapper" /> to purchase it.
 ///     Note: potion purchase can fail with <see cref="PurchaseStatus.FailureSpace" />
 ///     if the player's potion belt is full.
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 shop_buy_potion &lt;potion_id&gt; [--nth &lt;n&gt;]</c></para>
+///     <para><b>Scene:</b> Merchant room (shop).</para>
+/// </remarks>
 public static class ShopBuyPotionHandler
 {
     private static readonly ModLogger Logger = new("ShopBuyPotionHandler");

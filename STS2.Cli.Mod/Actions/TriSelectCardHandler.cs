@@ -8,11 +8,20 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles card selection from the "choose a card" screen (<see cref="NChooseACardSelectionScreen" />).
+///     Handles the <c>tri_select_card</c> and <c>tri_select_skip</c> CLI commands.
+///     Selects or skips cards from the "choose a card" screen (<see cref="NChooseACardSelectionScreen" />).
 ///     This screen displays up to 3 generated cards for the player to pick one (or skip).
 ///     Triggered by potions (AttackPotion, SkillPotion, etc.), cards (Discovery, Quasar, Splash),
 ///     relics (Toolbox, MassiveScroll, etc.), and monsters (KnowledgeDemon).
 /// </summary>
+/// <remarks>
+///     <para><b>CLI commands:</b></para>
+///     <list type="bullet">
+///         <item><c>sts2 tri_select_card &lt;card_id&gt; [&lt;card_id&gt;...] [--nth &lt;n&gt;...]</c></item>
+///         <item><c>sts2 tri_select_skip</c></item>
+///     </list>
+///     <para><b>Scene:</b> Combat or event, when a potion/card/relic/monster triggers a "choose a card" selection.</para>
+/// </remarks>
 public static class TriSelectCardHandler
 {
     private static readonly ModLogger Logger = new("TriSelectCardHandler");

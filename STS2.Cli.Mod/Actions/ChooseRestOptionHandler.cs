@@ -9,7 +9,8 @@ using STS2.Cli.Mod.Utils;
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
-///     Handles choosing a rest site option by option ID (e.g., "HEAL", "SMITH").
+///     Handles the <c>choose_rest_option</c> CLI command.
+///     Chooses a rest site option by option ID (e.g., "HEAL", "SMITH").
 ///     Mirrors the game's <c>NRestSiteButton.SelectOption</c> flow:
 ///     disables options, fires <c>ChooseLocalOption</c> (which awaits the option's
 ///     <c>OnSelect</c>), then calls <c>AfterSelectingOption</c> on success.
@@ -20,6 +21,10 @@ namespace STS2.Cli.Mod.Actions;
 ///     and returns immediately so the CLI can issue follow-up commands
 ///     (e.g., <c>grid_select_card</c>).
 /// </summary>
+/// <remarks>
+///     <para><b>CLI command:</b> <c>sts2 choose_rest_option &lt;option_id&gt;</c></para>
+///     <para><b>Scene:</b> Rest site room with available options (HEAL, SMITH, COOK, DIG, LIFT, RECALL, etc.).</para>
+/// </remarks>
 public static class ChooseRestOptionHandler
 {
     private static readonly ModLogger Logger = new("ChooseRestOptionHandler");
