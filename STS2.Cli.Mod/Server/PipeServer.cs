@@ -272,6 +272,18 @@ public static class PipeServer
                 "bundle_cancel" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     BundleSelectHandler.HandleCancelAsync(request)),
 
+                // crystal_set_tool is async — switch divination tool (big/small)
+                "crystal_set_tool" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    CrystalSphereHandler.HandleSetToolAsync(request)),
+
+                // crystal_click_cell is async — click a grid cell to clear fog
+                "crystal_click_cell" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    CrystalSphereHandler.HandleClickCellAsync(request)),
+
+                // crystal_proceed is async — leave the mini-game after divinations are exhausted
+                "crystal_proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    CrystalSphereHandler.HandleProceedAsync(request)),
+
                 // state is synchronous — single-frame game state extraction on the main thread
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 

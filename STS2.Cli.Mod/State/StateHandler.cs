@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Combat;
+using MegaCrit.Sts2.Core.Nodes.Events.Custom.CrystalSphere;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
@@ -112,6 +113,9 @@ public static class StateHandler
         // Extract bundle selection state if a "choose a bundle" overlay is open
         if (state.Screen == "BUNDLE_SELECT") state.BundleSelect = ExtractBundleSelectState();
 
+        // Extract Crystal Sphere mini-game state if the overlay is open
+        if (state.Screen == "CRYSTAL_SPHERE") state.CrystalSphere = ExtractCrystalSphereState();
+
         return state;
         }
         catch (Exception ex)
@@ -188,6 +192,12 @@ public static class StateHandler
                     return "BUNDLE_SELECT";
                 }
 
+                if (topOverlay is NCrystalSphereScreen)
+                {
+                    Logger.Info("Detected CRYSTAL_SPHERE screen during combat");
+                    return "CRYSTAL_SPHERE";
+                }
+
                 // Also check children in case it's not on top
                 foreach (var child in combatOverlay.GetChildren())
                 {
@@ -207,6 +217,12 @@ public static class StateHandler
                     {
                         Logger.Info("Detected BUNDLE_SELECT screen during combat in children");
                         return "BUNDLE_SELECT";
+                    }
+
+                    if (child is NCrystalSphereScreen)
+                    {
+                        Logger.Info("Detected CRYSTAL_SPHERE screen during combat in children");
+                        return "CRYSTAL_SPHERE";
                     }
                 }
             }
@@ -234,6 +250,13 @@ public static class StateHandler
                 Logger.Info($"NOverlayStack.Peek() returned: {overlay.GetType().FullName}");
 
                 if (overlay is NCardRewardSelectionScreen) return "CARD_REWARD";
+
+                if (overlay is NCrystalSphereScreen)
+                {
+                    Logger.Info("Detected CRYSTAL_SPHERE screen");
+                    return "CRYSTAL_SPHERE";
+                }
+
                 if (overlay is NRewardsScreen) return "REWARD";
 
                 if (overlay is NChooseACardSelectionScreen)
@@ -286,6 +309,12 @@ public static class StateHandler
                 {
                     Logger.Info("Detected BUNDLE_SELECT screen (in children)");
                     return "BUNDLE_SELECT";
+                }
+
+                if (child is NCrystalSphereScreen)
+                {
+                    Logger.Info("Detected CRYSTAL_SPHERE screen (in children)");
+                    return "CRYSTAL_SPHERE";
                 }
             }
         }
@@ -575,6 +604,23 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract bundle select state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the Crystal Sphere mini-game state from <see cref="NCrystalSphereScreen" />.
+    ///     Delegates to <see cref="CrystalSphereStateBuilder" /> for the actual extraction.
+    /// </summary>
+    private static CrystalSphereStateDto? ExtractCrystalSphereState()
+    {
+        try
+        {
+            return CrystalSphereStateBuilder.Build();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract Crystal Sphere state: {ex.Message}");
             return null;
         }
     }

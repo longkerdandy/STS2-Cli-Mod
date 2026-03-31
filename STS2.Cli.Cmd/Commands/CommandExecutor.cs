@@ -121,6 +121,9 @@ internal static class CommandExecutor
                 "NOT_IN_HAND_SELECT" or "CANNOT_CONFIRM" or
                 "NOT_IN_BUNDLE_SELECT" or "PREVIEW_ALREADY_OPEN" or
                 "NO_BUNDLES_AVAILABLE" or "CANNOT_CANCEL" or
+                "NOT_IN_CRYSTAL_SPHERE" or "TOOL_NOT_AVAILABLE" or
+                "TOOL_ALREADY_ACTIVE" or "MINIGAME_FINISHED" or
+                "CELL_NOT_CLICKABLE" or "CANNOT_PROCEED" or
                 "NOT_ON_MAP" or "NO_RUN_STATE" or "NOT_TRAVELABLE" or
                 "TRAVEL_DISABLED" or
                 "NOT_AT_REST_SITE" or "OPTION_DISABLED" or "OPTION_CANCELLED" or
@@ -142,6 +145,7 @@ internal static class CommandExecutor
                 "INVALID_ASCENSION_LEVEL" or "UI_NOT_FOUND" or
                 "NODE_NOT_FOUND" or "OPTION_NOT_FOUND" or "INVALID_RELIC_INDEX" or
                 "INVALID_BUNDLE_INDEX" or
+                "INVALID_TOOL" or "CELL_NOT_FOUND" or
                 "ITEM_NOT_FOUND" => ExitInvalidParam,
 
             // Timeout

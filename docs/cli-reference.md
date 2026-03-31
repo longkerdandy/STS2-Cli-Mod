@@ -190,6 +190,32 @@ Cancel the current bundle preview and return to bundle selection. Allows preview
 
 ---
 
+### crystal_set_tool
+
+```
+./sts2 crystal_set_tool <tool>
+```
+
+Set the divination tool in the Crystal Sphere mini-game. Tool is `big` (3x3 area) or `small` (1 cell).
+
+### crystal_click_cell
+
+```
+./sts2 crystal_click_cell <x> <y>
+```
+
+Click a cell in the Crystal Sphere mini-game to clear fog. Coordinates are 0-based (range 0..10). After clicking, a reward overlay may appear if an item was revealed -- handle the reward first, then continue clicking.
+
+### crystal_proceed
+
+```
+./sts2 crystal_proceed
+```
+
+Leave the Crystal Sphere mini-game after all divinations are exhausted. The proceed button must be enabled (`can_proceed` is true in state).
+
+---
+
 ### shop_buy_card
 
 ```
@@ -285,7 +311,7 @@ Returned by `state` in the `data` field. Only the relevant screen's data is popu
 data
 ├── screen              # COMBAT | HAND_SELECT | REWARD | CARD_REWARD | EVENT | TRI_SELECT
 │                       # MAP | CHARACTER_SELECT | GRID_CARD_SELECT | REST_SITE | TREASURE | SHOP
-│                       # RELIC_SELECT | BUNDLE_SELECT | MENU | UNKNOWN
+│                       # RELIC_SELECT | BUNDLE_SELECT | CRYSTAL_SPHERE | MENU | UNKNOWN
 ├── timestamp           # Unix ms
 ├── combat
 │   ├── encounter, turn_number, is_player_turn
@@ -358,6 +384,15 @@ data
 │   ├── preview_cards[]     # [{index, card_id, card_name, description, card_type, cost}] -- shown during preview
 │   ├── can_confirm         # bool, true when confirm button is enabled
 │   └── can_cancel          # bool, true when cancel button is enabled
+├── crystal_sphere
+│   ├── grid_width, grid_height  # int (always 11)
+│   ├── cells[]             # [{x, y, is_hidden, is_clickable, item_type?, is_good?}]
+│   ├── clickable_cells[]   # [{x, y}] -- convenience list of clickable coordinates
+│   ├── revealed_items[]    # [{item_type, is_good, x, y, width, height}]
+│   ├── tool                # "big" | "small" | "none"
+│   ├── can_use_big_tool, can_use_small_tool  # bool
+│   ├── divinations_left    # int, remaining divination uses
+│   └── can_proceed         # bool, true when proceed button is enabled
 ```
 
 ### Card Object (in hand)
@@ -419,6 +454,8 @@ data
 - **Shop Card Removal**: `{cost, is_used}` -- card removal service info
 - **Selectable Relic** (relic select): `{index, id, name, description, rarity}` -- relic available on boss/event relic choice screen
 - **Bundle**: `{index, card_count, cards[]}` -- a bundle of cards in the bundle selection screen; `cards[]` uses the same selectable card format
+- **Crystal Sphere Cell**: `{x, y, is_hidden, is_clickable, item_type?, is_good?}` -- item_type and is_good only populated for revealed (non-hidden) cells with items
+- **Crystal Sphere Revealed Item**: `{item_type, is_good, x, y, width, height}` -- fully revealed items (all occupied cells cleared); item_type is class name (e.g., "CrystalSphereRelic", "CrystalSphereGold")
 
 ### Action Results
 
@@ -543,6 +580,19 @@ data
 | `POTION_BELT_FULL` | No empty potion slots |
 | `CARD_REMOVAL_USED` | Card removal already used this visit |
 | `PURCHASE_FAILED` | Unknown purchase failure |
+
+**Crystal Sphere** (`crystal_set_tool`, `crystal_click_cell`, `crystal_proceed`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_CRYSTAL_SPHERE` | Not in Crystal Sphere mini-game |
+| `INVALID_TOOL` | Tool must be "big" or "small" |
+| `TOOL_NOT_AVAILABLE` | Tool button not visible (minigame finished) |
+| `TOOL_ALREADY_ACTIVE` | Requested tool is already selected |
+| `MINIGAME_FINISHED` | All divinations used (use `crystal_proceed`) |
+| `CELL_NOT_FOUND` | Invalid cell coordinates |
+| `CELL_NOT_CLICKABLE` | Cell is already cleared or not visible |
+| `CANNOT_PROCEED` | Proceed button not enabled (divinations remaining) |
 
 **Character Select** (`select_character`, `set_ascension`, `embark`):
 

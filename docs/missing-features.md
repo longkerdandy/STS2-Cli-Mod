@@ -18,18 +18,9 @@ Implemented as `bundle_select`, `bundle_confirm`, and `bundle_cancel` commands. 
 
 ## Priority 2 — Important (affects specific scenarios or AI decision quality)
 
-### 2.1 Crystal Sphere Mini-Game
+### 2.1 ~~Crystal Sphere Mini-Game~~ ✅ DONE
 
-The Crystal Sphere event features a minesweeper-style mini-game with a grid of hidden cells. The player uses divination tools to reveal cells and collect items.
-
-**Current gap**: Not implemented at all.
-
-**STS2MCP reference**: Three tools — `crystal_sphere_set_tool(tool)` to switch tool, `crystal_sphere_click_cell(x, y)` to click a cell, `crystal_sphere_proceed()` to finish. State includes grid layout, clickable cells, revealed items, current tool, and remaining actions.
-
-**Needed**:
-- Detect Crystal Sphere event screen
-- State extraction: grid state, available tools, remaining clicks, revealed items
-- Action: set tool, click cell, proceed when done
+Implemented as `crystal_set_tool`, `crystal_click_cell`, and `crystal_proceed` commands. Screen detection returns `CRYSTAL_SPHERE` when `NCrystalSphereScreen` is found in the overlay stack. State includes 11x11 grid cells with hidden/clickable status, current tool, divinations remaining, revealed items (with anti-cheat: hidden cell items are never exposed), and proceed availability. Tool switching via `ForceClick()` on `NDivinationButton`; cell clicks via `EmitSignal(Released)` (proven AutoSlay pattern); proceed via `ForceClick()` on `NProceedButton`. The `_entity` field on `NCrystalSphereScreen` is accessed via cached reflection.
 
 ### 2.2 Draw/Discard/Exhaust Pile Contents
 

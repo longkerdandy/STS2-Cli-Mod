@@ -93,4 +93,10 @@ public class GameStateDto
     ///     (triggered by the Scroll Boxes relic), null otherwise.
     /// </summary>
     public BundleSelectStateDto? BundleSelect { get; set; }
+
+    /// <summary>
+    ///     Crystal Sphere mini-game state if the Crystal Sphere overlay is open, null otherwise.
+    ///     The player uses divination tools to clear fog and reveal hidden items on a grid.
+    /// </summary>
+    public CrystalSphereStateDto? CrystalSphere { get; set; }
 }
