@@ -47,32 +47,8 @@ Game entities (cards, relics, potions) have keywords with hover-tip definitions.
 - Return as a glossary section in state response (deduplicated)
 - Or attach keyword descriptions inline to each entity
 
-### 2.4 Relic Counter and Dynamic Description
+### 2.4 ~~Relic Counter and Dynamic Description~~ ✅ DONE
 
-Some relics track usage counts (e.g., "Used 3/5 times this combat") and have descriptions that update with current values.
+Already implemented. `RelicStateDto.Counter` is populated from `relic.DisplayAmount` when `relic.ShowCounter` is true (null otherwise). `RelicStateDto.Description` already uses `relic.DynamicDescription.GetFormattedText()`, so it returns the live description with current values substituted — no separate `dynamic_description` field needed.
 
-**Current gap**: Only static `description` is returned.
 
-**STS2MCP reference**: Returns `DisplayAmount` (counter value) and `DynamicDescription` (description with live values substituted).
-
-**Needed**:
-- Add `counter` (or `display_amount`) field to `RelicStateDto` — nullable int
-- Add `dynamic_description` field — nullable string, only set when different from static description
-
-## Priority 3 — Nice to Have
-
-### 3.1 Markdown Format Output
-
-STS2MCP can render the full game state as formatted Markdown, which is easier for LLMs to consume directly than raw JSON.
-
-**Current gap**: Only JSON output supported.
-
-**Consideration**: Could be implemented as a `--format markdown` option on the `state` command. The Markdown renderer would live in the CLI project (STS2.Cli.Cmd), not the mod.
-
-### 3.2 Multiplayer Mode
-
-STS2MCP has 31 multiplayer tools including voting, auctioning, and multi-player state tracking.
-
-**Current gap**: Not supported at all.
-
-**Consideration**: Low priority unless multiplayer AI control is a goal. Would require significant effort — voting system, multi-player state extraction, undo mechanics, etc.
