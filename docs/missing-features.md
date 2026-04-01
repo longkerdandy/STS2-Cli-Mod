@@ -22,30 +22,13 @@ Implemented as `bundle_select`, `bundle_confirm`, and `bundle_cancel` commands. 
 
 Implemented as `crystal_set_tool`, `crystal_click_cell`, and `crystal_proceed` commands. Screen detection returns `CRYSTAL_SPHERE` when `NCrystalSphereScreen` is found in the overlay stack. State includes 11x11 grid cells with hidden/clickable status, current tool, divinations remaining, revealed items (with anti-cheat: hidden cell items are never exposed), and proceed availability. Tool switching via `ForceClick()` on `NDivinationButton`; cell clicks via `EmitSignal(Released)` (proven AutoSlay pattern); proceed via `ForceClick()` on `NProceedButton`. The `_entity` field on `NCrystalSphereScreen` is accessed via cached reflection.
 
-### 2.2 Draw/Discard/Exhaust Pile Contents
+### 2.2 ~~Draw/Discard/Exhaust Pile Contents~~ ✅ DONE
 
-Currently the state only returns the **count** of cards in each pile. AI agents need to know the actual cards to make informed decisions (e.g., knowing what's left in the draw pile affects play order).
+Implemented with `draw_pile`, `discard_pile`, and `exhaust_pile` fields in combat state. Each card entry includes: id, name, type, rarity, cost, keywords, is_upgraded. The draw pile is shuffled (order randomized) to match in-game view without revealing draw order. Use `--include-pile-details` flag with `state` command to include full descriptions (default is off to reduce payload size).
 
-**Current gap**: `draw_pile_count`, `discard_pile_count`, `exhaust_pile_count` are integers only.
+### 2.3 ~~Keyword Glossary~~ ✅ DONE (Documented)
 
-**STS2MCP reference**: Returns full card lists with name and description for each pile.
-
-**Needed**:
-- Extend `CombatStateDto` (or sub-DTOs) to include card lists for draw pile, discard pile, and exhaust pile
-- Each card entry: id, name, cost, type, rarity, description (same format as hand cards)
-
-### 2.3 Keyword Glossary
-
-Game entities (cards, relics, potions) have keywords with hover-tip definitions. Currently we return keyword names as string arrays but not their definitions.
-
-**Current gap**: Keywords like "Vulnerable", "Weak", "Ethereal" are returned as names only — no descriptions.
-
-**STS2MCP reference**: Collects all HoverTips from entities across the game state and generates a unified glossary with `{name, description}` entries.
-
-**Needed**:
-- Extract keyword definitions from `HoverTip` data on cards, relics, potions
-- Return as a glossary section in state response (deduplicated)
-- Or attach keyword descriptions inline to each entity
+Only 7 card keywords exist (Exhaust, Ethereal, Innate, Unplayable, Retain, Sly, Eternal). Instead of adding code overhead, their definitions are documented in [cli-reference.md](cli-reference.md#card-keywords). No code changes needed.
 
 ### 2.4 ~~Relic Counter and Dynamic Description~~ ✅ DONE
 

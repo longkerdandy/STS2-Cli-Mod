@@ -70,6 +70,24 @@ public class CombatStateDto
     /// </summary>
     public List<CardStateDto> Hand { get; set; } = [];
 
+    /// <summary>
+    ///     Draw pile cards (order randomized to match in-game view; does not reveal draw order).
+    ///     Does not include description by default (use --include-pile-details for full info).
+    /// </summary>
+    public List<PileCardDto> DrawPile { get; set; } = [];
+
+    /// <summary>
+    ///     Discard pile cards.
+    ///     Does not include description by default (use --include-pile-details for full info).
+    /// </summary>
+    public List<PileCardDto> DiscardPile { get; set; } = [];
+
+    /// <summary>
+    ///     Exhaust pile cards.
+    ///     Does not include description by default (use --include-pile-details for full info).
+    /// </summary>
+    public List<PileCardDto> ExhaustPile { get; set; } = [];
+
     // --- Enemies ---
 
     /// <summary>

@@ -34,7 +34,7 @@ public static class StateHandler
     {
         Logger.Info("Requested game state");
 
-        var state = GetState();
+        var state = GetState(request.IncludePileDetails);
 
         if (state.Error != null)
             return new { ok = false, error = "STATE_EXTRACTION_ERROR", message = state.Error };
@@ -45,7 +45,8 @@ public static class StateHandler
     /// <summary>
     ///     Gets the current game state.
     /// </summary>
-    private static GameStateDto GetState()
+    /// <param name="includePileDetails">Whether to include full card descriptions in pile listings.</param>
+    private static GameStateDto GetState(bool includePileDetails = false)
     {
         try
         {
@@ -56,13 +57,13 @@ public static class StateHandler
             };
 
             // Extract combat state if in combat
-            if (state.Screen == "COMBAT") state.Combat = ExtractCombatState();
+            if (state.Screen == "COMBAT") state.Combat = ExtractCombatState(includePileDetails);
 
             // Extract hand selection state if in hand card selection (combat sub-state)
             // Also include combat state so the AI has full context
             if (state.Screen == "HAND_SELECT")
             {
-                state.Combat = ExtractCombatState();
+                state.Combat = ExtractCombatState(includePileDetails);
                 state.HandSelect = ExtractHandSelectState();
             }
 
@@ -82,7 +83,7 @@ public static class StateHandler
         {
             state.TriSelect = ExtractTriSelectState();
             if (CombatManager.Instance.IsInProgress)
-                state.Combat = ExtractCombatState();
+                state.Combat = ExtractCombatState(includePileDetails);
         }
 
         // Extract character select state if on character select screen
@@ -95,7 +96,7 @@ public static class StateHandler
         {
             state.GridCardSelect = ExtractGridCardSelectState();
             if (CombatManager.Instance.IsInProgress)
-                state.Combat = ExtractCombatState();
+                state.Combat = ExtractCombatState(includePileDetails);
         }
 
         // Extract rest site state if at a rest site
@@ -368,7 +369,8 @@ public static class StateHandler
     /// <summary>
     ///     Extracts combat state from CombatManager.
     /// </summary>
-    private static CombatStateDto? ExtractCombatState()
+    /// <param name="includePileDetails">Whether to include full card descriptions in pile listings.</param>
+    private static CombatStateDto? ExtractCombatState(bool includePileDetails = false)
     {
         try
         {
@@ -402,6 +404,9 @@ public static class StateHandler
             {
                 result.Player = PlayerStateBuilder.Build(player);
                 result.Hand = CombatStateBuilder.BuildHand(player);
+                result.DrawPile = CombatStateBuilder.BuildDrawPile(player, includePileDetails);
+                result.DiscardPile = CombatStateBuilder.BuildDiscardPile(player, includePileDetails);
+                result.ExhaustPile = CombatStateBuilder.BuildExhaustPile(player, includePileDetails);
             }
 
             // Extract enemies

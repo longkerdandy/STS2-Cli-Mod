@@ -73,4 +73,11 @@ public class Request
     /// </summary>
     [JsonPropertyName("skip")]
     public bool? Skip { get; set; }
+
+    /// <summary>
+    ///     Whether to include full card descriptions in draw/discard/exhaust pile listings.
+    ///     Default is false to reduce payload size. Use with 'state' command.
+    /// </summary>
+    [JsonPropertyName("include_pile_details")]
+    public bool IncludePileDetails { get; set; }
 }

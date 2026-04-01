@@ -19,10 +19,13 @@ Test connection. Returns `{"ok": true}`.
 ### state
 
 ```
-./sts2 state
+./sts2 state [--include-pile-details]
 ```
 
 Get full game state. See [Game State Structure](#game-state-structure) below.
+
+**Options:**
+- `--include-pile-details` — Include full card descriptions in draw/discard/exhaust pile listings. Default is off to reduce payload size.
 
 ---
 
@@ -326,6 +329,9 @@ data
 │   │   ├── orbs[]?, orb_slots?  # Defect only
 │   │   └── stars?           # Regent only
 │   ├── hand[]
+│   ├── draw_pile[]       # Shuffled to hide draw order. Use --include-pile-details for descriptions
+│   ├── discard_pile[]    # Use --include-pile-details for descriptions
+│   ├── exhaust_pile[]    # Use --include-pile-details for descriptions
 │   └── enemies[]
 ├── rewards
 │   └── rewards[]
@@ -418,6 +424,19 @@ data
 | `can_play` | bool | Whether playable right now |
 | `unplayable_reason` | string? | Why not playable |
 
+### Pile Card Object (draw/discard/exhaust)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Card identifier |
+| `name` | string | Display name |
+| `type` | string | `Attack`, `Skill`, `Power`, `Status`, `Curse` |
+| `rarity` | string | `Basic`, `Common`, `Uncommon`, `Rare`, `Ancient`, `Event`, `Token`, `Status`, `Curse` |
+| `cost` | int | Energy cost |
+| `keywords` | string[] | Active keywords |
+| `is_upgraded` | bool | Whether upgraded |
+| `description` | string? | Full description (only with `--include-pile-details`) |
+
 ### Enemy Object
 
 | Field | Type | Description |
@@ -467,6 +486,20 @@ data
 | `block` | `target_id`, `target_name`, `amount` |
 | `power` | `target_id`, `target_name`, `power_id`, `amount` |
 | `potion_used` | `target_id`, `target_name`, `potion_id` |
+
+## Card Keywords Reference
+
+Cards can have the following keywords. These are returned as strings in the `keywords` array.
+
+| Keyword | Description |
+|---------|-------------|
+| `Exhaust` | Card is removed from combat when played (sent to exhaust pile) |
+| `Ethereal` | Card is exhausted if not played by end of turn |
+| `Innate` | Card is added to the starting hand at the beginning of combat |
+| `Retain` | Card is not discarded at end of turn |
+| `Sly` | Card's cost is reduced by 1 when drawn (cost returns to normal at end of turn) |
+| `Eternal` | Card cannot be removed from the deck (card removal services) |
+| `Unplayable` | Card cannot be played from hand |
 
 ## Key Notes
 

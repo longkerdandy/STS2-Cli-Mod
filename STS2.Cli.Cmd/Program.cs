@@ -28,7 +28,7 @@ internal static class Program
 
         // Simple commands (no arguments)
         rootCommand.Subcommands.Add(SimpleCommand.Create("ping", "Test connection to the mod"));
-        rootCommand.Subcommands.Add(SimpleCommand.Create("state", "Get current game state"));
+        rootCommand.Subcommands.Add(StateCommand.Create());
         rootCommand.Subcommands.Add(SimpleCommand.Create("end_turn", "End the current turn"));
         rootCommand.Subcommands.Add(SimpleCommand.Create("proceed",
             "Leave current screen and proceed to map (reward screen or FakeMerchant event)"));
