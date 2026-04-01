@@ -6,7 +6,7 @@
 
 This document catalogs all implemented features and identifies remaining gaps for full game automation.
 
-**Current status**: 36 CLI commands, 17 screen types detected, 22 state builders. Core game loop is fully covered.
+**Current status**: 37 CLI commands, 18 screen types detected, 22 state builders. Core game loop is fully covered.
 
 ---
 
@@ -52,8 +52,9 @@ This document catalogs all implemented features and identifies remaining gaps fo
 | 34 | `crystal_set_tool` | `<tool>` | Set Crystal Sphere divination tool (big/small) |
 | 35 | `crystal_click_cell` | `<x> <y>` | Click cell in Crystal Sphere mini-game |
 | 36 | `crystal_proceed` | — | Leave Crystal Sphere mini-game |
+| 37 | `return_to_menu` | — | Return to main menu from game over screen |
 
-### Screen Detection (17 types)
+### Screen Detection (18 types)
 
 | # | Screen | State DTO | Supported Commands |
 |---|--------|-----------|-------------------|
@@ -73,7 +74,8 @@ This document catalogs all implemented features and identifies remaining gaps fo
 | 14 | `RELIC_SELECT` | `RelicSelectStateDto` | `relic_select`, `relic_skip` |
 | 15 | `BUNDLE_SELECT` | `BundleSelectStateDto` | `bundle_select`, `bundle_confirm`, `bundle_cancel` |
 | 16 | `CRYSTAL_SPHERE` | `CrystalSphereStateDto` | `crystal_set_tool`, `crystal_click_cell`, `crystal_proceed` |
-| 17 | `UNKNOWN` | — | — |
+| 17 | `GAME_OVER` | `GameOverStateDto` | `return_to_menu` |
+| 18 | `UNKNOWN` | — | — |
 
 ### State Builders (22 total)
 
@@ -101,6 +103,7 @@ This document catalogs all implemented features and identifies remaining gaps fo
 | `RelicSelectStateBuilder` | Boss/event relic choice |
 | `BundleSelectStateBuilder` | Scroll Boxes bundle selection |
 | `CrystalSphereStateBuilder` | Crystal Sphere mini-game grid and state |
+| `GameOverStateBuilder` | Game over screen (victory/defeat info) |
 
 ---
 
@@ -186,32 +189,32 @@ Node types: `MONSTER`, `ELITE`, `BOSS`, `SHOP`, `REST_SITE`, `TREASURE`, `ANCIEN
 |-------------|--------|-------|
 | Act transition | ✅ Auto | No command needed (auto after boss) |
 | TheArchitect event | ✅ | `choose_event` |
-| **Game over screen** | ❌ **Missing** | **P0: Agent deadlocks after death/victory** |
-| Return to menu | ❌ **Missing** | **P0: Needed after game over** |
-| Start new run | ❌ **Missing** | **P0: Without this agent cannot continue** |
+| **Game over screen** | ✅ **Implemented** | Screen `GAME_OVER` with state extraction |
+| **Return to menu** | ✅ **Implemented** | `return_to_menu` command |
+| Start new run | ✅ **Implemented** | Use `select_character` after returning to menu |
 
 ---
 
 ## Missing Features Summary
 
-### P0 — Blocking (Complete Deadlock)
+**No blocking issues remaining. All features have been implemented.**
 
-| Feature | Game Class | Trigger | Impact |
-|---------|-----------|---------|--------|
-| **Game Over screen** | `NGameOverScreen` | Death or victory | Agent cannot return to menu or start a new run. Complete deadlock. |
-| **Return to menu** | — | After game over | Required to escape game over screen |
-| **New run from menu** | — | After returning to menu | Required to start next iteration |
+The agent can now:
+1. Start a run (`select_character` → `set_ascension` → `embark`)
+2. Navigate the full game loop (combat → rewards → events → map → etc.)
+3. Handle all special screens (hand select, tri select, grid select, relic select, bundle select, crystal sphere)
+4. Return to menu after game over (`return_to_menu`)
+5. Start a new run (use `select_character` from `MENU` screen)
 
-**Status**: These are the ONLY remaining blocking issues. Once implemented, the agent can run indefinitely.
+### Previously Implemented (for reference)
 
-### P1-P3 — None
-
-All previously identified P1, P2, and P3 features have been implemented:
 - ✅ CARD_REWARD state extraction
 - ✅ In-combat card selection (HAND_SELECT)
 - ✅ Relic selection (RELIC_SELECT)
 - ✅ Crystal Sphere event (CRYSTAL_SPHERE)
 - ✅ Bundle selection (BUNDLE_SELECT)
+- ✅ Game over screen (GAME_OVER)
+- ✅ Return to menu command
 
 ---
 
@@ -252,7 +255,8 @@ MENU
      Boss kill → REWARD → Act transition → next act MAP
      Final Boss → TheArchitect EVENT → Victory
 
-     GAME_OVER ❌  ← Agent STUCK (needs implementation)
+     GAME_OVER → return_to_menu → MENU → CHARACTER_SELECT
+     (Agent can now run indefinitely!)
 ```
 
 ---
@@ -261,9 +265,14 @@ MENU
 
 | Category | Count | Status |
 |----------|-------|--------|
-| CLI Commands | 36 | ✅ Complete |
-| Screen Types | 17 | ✅ Complete (except GAME_OVER) |
-| State Builders | 22 | ✅ Complete |
-| **Blocking Issues** | **3** | **❌ Need GAME_OVER handling** |
+| CLI Commands | 37 | ✅ Complete |
+| Screen Types | 18 | ✅ Complete |
+| State Builders | 23 | ✅ Complete |
+| **Blocking Issues** | **0** | ✅ **All features implemented** |
 
-The only remaining work is implementing Game Over screen detection and commands to return to menu/start a new run. All other features from the original gap analysis have been implemented.
+**The implementation is feature-complete!** The AI agent can now:
+- Play complete runs from start to finish (victory or defeat)
+- Handle all game scenarios including combat, events, shops, rest sites, treasure rooms
+- Manage all special selection screens (hand, tri, grid, relic, bundle, crystal sphere)
+- Automatically recover from game over and start new runs
+- Run indefinitely in a loop

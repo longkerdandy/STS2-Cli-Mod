@@ -110,6 +110,9 @@ internal static class Program
         rootCommand.Subcommands.Add(SimpleCommand.Create("crystal_proceed",
             "Leave the Crystal Sphere mini-game after divinations are complete"));
 
+        // Game over commands
+        rootCommand.Subcommands.Add(ReturnToMenuCommand.Create());
+
         return rootCommand.Parse(args).Invoke();
     }
 }

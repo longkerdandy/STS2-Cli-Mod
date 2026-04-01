@@ -99,4 +99,9 @@ public class GameStateDto
     ///     The player uses divination tools to clear fog and reveal hidden items on a grid.
     /// </summary>
     public CrystalSphereStateDto? CrystalSphere { get; set; }
+
+    /// <summary>
+    ///     Game over screen state if the run has ended (victory or defeat), null otherwise.
+    /// </summary>
+    public GameOverStateDto? GameOver { get; set; }
 }

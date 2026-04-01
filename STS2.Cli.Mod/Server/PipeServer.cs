@@ -284,6 +284,10 @@ public static class PipeServer
                 "crystal_proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     CrystalSphereHandler.HandleProceedAsync(request)),
 
+                // return_to_menu is synchronous — click main menu button on game over screen
+                "return_to_menu" => MainThreadExecutor.RunOnMainThread(() =>
+                    ReturnToMenuHandler.Execute(request)),
+
                 // state is synchronous — single-frame game state extraction on the main thread
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 

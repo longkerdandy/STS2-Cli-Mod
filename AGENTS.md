@@ -88,6 +88,7 @@ Verify the mod works by:
 33. `sts2.exe crystal_click_cell <x> <y>` - confirms Crystal Sphere cell click with fog clearing
 34. `sts2.exe crystal_proceed` - confirms leaving the Crystal Sphere mini-game after divinations are complete
 35. `sts2.exe state --include-pile-details` - confirms draw/discard/exhaust pile contents with full card descriptions
+36. `sts2.exe return_to_menu` - confirms returning to main menu from game over screen
 
 ## Code Style Guidelines
 

@@ -219,6 +219,16 @@ Leave the Crystal Sphere mini-game after all divinations are exhausted. The proc
 
 ---
 
+### return_to_menu
+
+```
+./sts2 return_to_menu
+```
+
+Return to the main menu from the game over screen. Only available when `screen` is `GAME_OVER` and `game_over.can_return_to_menu` is true. After returning to menu, the screen becomes `MENU` and you can start a new run with `select_character`.
+
+---
+
 ### shop_buy_card
 
 ```
@@ -314,7 +324,7 @@ Returned by `state` in the `data` field. Only the relevant screen's data is popu
 data
 ├── screen              # COMBAT | HAND_SELECT | REWARD | CARD_REWARD | EVENT | TRI_SELECT
 │                       # MAP | CHARACTER_SELECT | GRID_CARD_SELECT | REST_SITE | TREASURE | SHOP
-│                       # RELIC_SELECT | BUNDLE_SELECT | CRYSTAL_SPHERE | MENU | UNKNOWN
+│                       # RELIC_SELECT | BUNDLE_SELECT | CRYSTAL_SPHERE | GAME_OVER | MENU | UNKNOWN
 ├── timestamp           # Unix ms
 ├── combat
 │   ├── encounter, turn_number, is_player_turn
@@ -399,6 +409,14 @@ data
 │   ├── can_use_big_tool, can_use_small_tool  # bool
 │   ├── divinations_left    # int, remaining divination uses
 │   └── can_proceed         # bool, true when proceed button is enabled
+└── game_over                 # Only when screen is GAME_OVER
+    ├── is_victory          # bool, true if defeated final boss
+    ├── floor               # int, floor where run ended
+    ├── character_id        # string, character used
+    ├── score               # int, final score
+    ├── epochs_discovered   # int, number of epochs discovered
+    ├── can_return_to_menu  # bool, true when main menu button is available
+    └── can_continue        # bool, true when continue/summary button is available
 ```
 
 ### Card Object (in hand)
@@ -626,6 +644,15 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `CELL_NOT_FOUND` | Invalid cell coordinates |
 | `CELL_NOT_CLICKABLE` | Cell is already cleared or not visible |
 | `CANNOT_PROCEED` | Proceed button not enabled (divinations remaining) |
+
+**Game Over** (`return_to_menu`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_ON_GAME_OVER_SCREEN` | Not on game over screen |
+| `BUTTON_NOT_FOUND` | Main menu button not found |
+| `BUTTON_DISABLED` | Main menu button is disabled |
+| `ACTION_FAILED` | Failed to initiate return to menu |
 
 **Character Select** (`select_character`, `set_ascension`, `embark`):
 

@@ -7,6 +7,7 @@ using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
@@ -116,6 +117,9 @@ public static class StateHandler
 
         // Extract Crystal Sphere mini-game state if the overlay is open
         if (state.Screen == "CRYSTAL_SPHERE") state.CrystalSphere = ExtractCrystalSphereState();
+
+        // Extract game over state if on game over screen
+        if (state.Screen == "GAME_OVER") state.GameOver = ExtractGameOverState();
 
         return state;
         }
@@ -361,6 +365,19 @@ public static class StateHandler
         {
             Logger.Info("Detected SHOP screen");
             return "SHOP";
+        }
+
+        // Check for game over screen via overlay stack.
+        // NGameOverScreen implements IOverlayScreen and is pushed to NOverlayStack.
+        var overlayStackForGameOver = NOverlayStack.Instance;
+        if (overlayStackForGameOver != null)
+        {
+            var topOverlay = overlayStackForGameOver.Peek();
+            if (topOverlay is NGameOverScreen)
+            {
+                Logger.Info("Detected GAME_OVER screen");
+                return "GAME_OVER";
+            }
         }
 
         return "UNKNOWN";
@@ -642,6 +659,101 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract hand select state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the game over screen state from <see cref="NGameOverScreen" />.
+    /// </summary>
+    private static GameOverStateDto? ExtractGameOverState()
+    {
+        try
+        {
+            var overlayStack = NOverlayStack.Instance;
+            if (overlayStack == null)
+            {
+                Logger.Warning("NOverlayStack.Instance is null, cannot extract game over state");
+                return null;
+            }
+
+            var gameOverScreen = overlayStack.Peek() as NGameOverScreen;
+            if (gameOverScreen == null)
+            {
+                Logger.Warning("Game over screen detected but NGameOverScreen not found in overlay stack");
+                return null;
+            }
+
+            // Use reflection to access private fields for run state info
+            var runStateField = typeof(NGameOverScreen).GetField("_runState",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var runState = runStateField?.GetValue(gameOverScreen);
+
+            var scoreField = typeof(NGameOverScreen).GetField("_score",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var score = scoreField?.GetValue(gameOverScreen) as int? ?? 0;
+
+            // Check button availability
+            var mainMenuButton = gameOverScreen.GetNodeOrNull<Godot.Node>("%MainMenuButton");
+            var continueButton = gameOverScreen.GetNodeOrNull<Godot.Node>("%ContinueButton");
+
+            // Determine victory status from run state
+            bool isVictory = false;
+            int floor = 0;
+            string? characterId = null;
+
+            if (runState != null)
+            {
+                // Try to get victory status
+                var winProperty = runState.GetType().GetProperty("Win");
+                if (winProperty != null)
+                {
+                    isVictory = (bool)(winProperty.GetValue(runState) ?? false);
+                }
+
+                // Try to get current floor
+                var floorProperty = runState.GetType().GetProperty("CurrentFloor");
+                if (floorProperty != null)
+                {
+                    floor = (int)(floorProperty.GetValue(runState) ?? 0);
+                }
+
+                // Try to get character info from run state
+                var charactersProperty = runState.GetType().GetProperty("Characters");
+                if (charactersProperty != null)
+                {
+                    var characters = charactersProperty.GetValue(runState) as System.Collections.IList;
+                    if (characters != null && characters.Count > 0)
+                    {
+                        var firstChar = characters[0];
+                        var idProperty = firstChar?.GetType().GetProperty("Id");
+                        if (idProperty != null)
+                        {
+                            var idObj = idProperty.GetValue(firstChar);
+                            var entryProperty = idObj?.GetType().GetProperty("Entry");
+                            if (entryProperty != null)
+                            {
+                                characterId = entryProperty.GetValue(idObj) as string;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return new GameOverStateDto
+            {
+                IsVictory = isVictory,
+                Floor = floor,
+                CharacterId = characterId,
+                Score = score,
+                EpochsDiscovered = 0,
+                CanReturnToMenu = mainMenuButton != null,
+                CanContinue = continueButton != null
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract game over state: {ex.Message}");
             return null;
         }
     }
