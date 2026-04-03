@@ -50,7 +50,7 @@ public static class SetAscensionHandler
     private static object Execute(int level)
     {
         // Guard: Must be on the character select screen
-        var screen = CharacterSelectUtils.FindScreen();
+        var screen = UiUtils.FindCharacterSelectScreen();
         if (screen == null)
         {
             Logger.Warning("SetAscension requested but not on character select screen");

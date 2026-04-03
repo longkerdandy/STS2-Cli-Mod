@@ -11,15 +11,6 @@ public static class CharacterSelectUtils
     private static readonly ModLogger Logger = new("CharacterSelectUtils");
 
     /// <summary>
-    ///     Finds the Character Select screen via the main menu's submenu stack.
-    ///     Delegates to <see cref="UiUtils.FindCharacterSelectScreen" />.
-    /// </summary>
-    public static NCharacterSelectScreen? FindScreen()
-    {
-        return UiUtils.FindCharacterSelectScreen();
-    }
-
-    /// <summary>
     ///     Gets the CharacterModel from a character select button.
     ///     NCharacterSelectButton.Character is a public property.
     /// </summary>

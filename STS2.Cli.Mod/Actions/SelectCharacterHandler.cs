@@ -44,7 +44,7 @@ public static class SelectCharacterHandler
     private static object Execute(string characterId)
     {
         // Guard: Must be on the character select screen
-        var screen = CharacterSelectUtils.FindScreen();
+        var screen = UiUtils.FindCharacterSelectScreen();
         if (screen == null)
         {
             Logger.Warning("SelectCharacter requested but not on character select screen");

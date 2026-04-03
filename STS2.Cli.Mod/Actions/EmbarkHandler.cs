@@ -35,7 +35,7 @@ public static class EmbarkHandler
     private static object Execute()
     {
         // Guard: Must be on the character select screen
-        var screen = CharacterSelectUtils.FindScreen();
+        var screen = UiUtils.FindCharacterSelectScreen();
         if (screen == null)
         {
             Logger.Warning("Embark requested but not on character select screen");
