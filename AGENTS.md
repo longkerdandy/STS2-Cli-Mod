@@ -89,6 +89,10 @@ Verify the mod works by:
 34. `sts2.exe crystal_proceed` - confirms leaving the Crystal Sphere mini-game after divinations are complete
 35. `sts2.exe state --include-pile-details` - confirms draw/discard/exhaust pile contents with full card descriptions
 36. `sts2.exe return_to_menu` - confirms returning to main menu from game over screen
+37. `sts2.exe continue_run` - confirms loading a saved run from the main menu
+38. `sts2.exe new_run` - confirms clicking Singleplayer button (opens submenu or goes to character select)
+39. `sts2.exe abandon_run` - confirms abandoning the saved run from the main menu
+40. `sts2.exe choose_game_mode <mode>` - confirms game mode selection (standard, daily, custom) from singleplayer submenu
 
 ## Code Style Guidelines
 

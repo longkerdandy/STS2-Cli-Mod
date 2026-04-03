@@ -225,7 +225,41 @@ Leave the Crystal Sphere mini-game after all divinations are exhausted. The proc
 ./sts2 return_to_menu
 ```
 
-Return to the main menu from the game over screen. Only available when `screen` is `GAME_OVER` and `game_over.can_return_to_menu` is true. After returning to menu, the screen becomes `MENU` and you can start a new run with `select_character`.
+Return to the main menu from the game over screen. Only available when `screen` is `GAME_OVER` and `game_over.can_return_to_menu` is true. After returning to menu, the screen becomes `MENU` -- use `continue_run`, `new_run`, or `abandon_run` to proceed.
+
+---
+
+### continue_run
+
+```
+./sts2 continue_run
+```
+
+Continue a saved run from the main menu. Only available when `menu.has_run_save` is true. Clicks the Continue button and waits for the run to load (up to 15 seconds).
+
+### new_run
+
+```
+./sts2 new_run
+```
+
+Start a new game from the main menu. Only available when no saved run exists (`menu.has_run_save` is false). Clicks the Singleplayer button. If the player has completed at least one run, this opens the singleplayer submenu (screen becomes `SINGLEPLAYER_SUBMENU`) -- use `choose_game_mode` to select a mode. If it's the first ever game, goes directly to character select.
+
+### abandon_run
+
+```
+./sts2 abandon_run
+```
+
+Abandon the current saved run from the main menu. Only available when `menu.has_run_save` is true. Skips the confirmation popup. After abandoning, the menu refreshes and `new_run` becomes available.
+
+### choose_game_mode
+
+```
+./sts2 choose_game_mode <mode>
+```
+
+Select a game mode from the singleplayer submenu. Only available when `screen` is `SINGLEPLAYER_SUBMENU`. Valid modes: `standard`, `daily`, `custom`. After selecting, the screen transitions to character select (for standard) or the corresponding mode screen.
 
 ---
 
@@ -324,7 +358,8 @@ Returned by `state` in the `data` field. Only the relevant screen's data is popu
 data
 ├── screen              # COMBAT | HAND_SELECT | REWARD | CARD_REWARD | EVENT | TRI_SELECT
 │                       # MAP | CHARACTER_SELECT | GRID_CARD_SELECT | REST_SITE | TREASURE | SHOP
-│                       # RELIC_SELECT | BUNDLE_SELECT | CRYSTAL_SPHERE | GAME_OVER | MENU | UNKNOWN
+│                       # RELIC_SELECT | BUNDLE_SELECT | CRYSTAL_SPHERE | GAME_OVER
+│                       # MENU | SINGLEPLAYER_SUBMENU | UNKNOWN
 ├── timestamp           # Unix ms
 ├── combat
 │   ├── encounter, turn_number, is_player_turn
@@ -417,6 +452,12 @@ data
     ├── epochs_discovered   # int, number of epochs discovered
     ├── can_return_to_menu  # bool, true when main menu button is available
     └── can_continue        # bool, true when continue/summary button is available
+├── menu                      # Only when screen is MENU
+│   └── has_run_save        # bool, true if a saved run exists (continue_run available)
+└── singleplayer_submenu      # Only when screen is SINGLEPLAYER_SUBMENU
+    ├── standard_available  # bool, always true
+    ├── daily_available     # bool, true if daily run epoch is unlocked
+    └── custom_available    # bool, true if custom/seeds epoch is unlocked
 ```
 
 ### Card Object (in hand)
@@ -685,3 +726,17 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `UI_NOT_FOUND` | Confirm button not found |
 
 **General**: `CONNECTION_ERROR` -- game disconnected.
+
+**Main Menu** (`continue_run`, `new_run`, `abandon_run`, `choose_game_mode`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_ON_MENU` | Not on main menu screen |
+| `NO_SAVED_RUN` | No saved run exists (continue/abandon) |
+| `RUN_SAVE_EXISTS` | Saved run exists, must abandon first (new_run) |
+| `NOT_ON_SINGLEPLAYER_SUBMENU` | Not on singleplayer submenu (choose_game_mode) |
+| `INVALID_GAME_MODE` | Mode not one of standard, daily, custom |
+| `MODE_NOT_UNLOCKED` | Game mode not yet unlocked |
+| `BUTTON_NOT_FOUND` | UI button not found |
+| `BUTTON_DISABLED` | UI button is disabled |
+| `TIMEOUT` | Run failed to load within timeout (continue_run) |
