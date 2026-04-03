@@ -1,6 +1,5 @@
 using System.Reflection;
 using Godot;
-using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
@@ -50,7 +49,6 @@ public static class CharacterSelectStateBuilder
         foreach (var btn in buttons)
         {
             var character = btn.Character;
-            if (character == null) continue;
 
             var isSelected = btn == selectedButton;
             if (isSelected)

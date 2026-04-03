@@ -49,19 +49,7 @@ public static class RewardStateBuilder
 
         var result = new RewardStateDto();
 
-        // Access the rewards container via Godot unique name path
-        // NRewardsScreen._Ready() sets: _rewardsContainer = GetNode<Control>("%RewardsContainer")
-        Control? rewardsContainer;
-        try
-        {
-            rewardsContainer = screen.GetNode<Control>("%RewardsContainer");
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to access RewardsContainer: {ex.Message}");
-            return result;
-        }
-
+        var rewardsContainer = screen.GetNodeOrNull<Control>("%RewardsContainer");
         if (rewardsContainer == null)
         {
             Logger.Warning("RewardsContainer is null");
@@ -71,21 +59,22 @@ public static class RewardStateBuilder
         // Iterate reward button children (same pattern as NRewardsScreen.AfterOverlayClosed)
         var index = 0;
         foreach (var child in rewardsContainer.GetChildren())
-            if (child is NRewardButton rewardButton)
-                try
-                {
-                    var reward = rewardButton.Reward;
-                    if (reward == null) continue;
+        {
+            if (child is not NRewardButton rewardButton) continue;
+            var reward = rewardButton.Reward;
+            if (reward == null) continue;
 
-                    var item = BuildRewardItem(reward, index);
-                    result.Rewards.Add(item);
-                    index++;
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning($"Failed to build reward item at index {index}: {ex.Message}");
-                    index++;
-                }
+            try
+            {
+                result.Rewards.Add(BuildRewardItem(reward, index));
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning($"Failed to build reward item at index {index}: {ex.Message}");
+            }
+
+            index++;
+        }
 
         // NLinkedRewardSet (mutually-exclusive grouped rewards linked by chains) is fully
         // implemented in the game code but never instantiated in the current version.
@@ -99,37 +88,91 @@ public static class RewardStateBuilder
     /// </summary>
     private static RewardItemDto BuildRewardItem(Reward reward, int index)
     {
+        var typeName = reward switch
+        {
+            GoldReward => "Gold",
+            PotionReward => "Potion",
+            RelicReward => "Relic",
+            CardReward => "Card",
+            SpecialCardReward => "SpecialCard",
+            CardRemovalReward => "CardRemoval",
+            _ => reward.GetType().Name
+        };
+
         var item = new RewardItemDto
         {
             Index = index,
-            Type = GetRewardTypeName(reward),
-            Description = SafeGetDescription(reward)
+            Type = typeName,
+            Description = StripGameTags(reward.Description.GetFormattedText())
         };
 
         switch (reward)
         {
             case GoldReward gold:
-                BuildGoldFields(gold, item);
+                item.GoldAmount = gold.Amount;
                 break;
 
-            case PotionReward potion:
-                BuildPotionFields(potion, item);
-                break;
+            case PotionReward potionReward:
+            {
+                var potion = potionReward.Potion;
+                if (potion != null)
+                {
+                    item.PotionId = potion.Id.Entry;
+                    item.PotionName = StripGameTags(potion.Title.GetFormattedText());
+                    item.PotionRarity = potion.Rarity.ToString();
+                }
 
-            case RelicReward relic:
-                BuildRelicFields(relic, item);
                 break;
+            }
 
-            case CardReward card:
-                BuildCardFields(card, item);
-                break;
+            case RelicReward relicReward:
+            {
+                // _relic is private — use reflection; fallback to ClaimedRelic (set after claim)
+                var relic = RelicField?.GetValue(relicReward) as RelicModel ?? relicReward.ClaimedRelic;
+                if (relic != null)
+                {
+                    item.RelicId = relic.Id.Entry;
+                    item.RelicName = StripGameTags(relic.Title.GetFormattedText());
+                    item.RelicDescription = StripGameTags(relic.DynamicDescription.GetFormattedText());
+                    item.RelicRarity = relic.Rarity.ToString();
+                }
 
-            case SpecialCardReward specialCard:
-                BuildSpecialCardFields(specialCard, item);
                 break;
+            }
+
+            case CardReward cardReward:
+            {
+                item.CardChoices = [];
+                var cardIndex = 0;
+                foreach (var card in cardReward.Cards)
+                {
+                    try
+                    {
+                        item.CardChoices.Add(BuildCardChoice(card, cardIndex));
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warning($"Failed to build card choice at index {cardIndex}: {ex.Message}");
+                    }
+
+                    cardIndex++;
+                }
+
+                break;
+            }
+
+            case SpecialCardReward specialCardReward:
+            {
+                if (SpecialCardField?.GetValue(specialCardReward) is CardModel card)
+                {
+                    item.CardId = card.Id.Entry;
+                    item.CardName = StripGameTags(card.Title);
+                }
+
+                break;
+            }
 
             case CardRemovalReward:
-                // No extra fields — type and description are sufficient
                 break;
 
             default:
@@ -141,185 +184,27 @@ public static class RewardStateBuilder
     }
 
     /// <summary>
-    ///     Gets the reward type name string for the JSON output.
-    /// </summary>
-    private static string GetRewardTypeName(Reward reward)
-    {
-        return reward switch
-        {
-            GoldReward => "Gold",
-            PotionReward => "Potion",
-            RelicReward => "Relic",
-            CardReward => "Card",
-            SpecialCardReward => "SpecialCard",
-            CardRemovalReward => "CardRemoval",
-            _ => reward.GetType().Name
-        };
-    }
-
-    /// <summary>
-    ///     Safely reads the localized description from a reward.
-    /// </summary>
-    private static string SafeGetDescription(Reward reward)
-    {
-        try
-        {
-            return StripGameTags(reward.Description.GetFormattedText());
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get reward description: {ex.Message}");
-            return string.Empty;
-        }
-    }
-
-    /// <summary>
-    ///     Populates Gold-specific fields on the reward item.
-    /// </summary>
-    private static void BuildGoldFields(GoldReward gold, RewardItemDto item)
-    {
-        try
-        {
-            item.GoldAmount = gold.Amount;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read gold amount: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    ///     Populates Potion-specific fields on the reward item.
-    /// </summary>
-    private static void BuildPotionFields(PotionReward potionReward, RewardItemDto item)
-    {
-        try
-        {
-            var potion = potionReward.Potion;
-            if (potion == null) return;
-
-            item.PotionId = potion.Id.Entry;
-            item.PotionName = StripGameTags(potion.Title.GetFormattedText());
-            item.PotionRarity = potion.Rarity.ToString();
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read potion fields: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    ///     Populates Relic-specific fields on the reward item.
-    ///     Uses reflection to access the private <c>_relic</c> field since <c>ClaimedRelic</c>
-    ///     is only populated after claiming the reward.
-    /// </summary>
-    private static void BuildRelicFields(RelicReward relicReward, RewardItemDto item)
-    {
-        try
-        {
-            // _relic is private — use reflection
-            // Fallback: try ClaimedRelic (set after claim)
-            var relic = RelicField?.GetValue(relicReward) as RelicModel ?? relicReward.ClaimedRelic;
-            if (relic == null) return;
-
-            item.RelicId = relic.Id.Entry;
-            item.RelicName = StripGameTags(relic.Title.GetFormattedText());
-            item.RelicDescription = StripGameTags(relic.DynamicDescription.GetFormattedText());
-            item.RelicRarity = relic.Rarity.ToString();
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read relic fields: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    ///     Populates Card-specific fields on the reward item.
-    ///     Reads the card choices from <see cref="CardReward.Cards" />.
-    /// </summary>
-    private static void BuildCardFields(CardReward cardReward, RewardItemDto item)
-    {
-        try
-        {
-            var cards = cardReward.Cards;
-
-            item.CardChoices = [];
-            var cardIndex = 0;
-            foreach (var card in cards)
-            {
-                try
-                {
-                    item.CardChoices.Add(BuildCardChoice(card, cardIndex));
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning($"Failed to build card choice at index {cardIndex}: {ex.Message}");
-                }
-
-                cardIndex++;
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read card choices: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    ///     Populates SpecialCard-specific fields on the reward item.
-    ///     Uses reflection to access the private <c>_card</c> field.
-    /// </summary>
-    private static void BuildSpecialCardFields(SpecialCardReward specialCardReward, RewardItemDto item)
-    {
-        try
-        {
-            if (SpecialCardField?.GetValue(specialCardReward) is not CardModel card) return;
-
-            item.CardId = card.Id.Entry;
-            item.CardName = StripGameTags(card.Title);
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read special card fields: {ex.Message}");
-        }
-    }
-
-    /// <summary>
     ///     Builds a <see cref="CardChoiceDto" /> from a <see cref="CardModel" />.
     /// </summary>
     private static CardChoiceDto BuildCardChoice(CardModel card, int index)
     {
-        var choice = new CardChoiceDto
+        return new CardChoiceDto
         {
             Index = index,
             Id = card.Id.Entry,
             Name = StripGameTags(card.Title),
-            Description = StripGameTags(SafeGetCardDescription(card)),
+            Description = StripGameTags(GetCardDescription(card)),
             Type = card.Type.ToString(),
             Rarity = card.Rarity.ToString(),
-            IsUpgraded = card.IsUpgraded
+            IsUpgraded = card.IsUpgraded,
+            Cost = card.EnergyCost.CostsX ? -1 : card.EnergyCost.GetAmountToSpend()
         };
-
-        // Energy cost
-        try
-        {
-            if (card.EnergyCost.CostsX)
-                choice.Cost = -1;
-            else
-                choice.Cost = card.EnergyCost.GetAmountToSpend();
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read card cost for {card.Id}: {ex.Message}");
-        }
-
-        return choice;
     }
 
     /// <summary>
-    ///     Safely gets the resolved card description.
+    ///     Gets the resolved card description, falling back to raw formatted text.
     /// </summary>
-    private static string SafeGetCardDescription(CardModel card)
+    private static string GetCardDescription(CardModel card)
     {
         try
         {

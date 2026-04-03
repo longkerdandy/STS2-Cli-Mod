@@ -37,7 +37,7 @@ public static class RelicSelectStateBuilder
     /// </summary>
     /// <param name="screen">The relic selection screen to extract data from.</param>
     /// <returns>DTO with selectable relics and skip availability; null on failure.</returns>
-    public static RelicSelectStateDto? Build(NChooseARelicSelection screen)
+    private static RelicSelectStateDto? Build(NChooseARelicSelection screen)
     {
         try
         {

@@ -49,7 +49,7 @@ public static class CrystalSphereStateBuilder
     /// </summary>
     /// <param name="screen">The Crystal Sphere screen to extract data from.</param>
     /// <returns>DTO with grid, tool, divination, and proceed state; null on failure.</returns>
-    public static CrystalSphereStateDto? Build(NCrystalSphereScreen screen)
+    private static CrystalSphereStateDto? Build(NCrystalSphereScreen screen)
     {
         try
         {
@@ -86,7 +86,7 @@ public static class CrystalSphereStateBuilder
                     // ANTI-CHEAT: Only expose item info for revealed (non-hidden) cells.
                     // cell.Item is set before cells are cleared — reading it on hidden cells
                     // would leak item positions to the AI agent.
-                    if (!cell.IsHidden && cell.Item != null)
+                    if (cell is { IsHidden: false, Item: not null })
                     {
                         dto.ItemType = cell.Item.GetType().Name;
                         dto.IsGood = cell.Item.IsGood;

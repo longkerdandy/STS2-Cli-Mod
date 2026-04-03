@@ -1,7 +1,6 @@
 using System.Reflection;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
@@ -24,7 +23,7 @@ public static class HandSelectStateBuilder
     public static HandSelectStateDto? Build()
     {
         var hand = NPlayerHand.Instance;
-        if (hand == null || !hand.IsInCardSelection)
+        if (hand is not { IsInCardSelection: true })
             return null;
 
         try
@@ -42,14 +41,12 @@ public static class HandSelectStateBuilder
                 Cancelable = prefs?.Cancelable ?? false,
                 RequireManualConfirmation = prefs?.RequireManualConfirmation ?? false,
                 SelectedCount = selectedCards?.Count ?? 0,
-                CanConfirm = IsConfirmEnabled(hand)
+                CanConfirm = IsConfirmEnabled(hand),
+                // Build selectable cards (visible hand card holders that pass the filter)
+                SelectableCards = BuildSelectableCards(hand),
+                // Build selected cards
+                SelectedCards = BuildSelectedCards(selectedCards)
             };
-
-            // Build selectable cards (visible hand card holders that pass the filter)
-            dto.SelectableCards = BuildSelectableCards(hand);
-
-            // Build selected cards
-            dto.SelectedCards = BuildSelectedCards(hand, selectedCards);
 
             return dto;
         }
@@ -180,7 +177,7 @@ public static class HandSelectStateBuilder
     /// <summary>
     ///     Builds the list of already-selected cards from the <c>_selectedCards</c> field.
     /// </summary>
-    private static List<HandSelectCardDto> BuildSelectedCards(NPlayerHand hand, List<CardModel>? selectedCards)
+    private static List<HandSelectCardDto> BuildSelectedCards(List<CardModel>? selectedCards)
     {
         var cards = new List<HandSelectCardDto>();
         if (selectedCards == null) return cards;
