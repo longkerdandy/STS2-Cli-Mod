@@ -57,34 +57,61 @@ public static class StateHandler
 
             switch (state.Screen)
             {
-                case "COMBAT":
-                    state.Combat = CombatStateBuilder.Build(includePileDetails);
+                // --- Pre-run ---
+                case "CHARACTER_SELECT":
+                    state.CharacterSelect = CharacterSelectStateBuilder.Build();
                     break;
+                case "SINGLEPLAYER_SUBMENU":
+                    state.SingleplayerSubmenu = SingleplayerSubmenuStateBuilder.Build();
+                    break;
+                case "MENU":
+                    state.Menu = MenuStateBuilder.Build();
+                    break;
+
+                // --- Combat and its sub-states ---
                 case "HAND_SELECT":
                     state.Combat = CombatStateBuilder.Build(includePileDetails);
                     state.HandSelect = HandSelectStateBuilder.Build();
                     break;
-                case "MAP":
-                    state.Map = MapStateBuilder.Build();
-                    break;
-                case "REWARD":
-                    state.Rewards = RewardStateBuilder.Build();
-                    break;
-                case "EVENT":
-                    state.Event = EventStateBuilder.Build();
+                case "GRID_CARD_SELECT":
+                    state.GridCardSelect = GridCardSelectStateBuilder.Build();
+                    if (CombatManager.Instance.IsInProgress)
+                        state.Combat = CombatStateBuilder.Build(includePileDetails);
                     break;
                 case "TRI_SELECT":
                     state.TriSelect = TriSelectStateBuilder.Build();
                     if (CombatManager.Instance.IsInProgress)
                         state.Combat = CombatStateBuilder.Build(includePileDetails);
                     break;
-                case "CHARACTER_SELECT":
-                    state.CharacterSelect = CharacterSelectStateBuilder.Build();
+                case "BUNDLE_SELECT":
+                    state.BundleSelect = BundleSelectStateBuilder.Build();
                     break;
-                case "GRID_CARD_SELECT":
-                    state.GridCardSelect = GridCardSelectStateBuilder.Build();
-                    if (CombatManager.Instance.IsInProgress)
-                        state.Combat = CombatStateBuilder.Build(includePileDetails);
+                case "CRYSTAL_SPHERE":
+                    state.CrystalSphere = CrystalSphereStateBuilder.Build();
+                    break;
+                case "COMBAT":
+                    state.Combat = CombatStateBuilder.Build(includePileDetails);
+                    break;
+
+                // --- Map ---
+                case "MAP":
+                    state.Map = MapStateBuilder.Build();
+                    break;
+
+                // --- Overlay stack ---
+                case "REWARD":
+                    state.Rewards = RewardStateBuilder.Build();
+                    break;
+                case "RELIC_SELECT":
+                    state.RelicSelect = RelicSelectStateBuilder.Build();
+                    break;
+                case "GAME_OVER":
+                    state.GameOver = GameOverStateBuilder.Build();
+                    break;
+
+                // --- Room-based ---
+                case "EVENT":
+                    state.Event = EventStateBuilder.Build();
                     break;
                 case "REST_SITE":
                     state.RestSite = RestSiteStateBuilder.Build();
@@ -94,24 +121,6 @@ public static class StateHandler
                     break;
                 case "SHOP":
                     state.Shop = ShopStateBuilder.Build();
-                    break;
-                case "RELIC_SELECT":
-                    state.RelicSelect = RelicSelectStateBuilder.Build();
-                    break;
-                case "BUNDLE_SELECT":
-                    state.BundleSelect = BundleSelectStateBuilder.Build();
-                    break;
-                case "CRYSTAL_SPHERE":
-                    state.CrystalSphere = CrystalSphereStateBuilder.Build();
-                    break;
-                case "GAME_OVER":
-                    state.GameOver = GameOverStateBuilder.Build();
-                    break;
-                case "MENU":
-                    state.Menu = MenuStateBuilder.Build();
-                    break;
-                case "SINGLEPLAYER_SUBMENU":
-                    state.SingleplayerSubmenu = SingleplayerSubmenuStateBuilder.Build();
                     break;
             }
 
@@ -199,5 +208,4 @@ public static class StateHandler
 
         return "UNKNOWN";
     }
-
 }
