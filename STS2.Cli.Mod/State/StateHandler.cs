@@ -70,19 +70,19 @@ public static class StateHandler
                     break;
                 case "HAND_SELECT":
                     state.Combat = ExtractCombatState(includePileDetails);
-                    state.HandSelect = SafeExtract(HandSelectStateBuilder.Build, "hand select");
+                    state.HandSelect = HandSelectStateBuilder.Build();
                     break;
                 case "MAP":
-                    state.Map = SafeExtract(MapStateBuilder.Build, "map");
+                    state.Map = MapStateBuilder.Build();
                     break;
                 case "REWARD":
-                    state.Rewards = SafeExtract(RewardStateBuilder.Build, "reward");
+                    state.Rewards = RewardStateBuilder.Build();
                     break;
                 case "EVENT":
-                    state.Event = SafeExtract(EventStateBuilder.Build, "event");
+                    state.Event = EventStateBuilder.Build();
                     break;
                 case "TRI_SELECT":
-                    state.TriSelect = SafeExtract(TriSelectStateBuilder.Build, "tri-select");
+                    state.TriSelect = TriSelectStateBuilder.Build();
                     if (CombatManager.Instance.IsInProgress)
                         state.Combat = ExtractCombatState(includePileDetails);
                     break;
@@ -95,22 +95,22 @@ public static class StateHandler
                         state.Combat = ExtractCombatState(includePileDetails);
                     break;
                 case "REST_SITE":
-                    state.RestSite = SafeExtract(RestSiteStateBuilder.Build, "rest site");
+                    state.RestSite = RestSiteStateBuilder.Build();
                     break;
                 case "TREASURE":
-                    state.Treasure = SafeExtract(TreasureStateBuilder.Build, "treasure");
+                    state.Treasure = TreasureStateBuilder.Build();
                     break;
                 case "SHOP":
-                    state.Shop = SafeExtract(ShopStateBuilder.Build, "shop");
+                    state.Shop = ShopStateBuilder.Build();
                     break;
                 case "RELIC_SELECT":
-                    state.RelicSelect = SafeExtract(RelicSelectStateBuilder.Build, "relic select");
+                    state.RelicSelect = RelicSelectStateBuilder.Build();
                     break;
                 case "BUNDLE_SELECT":
-                    state.BundleSelect = SafeExtract(BundleSelectStateBuilder.Build, "bundle select");
+                    state.BundleSelect = BundleSelectStateBuilder.Build();
                     break;
                 case "CRYSTAL_SPHERE":
-                    state.CrystalSphere = SafeExtract(CrystalSphereStateBuilder.Build, "crystal sphere");
+                    state.CrystalSphere = CrystalSphereStateBuilder.Build();
                     break;
                 case "GAME_OVER":
                     state.GameOver = ExtractGameOverState();
@@ -129,22 +129,6 @@ public static class StateHandler
         {
             Logger.Error($"Failed to extract game state: {ex.Message}");
             return new GameStateDto { Screen = "ERROR", Error = ex.Message };
-        }
-    }
-
-    /// <summary>
-    ///     Safely calls an extractor function, returning null and logging on failure.
-    /// </summary>
-    private static T? SafeExtract<T>(Func<T?> extractor, string name) where T : class
-    {
-        try
-        {
-            return extractor();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract {name} state: {ex.Message}");
-            return null;
         }
     }
 
