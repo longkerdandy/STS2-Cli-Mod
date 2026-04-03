@@ -113,6 +113,15 @@ internal static class Program
         // Game over commands
         rootCommand.Subcommands.Add(ReturnToMenuCommand.Create());
 
+        // Main menu commands
+        rootCommand.Subcommands.Add(SimpleCommand.Create("continue_run",
+            "Continue a saved run from the main menu"));
+        rootCommand.Subcommands.Add(SimpleCommand.Create("new_run",
+            "Start a new game from the main menu (opens singleplayer submenu or character select)"));
+        rootCommand.Subcommands.Add(SimpleCommand.Create("abandon_run",
+            "Abandon the current saved run from the main menu"));
+        rootCommand.Subcommands.Add(ChooseGameModeCommand.Create());
+
         return rootCommand.Parse(args).Invoke();
     }
 }

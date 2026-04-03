@@ -8,9 +8,11 @@ using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
+using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.State.Builders;
@@ -121,6 +123,12 @@ public static class StateHandler
         // Extract game over state if on game over screen
         if (state.Screen == "GAME_OVER") state.GameOver = ExtractGameOverState();
 
+        // Extract menu state if on main menu
+        if (state.Screen == "MENU") state.Menu = ExtractMenuState();
+
+        // Extract singleplayer submenu state if on singleplayer submenu
+        if (state.Screen == "SINGLEPLAYER_SUBMENU") state.SingleplayerSubmenu = ExtractSingleplayerSubmenuState();
+
         return state;
         }
         catch (Exception ex)
@@ -155,6 +163,15 @@ public static class StateHandler
         {
             Logger.Info("Detected CHARACTER_SELECT screen");
             return "CHARACTER_SELECT";
+        }
+
+        // Check for singleplayer submenu (Standard/Daily/Custom) on the main menu.
+        // This must be checked before the generic MENU fallback because the submenu
+        // is a sub-state of the main menu (RunManager.IsInProgress is still false).
+        if (FindSingleplayerSubmenu() != null)
+        {
+            Logger.Info("Detected SINGLEPLAYER_SUBMENU screen");
+            return "SINGLEPLAYER_SUBMENU";
         }
 
         // Check if a run is in progress
@@ -907,5 +924,68 @@ public static class StateHandler
     private static bool GetIsLocked(NCharacterSelectButton btn)
     {
         return CharacterSelectUtils.GetIsLocked(btn);
+    }
+
+    /// <summary>
+    ///     Finds the <see cref="NSingleplayerSubmenu" /> if it is currently at the top of
+    ///     the main menu's submenu stack.
+    /// </summary>
+    private static NSingleplayerSubmenu? FindSingleplayerSubmenu()
+    {
+        try
+        {
+            var mainMenu = NGame.Instance?.MainMenu;
+            if (mainMenu == null) return null;
+
+            var submenuStack = mainMenu.SubmenuStack;
+            if (submenuStack == null || !submenuStack.SubmenusOpen) return null;
+
+            return submenuStack.Peek() as NSingleplayerSubmenu;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to find singleplayer submenu: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the main menu state (saved run availability).
+    /// </summary>
+    private static MenuStateDto? ExtractMenuState()
+    {
+        try
+        {
+            return new MenuStateDto
+            {
+                HasRunSave = SaveManager.Instance.HasRunSave
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract menu state: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Extracts the singleplayer submenu state (available game modes).
+    /// </summary>
+    private static SingleplayerSubmenuStateDto? ExtractSingleplayerSubmenuState()
+    {
+        try
+        {
+            return new SingleplayerSubmenuStateDto
+            {
+                StandardAvailable = true,
+                DailyAvailable = SaveManager.Instance.IsEpochRevealed<MegaCrit.Sts2.Core.Timeline.Epochs.DailyRunEpoch>(),
+                CustomAvailable = SaveManager.Instance.IsEpochRevealed<MegaCrit.Sts2.Core.Timeline.Epochs.CustomAndSeedsEpoch>()
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract singleplayer submenu state: {ex.Message}");
+            return null;
+        }
     }
 }

@@ -104,4 +104,16 @@ public class GameStateDto
     ///     Game over screen state if the run has ended (victory or defeat), null otherwise.
     /// </summary>
     public GameOverStateDto? GameOver { get; set; }
+
+    /// <summary>
+    ///     Main menu state if on the main menu screen, null otherwise.
+    ///     Contains information about saved run availability.
+    /// </summary>
+    public MenuStateDto? Menu { get; set; }
+
+    /// <summary>
+    ///     Singleplayer submenu state if the singleplayer submenu is open, null otherwise.
+    ///     Contains information about available game modes (standard, daily, custom).
+    /// </summary>
+    public SingleplayerSubmenuStateDto? SingleplayerSubmenu { get; set; }
 }

@@ -129,7 +129,11 @@ internal static class CommandExecutor
                 "NOT_AT_REST_SITE" or "OPTION_DISABLED" or "OPTION_CANCELLED" or
                 "NOT_IN_TREASURE_ROOM" or "CHEST_ALREADY_OPENED" or "NO_RELICS_AVAILABLE" or
                 "NOT_IN_SHOP" or "ITEM_SOLD_OUT" or "NOT_ENOUGH_GOLD" or
-                "CARD_REMOVAL_USED" or "PURCHASE_FAILED" or "POTION_BELT_FULL" => ExitInvalidState,
+                "CARD_REMOVAL_USED" or "PURCHASE_FAILED" or
+                "NOT_ON_MENU" or "NO_SAVED_RUN" or "RUN_SAVE_EXISTS" or
+                "NOT_ON_SINGLEPLAYER_SUBMENU" or "MODE_NOT_UNLOCKED" or
+                "BUTTON_NOT_FOUND" or "BUTTON_DISABLED" or
+                "ACTION_FAILED" => ExitInvalidState,
 
             // Invalid parameter — caller provided wrong arguments
             "INVALID_REQUEST" or "UNKNOWN_COMMAND" or "MISSING_ARGUMENT" or
@@ -146,7 +150,8 @@ internal static class CommandExecutor
                 "NODE_NOT_FOUND" or "OPTION_NOT_FOUND" or "INVALID_RELIC_INDEX" or
                 "INVALID_BUNDLE_INDEX" or
                 "INVALID_TOOL" or "CELL_NOT_FOUND" or
-                "ITEM_NOT_FOUND" => ExitInvalidParam,
+                "ITEM_NOT_FOUND" or
+                "INVALID_GAME_MODE" => ExitInvalidParam,
 
             // Timeout
             "TIMEOUT" or "EVENT_TIMEOUT" => ExitTimeout,

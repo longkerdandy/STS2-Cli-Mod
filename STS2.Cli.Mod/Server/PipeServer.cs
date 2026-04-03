@@ -288,6 +288,22 @@ public static class PipeServer
                 "return_to_menu" => MainThreadExecutor.RunOnMainThread(() =>
                     ReturnToMenuHandler.Execute(request)),
 
+                // continue_run is async — loads saved run with fade-out and scene transition
+                "continue_run" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ContinueRunHandler.HandleRequestAsync(request)),
+
+                // new_run is synchronous — clicks Singleplayer button on main menu
+                "new_run" => MainThreadExecutor.RunOnMainThread(() =>
+                    NewRunHandler.HandleRequest(request)),
+
+                // abandon_run is synchronous — abandons saved run from main menu
+                "abandon_run" => MainThreadExecutor.RunOnMainThread(() =>
+                    AbandonRunHandler.HandleRequest(request)),
+
+                // choose_game_mode is synchronous — selects game mode from singleplayer submenu
+                "choose_game_mode" => MainThreadExecutor.RunOnMainThread(() =>
+                    ChooseGameModeHandler.HandleRequest(request)),
+
                 // state is synchronous — single-frame game state extraction on the main thread
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 
