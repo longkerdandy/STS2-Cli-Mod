@@ -8,7 +8,6 @@ using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
-using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
@@ -168,7 +167,7 @@ public static class StateHandler
         // Check for singleplayer submenu (Standard/Daily/Custom) on the main menu.
         // This must be checked before the generic MENU fallback because the submenu
         // is a sub-state of the main menu (RunManager.IsInProgress is still false).
-        if (FindSingleplayerSubmenu() != null)
+        if (ScreenUtils.FindSingleplayerSubmenu() != null)
         {
             Logger.Info("Detected SINGLEPLAYER_SUBMENU screen");
             return "SINGLEPLAYER_SUBMENU";
@@ -924,29 +923,6 @@ public static class StateHandler
     private static bool GetIsLocked(NCharacterSelectButton btn)
     {
         return CharacterSelectUtils.GetIsLocked(btn);
-    }
-
-    /// <summary>
-    ///     Finds the <see cref="NSingleplayerSubmenu" /> if it is currently at the top of
-    ///     the main menu's submenu stack.
-    /// </summary>
-    private static NSingleplayerSubmenu? FindSingleplayerSubmenu()
-    {
-        try
-        {
-            var mainMenu = NGame.Instance?.MainMenu;
-            if (mainMenu == null) return null;
-
-            var submenuStack = mainMenu.SubmenuStack;
-            if (submenuStack == null || !submenuStack.SubmenusOpen) return null;
-
-            return submenuStack.Peek() as NSingleplayerSubmenu;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to find singleplayer submenu: {ex.Message}");
-            return null;
-        }
     }
 
     /// <summary>

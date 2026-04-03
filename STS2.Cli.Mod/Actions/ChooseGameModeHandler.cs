@@ -1,6 +1,5 @@
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
-using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
@@ -57,19 +56,11 @@ public static class ChooseGameModeHandler
 
         try
         {
-            // Find the NMainMenu and its submenu stack
-            var mainMenu = NGame.Instance?.MainMenu;
-            if (mainMenu == null)
-            {
-                Logger.Error("NMainMenu instance not found");
-                return new { ok = false, error = "UI_NOT_FOUND", message = "Main menu not found" };
-            }
-
-            var submenuStack = mainMenu.SubmenuStack;
-            var submenu = submenuStack.Peek() as NSingleplayerSubmenu;
+            // Find the singleplayer submenu via ScreenUtils
+            var submenu = ScreenUtils.FindSingleplayerSubmenu();
             if (submenu == null)
             {
-                Logger.Error("NSingleplayerSubmenu not found at top of submenu stack");
+                Logger.Error("NSingleplayerSubmenu not found");
                 return new { ok = false, error = "UI_NOT_FOUND", message = "Singleplayer submenu not found" };
             }
 
