@@ -1,5 +1,9 @@
+using System.Collections;
+using System.Reflection;
+using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Events.Custom.CrystalSphere;
@@ -12,6 +16,7 @@ using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
+using MegaCrit.Sts2.Core.Timeline.Epochs;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.State.Builders;
@@ -75,60 +80,60 @@ public static class StateHandler
             // Extract reward state if on reward screen
             if (state.Screen == "REWARD") state.Rewards = ExtractRewardState();
 
-        // Extract event state if at an event
-        if (state.Screen == "EVENT") state.Event = ExtractEventState();
+            // Extract event state if at an event
+            if (state.Screen == "EVENT") state.Event = ExtractEventState();
 
-        // Extract tri-select (choose-a-card) state if on tri-select screen
-        // Also include combat state when tri-select is triggered during combat
-        // so the AI has full context (e.g., Discovery/Quasar/Splash mid-combat)
-        if (state.Screen == "TRI_SELECT")
-        {
-            state.TriSelect = ExtractTriSelectState();
-            if (CombatManager.Instance.IsInProgress)
-                state.Combat = ExtractCombatState(includePileDetails);
-        }
+            // Extract tri-select (choose-a-card) state if on tri-select screen
+            // Also include combat state when tri-select is triggered during combat
+            // so the AI has full context (e.g., Discovery/Quasar/Splash mid-combat)
+            if (state.Screen == "TRI_SELECT")
+            {
+                state.TriSelect = ExtractTriSelectState();
+                if (CombatManager.Instance.IsInProgress)
+                    state.Combat = ExtractCombatState(includePileDetails);
+            }
 
-        // Extract character select state if on character select screen
-        if (state.Screen == "CHARACTER_SELECT") state.CharacterSelect = ExtractCharacterSelectState();
+            // Extract character select state if on character select screen
+            if (state.Screen == "CHARACTER_SELECT") state.CharacterSelect = ExtractCharacterSelectState();
 
-        // Extract grid card selection state if on a grid-based card selection screen
-        // Also include combat state when grid select is triggered during combat
-        // so the AI has full context (e.g., Headbutt selecting from discard pile)
-        if (state.Screen == "GRID_CARD_SELECT")
-        {
-            state.GridCardSelect = ExtractGridCardSelectState();
-            if (CombatManager.Instance.IsInProgress)
-                state.Combat = ExtractCombatState(includePileDetails);
-        }
+            // Extract grid card selection state if on a grid-based card selection screen
+            // Also include combat state when grid select is triggered during combat
+            // so the AI has full context (e.g., Headbutt selecting from discard pile)
+            if (state.Screen == "GRID_CARD_SELECT")
+            {
+                state.GridCardSelect = ExtractGridCardSelectState();
+                if (CombatManager.Instance.IsInProgress)
+                    state.Combat = ExtractCombatState(includePileDetails);
+            }
 
-        // Extract rest site state if at a rest site
-        if (state.Screen == "REST_SITE") state.RestSite = ExtractRestSiteState();
+            // Extract rest site state if at a rest site
+            if (state.Screen == "REST_SITE") state.RestSite = ExtractRestSiteState();
 
-        // Extract treasure room state if at a treasure room
-        if (state.Screen == "TREASURE") state.Treasure = ExtractTreasureState();
+            // Extract treasure room state if at a treasure room
+            if (state.Screen == "TREASURE") state.Treasure = ExtractTreasureState();
 
-        // Extract shop state if at a merchant room
-        if (state.Screen == "SHOP") state.Shop = ExtractShopState();
+            // Extract shop state if at a merchant room
+            if (state.Screen == "SHOP") state.Shop = ExtractShopState();
 
-        // Extract relic selection state if a "choose a relic" overlay is open
-        if (state.Screen == "RELIC_SELECT") state.RelicSelect = ExtractRelicSelectState();
+            // Extract relic selection state if a "choose a relic" overlay is open
+            if (state.Screen == "RELIC_SELECT") state.RelicSelect = ExtractRelicSelectState();
 
-        // Extract bundle selection state if a "choose a bundle" overlay is open
-        if (state.Screen == "BUNDLE_SELECT") state.BundleSelect = ExtractBundleSelectState();
+            // Extract bundle selection state if a "choose a bundle" overlay is open
+            if (state.Screen == "BUNDLE_SELECT") state.BundleSelect = ExtractBundleSelectState();
 
-        // Extract Crystal Sphere mini-game state if the overlay is open
-        if (state.Screen == "CRYSTAL_SPHERE") state.CrystalSphere = ExtractCrystalSphereState();
+            // Extract Crystal Sphere mini-game state if the overlay is open
+            if (state.Screen == "CRYSTAL_SPHERE") state.CrystalSphere = ExtractCrystalSphereState();
 
-        // Extract game over state if on game over screen
-        if (state.Screen == "GAME_OVER") state.GameOver = ExtractGameOverState();
+            // Extract game over state if on game over screen
+            if (state.Screen == "GAME_OVER") state.GameOver = ExtractGameOverState();
 
-        // Extract menu state if on main menu
-        if (state.Screen == "MENU") state.Menu = ExtractMenuState();
+            // Extract menu state if on main menu
+            if (state.Screen == "MENU") state.Menu = ExtractMenuState();
 
-        // Extract singleplayer submenu state if on singleplayer submenu
-        if (state.Screen == "SINGLEPLAYER_SUBMENU") state.SingleplayerSubmenu = ExtractSingleplayerSubmenuState();
+            // Extract singleplayer submenu state if on singleplayer submenu
+            if (state.Screen == "SINGLEPLAYER_SUBMENU") state.SingleplayerSubmenu = ExtractSingleplayerSubmenuState();
 
-        return state;
+            return state;
         }
         catch (Exception ex)
         {
@@ -141,260 +146,104 @@ public static class StateHandler
     ///     Public accessor for the current screen detection.
     ///     Used by action handlers that need to report the resulting screen after an action.
     /// </summary>
-    public static string DetectCurrentScreen() => DetectScreen();
+    public static string DetectCurrentScreen()
+    {
+        return DetectScreen();
+    }
 
     /// <summary>
     ///     Detects which screen the player is currently on.
-    ///     Priority order: CHARACTER_SELECT → COMBAT (with HAND_SELECT, GRID_CARD_SELECT,
-    ///     TRI_SELECT, and BUNDLE_SELECT sub-states) → MAP → overlay screens (CARD_REWARD,
-    ///     TRI_SELECT, GRID_CARD_SELECT, RELIC_SELECT, BUNDLE_SELECT, REWARD) → EVENT →
-    ///     REST_SITE → TREASURE → SHOP → UNKNOWN.
-    ///     Overlay screens take priority over EVENT because events can trigger overlays
-    ///     (e.g., Neow's Lead Paperweight opens NCardRewardSelectionScreen while NEventRoom
-    ///     is still in the scene tree).
-    ///     REST_SITE is checked after overlays because SMITH opens a card selection overlay.
+    ///     Checks pre-run screens (menu / submenus) first, then in-run screens
+    ///     grouped by: combat → map → overlays → rooms → game over.
     /// </summary>
     private static string DetectScreen()
     {
-        // Check Character Select screen FIRST (before checking IsInProgress)
-        // Character select screen is valid even when RunManager.IsInProgress is false
-        if (FindCharacterSelectScreen() != null)
-        {
-            Logger.Info("Detected CHARACTER_SELECT screen");
-            return "CHARACTER_SELECT";
-        }
+        // --- Pre-run: main menu and its submenu stack ---
+        if (ScreenUtils.FindCharacterSelectScreen() != null) return "CHARACTER_SELECT";
+        if (ScreenUtils.FindSingleplayerSubmenu() != null) return "SINGLEPLAYER_SUBMENU";
+        if (ScreenUtils.FindMainMenu() != null) return "MENU";
 
-        // Check for singleplayer submenu (Standard/Daily/Custom) on the main menu.
-        // This must be checked before the generic MENU fallback because the submenu
-        // is a sub-state of the main menu (RunManager.IsInProgress is still false).
-        if (ScreenUtils.FindSingleplayerSubmenu() != null)
-        {
-            Logger.Info("Detected SINGLEPLAYER_SUBMENU screen");
-            return "SINGLEPLAYER_SUBMENU";
-        }
+        // All screens below require an active run
+        if (!RunManager.Instance.IsInProgress) return "UNKNOWN";
 
-        // Check if a run is in progress
-        if (!RunManager.Instance.IsInProgress) return "MENU";
-
-        // Check CombatManager for active combat
-        // Hand selection and grid card selection are sub-states of combat — detected here
-        // before generic COMBAT because they require different commands.
-        // Grid overlays (NSimpleCardSelectScreen) can appear during combat when cards like
-        // Headbutt, Hologram, SecretWeapon etc. trigger selection from draw/discard pile.
+        // --- Combat and its sub-states ---
         if (CombatManager.Instance.IsInProgress)
         {
-            if (NPlayerHand.Instance is { IsInCardSelection: true })
-            {
-                Logger.Info("Detected HAND_SELECT screen (combat sub-state)");
-                return "HAND_SELECT";
-            }
+            if (NPlayerHand.Instance is { IsInCardSelection: true }) return "HAND_SELECT";
 
-            // Check overlay stack for grid selection screens triggered during combat
             var combatOverlay = NOverlayStack.Instance;
             if (combatOverlay != null)
             {
                 var topOverlay = combatOverlay.Peek();
-                if (topOverlay is NCardGridSelectionScreen)
+                switch (topOverlay)
                 {
-                    Logger.Info($"Detected GRID_CARD_SELECT screen during combat ({topOverlay.GetType().Name})");
-                    return "GRID_CARD_SELECT";
+                    case NCardGridSelectionScreen: return "GRID_CARD_SELECT";
+                    case NChooseACardSelectionScreen: return "TRI_SELECT";
+                    case NChooseABundleSelectionScreen: return "BUNDLE_SELECT";
+                    case NCrystalSphereScreen: return "CRYSTAL_SPHERE";
                 }
 
-                // Cards like Discovery, Quasar, Splash open NChooseACardSelectionScreen during combat
-                if (topOverlay is NChooseACardSelectionScreen)
-                {
-                    Logger.Info("Detected TRI_SELECT screen during combat");
-                    return "TRI_SELECT";
-                }
-
-                if (topOverlay is NChooseABundleSelectionScreen)
-                {
-                    Logger.Info("Detected BUNDLE_SELECT screen during combat");
-                    return "BUNDLE_SELECT";
-                }
-
-                if (topOverlay is NCrystalSphereScreen)
-                {
-                    Logger.Info("Detected CRYSTAL_SPHERE screen during combat");
-                    return "CRYSTAL_SPHERE";
-                }
-
-                // Also check children in case it's not on top
+                // Fallback: check children in case the screen is not on top
                 foreach (var child in combatOverlay.GetChildren())
-                {
-                    if (child is NCardGridSelectionScreen)
+                    switch (child)
                     {
-                        Logger.Info($"Detected GRID_CARD_SELECT screen during combat in children ({child.GetType().Name})");
-                        return "GRID_CARD_SELECT";
+                        case NCardGridSelectionScreen: return "GRID_CARD_SELECT";
+                        case NChooseACardSelectionScreen: return "TRI_SELECT";
+                        case NChooseABundleSelectionScreen: return "BUNDLE_SELECT";
+                        case NCrystalSphereScreen: return "CRYSTAL_SPHERE";
                     }
-
-                    if (child is NChooseACardSelectionScreen)
-                    {
-                        Logger.Info("Detected TRI_SELECT screen during combat in children");
-                        return "TRI_SELECT";
-                    }
-
-                    if (child is NChooseABundleSelectionScreen)
-                    {
-                        Logger.Info("Detected BUNDLE_SELECT screen during combat in children");
-                        return "BUNDLE_SELECT";
-                    }
-
-                    if (child is NCrystalSphereScreen)
-                    {
-                        Logger.Info("Detected CRYSTAL_SPHERE screen during combat in children");
-                        return "CRYSTAL_SPHERE";
-                    }
-                }
             }
 
             return "COMBAT";
         }
 
-        // Check NMapScreen.IsOpen BEFORE overlay stack.
-        // After proceeding from rewards, the map opens but NRewardsScreen may linger
-        // in the overlay stack. NMapScreen.IsOpen is the authoritative signal that
-        // the player has moved past the current room to the map.
+        // Map takes priority over overlays — after proceeding from rewards,
+        // NRewardsScreen may linger in the overlay stack.
         if (NMapScreen.Instance is { IsOpen: true }) return "MAP";
 
-        // Check NOverlayStack for interactive screens BEFORE event detection.
-        // Events can trigger overlay screens (e.g., Neow opening card reward selection),
-        // and NEventRoom.Instance remains in the scene tree while the overlay is active.
-        // CARD_REWARD must be checked before REWARD because NCardRewardSelectionScreen
-        // is pushed on top of NRewardsScreen in the overlay stack.
+        // --- Overlay stack (checked before rooms because events/rest can trigger overlays) ---
         var overlayStack = NOverlayStack.Instance;
         if (overlayStack != null)
         {
             var overlay = overlayStack.Peek();
             if (overlay != null)
-            {
-                Logger.Info($"NOverlayStack.Peek() returned: {overlay.GetType().FullName}");
-
-                if (overlay is NCardRewardSelectionScreen) return "CARD_REWARD";
-
-                if (overlay is NCrystalSphereScreen)
+                switch (overlay)
                 {
-                    Logger.Info("Detected CRYSTAL_SPHERE screen");
-                    return "CRYSTAL_SPHERE";
+                    case NCardRewardSelectionScreen: return "CARD_REWARD";
+                    case NCrystalSphereScreen: return "CRYSTAL_SPHERE";
+                    case NRewardsScreen: return "REWARD";
+                    case NChooseACardSelectionScreen: return "TRI_SELECT";
+                    case NCardGridSelectionScreen: return "GRID_CARD_SELECT";
+                    case NChooseARelicSelection: return "RELIC_SELECT";
+                    case NChooseABundleSelectionScreen: return "BUNDLE_SELECT";
+                    case NGameOverScreen: return "GAME_OVER";
                 }
 
-                if (overlay is NRewardsScreen) return "REWARD";
-
-                if (overlay is NChooseACardSelectionScreen)
-                {
-                    Logger.Info("Detected TRI_SELECT screen");
-                    return "TRI_SELECT";
-                }
-
-                if (overlay is NCardGridSelectionScreen)
-                {
-                    Logger.Info($"Detected GRID_CARD_SELECT screen ({overlay.GetType().Name})");
-                    return "GRID_CARD_SELECT";
-                }
-
-                if (overlay is NChooseARelicSelection)
-                {
-                    Logger.Info("Detected RELIC_SELECT screen");
-                    return "RELIC_SELECT";
-                }
-
-                if (overlay is NChooseABundleSelectionScreen)
-                {
-                    Logger.Info("Detected BUNDLE_SELECT screen");
-                    return "BUNDLE_SELECT";
-                }
-            }
-
-            // Check children for screens that may not be on top
+            // Fallback: check children for screens that may not be on top
             foreach (var child in overlayStack.GetChildren())
-            {
-                if (child is NChooseACardSelectionScreen)
+                switch (child)
                 {
-                    Logger.Info("Detected TRI_SELECT screen (in children)");
-                    return "TRI_SELECT";
+                    case NChooseACardSelectionScreen: return "TRI_SELECT";
+                    case NCardGridSelectionScreen: return "GRID_CARD_SELECT";
+                    case NChooseARelicSelection: return "RELIC_SELECT";
+                    case NChooseABundleSelectionScreen: return "BUNDLE_SELECT";
+                    case NCrystalSphereScreen: return "CRYSTAL_SPHERE";
+                    case NGameOverScreen: return "GAME_OVER";
                 }
-
-                if (child is NCardGridSelectionScreen)
-                {
-                    Logger.Info($"Detected GRID_CARD_SELECT screen in children ({child.GetType().Name})");
-                    return "GRID_CARD_SELECT";
-                }
-
-                if (child is NChooseARelicSelection)
-                {
-                    Logger.Info("Detected RELIC_SELECT screen (in children)");
-                    return "RELIC_SELECT";
-                }
-
-                if (child is NChooseABundleSelectionScreen)
-                {
-                    Logger.Info("Detected BUNDLE_SELECT screen (in children)");
-                    return "BUNDLE_SELECT";
-                }
-
-                if (child is NCrystalSphereScreen)
-                {
-                    Logger.Info("Detected CRYSTAL_SPHERE screen (in children)");
-                    return "CRYSTAL_SPHERE";
-                }
-            }
-        }
-        else
-        {
-            Logger.Warning("NOverlayStack.Instance is null (NRun.Instance?.GlobalUi.Overlays)");
         }
 
-        // Check for event room AFTER overlay stack.
-        // Event rooms don't use the overlay stack — the event UI is part of the room node.
-        // However, events can trigger overlays (card rewards, deck selection, etc.),
-        // so overlay detection must happen first.
+        // --- Room-based screens ---
         var eventRoom = NEventRoom.Instance;
-        if (eventRoom is { } && eventRoom.IsInsideTree())
-        {
-            Logger.Info("Detected EVENT screen");
-            return "EVENT";
-        }
+        if (eventRoom is not null && eventRoom.IsInsideTree()) return "EVENT";
 
-        // Check for rest site room.
-        // NRestSiteRoom.Instance resolves to NRun.Instance?.RestSiteRoom.
-        // Must check AFTER overlays because SMITH opens a card selection overlay.
         var restSiteRoom = NRestSiteRoom.Instance;
-        if (restSiteRoom is { } && restSiteRoom.IsInsideTree())
-        {
-            Logger.Info("Detected REST_SITE screen");
-            return "REST_SITE";
-        }
+        if (restSiteRoom is not null && restSiteRoom.IsInsideTree()) return "REST_SITE";
 
-        // Check for treasure room.
-        // NRun.Instance?.TreasureRoom returns non-null if the current room is a treasure room.
         var treasureRoom = NRun.Instance?.TreasureRoom;
-        if (treasureRoom is { } && treasureRoom.IsInsideTree())
-        {
-            Logger.Info("Detected TREASURE screen");
-            return "TREASURE";
-        }
+        if (treasureRoom is not null && treasureRoom.IsInsideTree()) return "TREASURE";
 
-        // Check for merchant room (shop).
-        // NRun.Instance?.MerchantRoom returns non-null if the current room is a merchant room.
         var merchantRoom = NRun.Instance?.MerchantRoom;
-        if (merchantRoom is { } && merchantRoom.IsInsideTree())
-        {
-            Logger.Info("Detected SHOP screen");
-            return "SHOP";
-        }
-
-        // Check for game over screen via overlay stack.
-        // NGameOverScreen implements IOverlayScreen and is pushed to NOverlayStack.
-        var overlayStackForGameOver = NOverlayStack.Instance;
-        if (overlayStackForGameOver != null)
-        {
-            var topOverlay = overlayStackForGameOver.Peek();
-            if (topOverlay is NGameOverScreen)
-            {
-                Logger.Info("Detected GAME_OVER screen");
-                return "GAME_OVER";
-            }
-        }
+        if (merchantRoom is not null && merchantRoom.IsInsideTree()) return "SHOP";
 
         return "UNKNOWN";
     }
@@ -702,43 +551,37 @@ public static class StateHandler
 
             // Use reflection to access private fields for run state info
             var runStateField = typeof(NGameOverScreen).GetField("_runState",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
             var runState = runStateField?.GetValue(gameOverScreen);
 
             var scoreField = typeof(NGameOverScreen).GetField("_score",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
             var score = scoreField?.GetValue(gameOverScreen) as int? ?? 0;
 
             // Check button availability
-            var mainMenuButton = gameOverScreen.GetNodeOrNull<Godot.Node>("%MainMenuButton");
-            var continueButton = gameOverScreen.GetNodeOrNull<Godot.Node>("%ContinueButton");
+            var mainMenuButton = gameOverScreen.GetNodeOrNull<Node>("%MainMenuButton");
+            var continueButton = gameOverScreen.GetNodeOrNull<Node>("%ContinueButton");
 
             // Determine victory status from run state
-            bool isVictory = false;
-            int floor = 0;
+            var isVictory = false;
+            var floor = 0;
             string? characterId = null;
 
             if (runState != null)
             {
                 // Try to get victory status
                 var winProperty = runState.GetType().GetProperty("Win");
-                if (winProperty != null)
-                {
-                    isVictory = (bool)(winProperty.GetValue(runState) ?? false);
-                }
+                if (winProperty != null) isVictory = (bool)(winProperty.GetValue(runState) ?? false);
 
                 // Try to get current floor
                 var floorProperty = runState.GetType().GetProperty("CurrentFloor");
-                if (floorProperty != null)
-                {
-                    floor = (int)(floorProperty.GetValue(runState) ?? 0);
-                }
+                if (floorProperty != null) floor = (int)(floorProperty.GetValue(runState) ?? 0);
 
                 // Try to get character info from run state
                 var charactersProperty = runState.GetType().GetProperty("Characters");
                 if (charactersProperty != null)
                 {
-                    var characters = charactersProperty.GetValue(runState) as System.Collections.IList;
+                    var characters = charactersProperty.GetValue(runState) as IList;
                     if (characters != null && characters.Count > 0)
                     {
                         var firstChar = characters[0];
@@ -747,10 +590,7 @@ public static class StateHandler
                         {
                             var idObj = idProperty.GetValue(firstChar);
                             var entryProperty = idObj?.GetType().GetProperty("Entry");
-                            if (entryProperty != null)
-                            {
-                                characterId = entryProperty.GetValue(idObj) as string;
-                            }
+                            if (entryProperty != null) characterId = entryProperty.GetValue(idObj) as string;
                         }
                     }
                 }
@@ -789,10 +629,8 @@ public static class StateHandler
 
         // Check children
         foreach (var child in overlayStack.GetChildren())
-        {
             if (child is NCardGridSelectionScreen childScreen)
                 return childScreen;
-        }
 
         return null;
     }
@@ -804,7 +642,7 @@ public static class StateHandler
     {
         try
         {
-            var screen = FindCharacterSelectScreen();
+            var screen = ScreenUtils.FindCharacterSelectScreen();
             if (screen == null)
             {
                 Logger.Warning("CHARACTER_SELECT screen detected but NCharacterSelectScreen not found");
@@ -812,7 +650,7 @@ public static class StateHandler
             }
 
             // Get character buttons from the button container
-            var buttonContainer = screen.GetNodeOrNull<Godot.Control>("CharSelectButtons/ButtonContainer");
+            var buttonContainer = screen.GetNodeOrNull<Control>("CharSelectButtons/ButtonContainer");
             if (buttonContainer == null)
             {
                 Logger.Warning("Character button container not found");
@@ -832,7 +670,7 @@ public static class StateHandler
                 var characterModel = GetCharacterModel(btn);
                 if (characterModel == null) continue;
 
-                var isSelected = (btn == selectedButton);
+                var isSelected = btn == selectedButton;
                 if (isSelected)
                     selectedCharacter = characterModel.Id.Entry;
 
@@ -875,12 +713,12 @@ public static class StateHandler
         try
         {
             // Ascension is a public property on NAscensionPanel
-            int current = panel.Ascension;
+            var current = panel.Ascension;
 
             // _maxAscension is a private field
-            int max = 20;
+            var max = 20;
             var maxField = typeof(NAscensionPanel).GetField("_maxAscension",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
             if (maxField != null)
                 max = (int)(maxField.GetValue(panel) ?? 20);
 
@@ -894,14 +732,6 @@ public static class StateHandler
     }
 
     /// <summary>
-    ///     Finds the Character Select screen in the scene tree.
-    /// </summary>
-    private static NCharacterSelectScreen? FindCharacterSelectScreen()
-    {
-        return CharacterSelectUtils.FindScreen();
-    }
-
-    /// <summary>
     ///     Gets the selected character button from the screen via reflection.
     /// </summary>
     private static NCharacterSelectButton? GetSelectedButton(NCharacterSelectScreen screen)
@@ -912,7 +742,7 @@ public static class StateHandler
     /// <summary>
     ///     Gets the CharacterModel from a character select button's public Character property.
     /// </summary>
-    private static MegaCrit.Sts2.Core.Models.CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
+    private static CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
     {
         return CharacterSelectUtils.GetCharacterModel(btn);
     }
@@ -954,8 +784,8 @@ public static class StateHandler
             return new SingleplayerSubmenuStateDto
             {
                 StandardAvailable = true,
-                DailyAvailable = SaveManager.Instance.IsEpochRevealed<MegaCrit.Sts2.Core.Timeline.Epochs.DailyRunEpoch>(),
-                CustomAvailable = SaveManager.Instance.IsEpochRevealed<MegaCrit.Sts2.Core.Timeline.Epochs.CustomAndSeedsEpoch>()
+                DailyAvailable = SaveManager.Instance.IsEpochRevealed<DailyRunEpoch>(),
+                CustomAvailable = SaveManager.Instance.IsEpochRevealed<CustomAndSeedsEpoch>()
             };
         }
         catch (Exception ex)

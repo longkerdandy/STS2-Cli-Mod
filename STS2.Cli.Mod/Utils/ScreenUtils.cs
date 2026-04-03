@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 
 namespace STS2.Cli.Mod.Utils;
@@ -8,6 +9,10 @@ namespace STS2.Cli.Mod.Utils;
 ///     Provides a centralized place for screen lookup logic used by both
 ///     <c>StateHandler</c> (screen detection) and action handlers (guard clauses).
 /// </summary>
+/// <remarks>
+///     All lookups use the game API directly (e.g., <c>NGame.Instance.MainMenu</c>,
+///     <c>SubmenuStack.Peek()</c>) rather than scene tree traversal.
+/// </remarks>
 public static class ScreenUtils
 {
     private static readonly ModLogger Logger = new("ScreenUtils");
@@ -48,6 +53,35 @@ public static class ScreenUtils
         catch (Exception ex)
         {
             Logger.Warning($"Failed to find singleplayer submenu: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Finds the <see cref="NCharacterSelectScreen" /> if it is currently at the top of
+    ///     the main menu's submenu stack.
+    /// </summary>
+    /// <returns>
+    ///     The character select screen, or <c>null</c> if the top submenu is not
+    ///     <see cref="NCharacterSelectScreen" />.
+    /// </returns>
+    /// <remarks>
+    ///     <see cref="NCharacterSelectScreen" /> is an <see cref="NSubmenu" /> pushed onto
+    ///     <see cref="NMainMenu.SubmenuStack" /> — it is NOT a root scene.
+    ///     It may sit above <see cref="NSingleplayerSubmenu" /> on the stack (normal flow)
+    ///     or be pushed directly when <c>NumberOfRuns == 0</c> (first-run shortcut).
+    /// </remarks>
+    public static NCharacterSelectScreen? FindCharacterSelectScreen()
+    {
+        try
+        {
+            var submenuStack = FindMainMenu()?.SubmenuStack;
+            if (submenuStack is not { SubmenusOpen: true }) return null;
+            return submenuStack.Peek() as NCharacterSelectScreen;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to find character select screen: {ex.Message}");
             return null;
         }
     }

@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 
 namespace STS2.Cli.Mod.Utils;
@@ -12,39 +11,12 @@ public static class CharacterSelectUtils
     private static readonly ModLogger Logger = new("CharacterSelectUtils");
 
     /// <summary>
-    ///     Finds the Character Select screen in the scene tree.
+    ///     Finds the Character Select screen via the main menu's submenu stack.
+    ///     Delegates to <see cref="ScreenUtils.FindCharacterSelectScreen" />.
     /// </summary>
     public static NCharacterSelectScreen? FindScreen()
     {
-        try
-        {
-            // Try to find through NGame instance
-            var game = NGame.Instance;
-            if (game == null) return null;
-
-            // Search in the current scene
-            var currentScene = game.RootSceneContainer.CurrentScene;
-            if (currentScene != null)
-            {
-                var charSelect = CommonUiUtils.FindFirst<NCharacterSelectScreen>(currentScene);
-                if (charSelect != null && charSelect.IsInsideTree())
-                    return charSelect;
-            }
-
-            // Search in the entire scene tree
-            var root = game.GetTree()?.Root;
-            if (root != null)
-            {
-                return CommonUiUtils.FindFirst<NCharacterSelectScreen>(root);
-            }
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to find character select screen: {ex.Message}");
-            return null;
-        }
+        return ScreenUtils.FindCharacterSelectScreen();
     }
 
     /// <summary>
