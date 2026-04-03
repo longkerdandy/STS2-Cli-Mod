@@ -1,21 +1,15 @@
-using System.Reflection;
-using Godot;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Players;
-using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Events.Custom.CrystalSphere;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
-using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using MegaCrit.Sts2.Core.Runs;
-using MegaCrit.Sts2.Core.Saves;
-using MegaCrit.Sts2.Core.Timeline.Epochs;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.State.Builders;
@@ -86,13 +80,17 @@ public static class StateHandler
                         state.Combat = ExtractCombatState(includePileDetails);
                     break;
                 case "CHARACTER_SELECT":
-                    state.CharacterSelect = ExtractCharacterSelectState();
+                    state.CharacterSelect = CharacterSelectStateBuilder.Build();
                     break;
                 case "GRID_CARD_SELECT":
-                    state.GridCardSelect = ExtractGridCardSelectState();
+                {
+                    var gridScreen = ScreenUtils.FindGridSelectionScreen();
+                    if (gridScreen != null)
+                        state.GridCardSelect = GridCardSelectStateBuilder.Build(gridScreen);
                     if (CombatManager.Instance.IsInProgress)
                         state.Combat = ExtractCombatState(includePileDetails);
                     break;
+                }
                 case "REST_SITE":
                     state.RestSite = RestSiteStateBuilder.Build();
                     break;
@@ -115,10 +113,10 @@ public static class StateHandler
                     state.GameOver = GameOverStateBuilder.Build();
                     break;
                 case "MENU":
-                    state.Menu = ExtractMenuState();
+                    state.Menu = MenuStateBuilder.Build();
                     break;
                 case "SINGLEPLAYER_SUBMENU":
-                    state.SingleplayerSubmenu = ExtractSingleplayerSubmenuState();
+                    state.SingleplayerSubmenu = SingleplayerSubmenuStateBuilder.Build();
                     break;
             }
 
@@ -288,180 +286,5 @@ public static class StateHandler
         }
 
         return null;
-    }
-
-    /// <summary>
-    ///     Extracts the grid card selection state from a <see cref="NCardGridSelectionScreen" />.
-    ///     Checks the overlay stack for any grid-based card selection screen subtype.
-    /// </summary>
-    private static GridCardSelectStateDto? ExtractGridCardSelectState()
-    {
-        try
-        {
-            var screen = FindGridSelectionScreen();
-            if (screen == null)
-            {
-                Logger.Warning("GRID_CARD_SELECT screen detected but no grid selection screen found");
-                return null;
-            }
-
-            return GridCardSelectStateBuilder.Build(screen);
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract grid card select state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Finds a <see cref="NCardGridSelectionScreen" /> in the overlay stack.
-    /// </summary>
-    private static NCardGridSelectionScreen? FindGridSelectionScreen()
-    {
-        var overlayStack = NOverlayStack.Instance;
-        if (overlayStack == null) return null;
-
-        var children = overlayStack.GetChildren();
-        for (var i = children.Count - 1; i >= 0; i--)
-            if (children[i] is NCardGridSelectionScreen gridScreen)
-                return gridScreen;
-
-        return null;
-    }
-
-    /// <summary>
-    ///     Extracts the character selection state from NCharacterSelectScreen.
-    /// </summary>
-    private static CharacterSelectStateDto? ExtractCharacterSelectState()
-    {
-        try
-        {
-            var screen = ScreenUtils.FindCharacterSelectScreen();
-            if (screen == null)
-            {
-                Logger.Warning("CHARACTER_SELECT screen detected but NCharacterSelectScreen not found");
-                return null;
-            }
-
-            // Get character buttons from the button container
-            var buttonContainer = screen.GetNodeOrNull<Control>("CharSelectButtons/ButtonContainer");
-            if (buttonContainer == null)
-            {
-                Logger.Warning("Character button container not found");
-                return null;
-            }
-
-            var buttons = CommonUiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
-            var characters = new List<CharacterOptionDto>();
-            string? selectedCharacter = null;
-
-            // Get the currently selected button via reflection
-            var selectedButton = CharacterSelectUtils.GetSelectedButton(screen);
-
-            foreach (var btn in buttons)
-            {
-                var characterModel = CharacterSelectUtils.GetCharacterModel(btn);
-                if (characterModel == null) continue;
-
-                var isSelected = btn == selectedButton;
-                if (isSelected)
-                    selectedCharacter = characterModel.Id.Entry;
-
-                characters.Add(new CharacterOptionDto
-                {
-                    CharacterId = characterModel.Id.Entry,
-                    CharacterName = TextUtils.StripGameTags(characterModel.Title.GetFormattedText()),
-                    IsLocked = CharacterSelectUtils.GetIsLocked(btn),
-                    IsSelected = isSelected
-                });
-            }
-
-            // Get ascension info
-            var ascensionPanel = screen.GetNodeOrNull<NAscensionPanel>("%AscensionPanel");
-            var (currentAsc, maxAsc) = GetAscensionInfo(ascensionPanel);
-
-            return new CharacterSelectStateDto
-            {
-                AvailableCharacters = characters,
-                SelectedCharacter = selectedCharacter,
-                CurrentAscension = currentAsc,
-                MaxAscension = maxAsc,
-                CanEmbark = selectedCharacter != null
-            };
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract character select state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets ascension information from the ascension panel.
-    /// </summary>
-    private static (int Current, int Max) GetAscensionInfo(NAscensionPanel? panel)
-    {
-        if (panel == null) return (0, 20);
-
-        try
-        {
-            // Ascension is a public property on NAscensionPanel
-            var current = panel.Ascension;
-
-            // _maxAscension is a private field
-            var max = 20;
-            var maxField = typeof(NAscensionPanel).GetField("_maxAscension",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            if (maxField != null)
-                max = (int)(maxField.GetValue(panel) ?? 20);
-
-            return (current, max);
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get ascension info: {ex.Message}");
-            return (0, 20);
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the main menu state (saved run availability).
-    /// </summary>
-    private static MenuStateDto? ExtractMenuState()
-    {
-        try
-        {
-            return new MenuStateDto
-            {
-                HasRunSave = SaveManager.Instance.HasRunSave
-            };
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract menu state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the singleplayer submenu state (available game modes).
-    /// </summary>
-    private static SingleplayerSubmenuStateDto? ExtractSingleplayerSubmenuState()
-    {
-        try
-        {
-            return new SingleplayerSubmenuStateDto
-            {
-                StandardAvailable = true,
-                DailyAvailable = SaveManager.Instance.IsEpochRevealed<DailyRunEpoch>(),
-                CustomAvailable = SaveManager.Instance.IsEpochRevealed<CustomAndSeedsEpoch>()
-            };
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract singleplayer submenu state: {ex.Message}");
-            return null;
-        }
     }
 }

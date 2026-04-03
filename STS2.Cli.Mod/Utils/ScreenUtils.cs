@@ -1,6 +1,8 @@
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
+using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 
 namespace STS2.Cli.Mod.Utils;
 
@@ -82,6 +84,32 @@ public static class ScreenUtils
         catch (Exception ex)
         {
             Logger.Warning($"Failed to find character select screen: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Finds a <see cref="NCardGridSelectionScreen" /> in the overlay stack
+    ///     by reverse-iterating children (topmost overlay wins).
+    /// </summary>
+    /// <returns>The grid selection screen, or <c>null</c> if none is found.</returns>
+    public static NCardGridSelectionScreen? FindGridSelectionScreen()
+    {
+        try
+        {
+            var overlayStack = NOverlayStack.Instance;
+            if (overlayStack == null) return null;
+
+            var children = overlayStack.GetChildren();
+            for (var i = children.Count - 1; i >= 0; i--)
+                if (children[i] is NCardGridSelectionScreen gridScreen)
+                    return gridScreen;
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to find grid selection screen: {ex.Message}");
             return null;
         }
     }
