@@ -16,6 +16,18 @@ public static class HandSelectStateBuilder
 {
     private static readonly ModLogger Logger = new("HandSelectStateBuilder");
 
+    private static readonly FieldInfo? PrefsField =
+        typeof(NPlayerHand).GetField("_prefs", BindingFlags.NonPublic | BindingFlags.Instance);
+
+    private static readonly FieldInfo? SelectedCardsField =
+        typeof(NPlayerHand).GetField("_selectedCards", BindingFlags.NonPublic | BindingFlags.Instance);
+
+    /// <summary>
+    ///     Cached PropertyInfo for NClickableControl.IsEnabled (public).
+    ///     Lazily resolved on first use since the confirm button type is only available at runtime.
+    /// </summary>
+    private static PropertyInfo? _confirmIsEnabledProp;
+
     /// <summary>
     ///     Builds the hand selection state from the current <see cref="NPlayerHand" /> instance.
     ///     Returns null if not in hand card selection mode.
@@ -28,27 +40,24 @@ public static class HandSelectStateBuilder
 
         try
         {
-            var mode = hand.CurrentMode;
             var prefs = GetPrefs(hand);
             var selectedCards = GetSelectedCards(hand);
 
-            var dto = new HandSelectStateDto
+            return new HandSelectStateDto
             {
-                Mode = mode.ToString(),
-                Prompt = GetPromptText(hand),
+                Mode = hand.CurrentMode.ToString(),
+                Prompt = prefs.HasValue
+                    ? TextUtils.StripGameTags(prefs.Value.Prompt.GetFormattedText())
+                    : null,
                 MinSelect = prefs?.MinSelect ?? 0,
                 MaxSelect = prefs?.MaxSelect ?? 0,
                 Cancelable = prefs?.Cancelable ?? false,
                 RequireManualConfirmation = prefs?.RequireManualConfirmation ?? false,
                 SelectedCount = selectedCards?.Count ?? 0,
-                CanConfirm = IsConfirmEnabled(hand),
-                // Build selectable cards (visible hand card holders that pass the filter)
+                CanConfirm = GetConfirmEnabled(hand),
                 SelectableCards = BuildSelectableCards(hand),
-                // Build selected cards
                 SelectedCards = BuildSelectedCards(selectedCards)
             };
-
-            return dto;
         }
         catch (Exception ex)
         {
@@ -64,9 +73,7 @@ public static class HandSelectStateBuilder
     {
         try
         {
-            var field = typeof(NPlayerHand).GetField("_prefs",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field == null ? null : (CardSelectorPrefs?)field.GetValue(hand);
+            return PrefsField == null ? null : (CardSelectorPrefs?)PrefsField.GetValue(hand);
         }
         catch (Exception ex)
         {
@@ -82,9 +89,7 @@ public static class HandSelectStateBuilder
     {
         try
         {
-            var field = typeof(NPlayerHand).GetField("_selectedCards",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(hand) as List<CardModel>;
+            return SelectedCardsField?.GetValue(hand) as List<CardModel>;
         }
         catch (Exception ex)
         {
@@ -94,43 +99,19 @@ public static class HandSelectStateBuilder
     }
 
     /// <summary>
-    ///     Gets the prompt text from the <c>_selectionHeader</c> MegaRichTextLabel.
+    ///     Checks if the confirm button is currently enabled via the IsEnabled property.
     /// </summary>
-    private static string? GetPromptText(NPlayerHand hand)
-    {
-        try
-        {
-            var prefs = GetPrefs(hand);
-            if (prefs == null) return null;
-
-            var promptText = prefs.Value.Prompt.GetFormattedText();
-            return TextUtils.StripGameTags(promptText);
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get prompt text: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Checks if the confirm button is currently enabled.
-    ///     Uses the public <c>IsEnabled</c> property inherited from <c>NClickableControl</c>.
-    /// </summary>
-    private static bool IsConfirmEnabled(NPlayerHand hand)
+    private static bool GetConfirmEnabled(NPlayerHand hand)
     {
         try
         {
             var confirmButton = hand.GetNodeOrNull<Godot.Control>("%SelectModeConfirmButton");
             if (confirmButton == null) return false;
 
-            // NClickableControl exposes a public IsEnabled property (backed by protected _isEnabled field)
-            var isEnabledProp = confirmButton.GetType().GetProperty("IsEnabled",
+            _confirmIsEnabledProp ??= confirmButton.GetType().GetProperty("IsEnabled",
                 BindingFlags.Public | BindingFlags.Instance);
-            if (isEnabledProp != null)
-                return isEnabledProp.GetValue(confirmButton) as bool? ?? false;
 
-            return false;
+            return _confirmIsEnabledProp?.GetValue(confirmButton) as bool? ?? false;
         }
         catch (Exception ex)
         {

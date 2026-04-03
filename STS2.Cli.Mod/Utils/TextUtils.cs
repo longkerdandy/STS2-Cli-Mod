@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using MegaCrit.Sts2.Core.Localization;
 
 namespace STS2.Cli.Mod.Utils;
 
@@ -56,5 +57,28 @@ public static partial class TextUtils
         cleaned = WhitespaceRegex().Replace(cleaned, " ");
 
         return cleaned.Trim();
+    }
+
+    /// <summary>
+    ///     Safely resolves a <see cref="LocString" /> to its formatted text with game tags stripped.
+    ///     Returns null if the <see cref="LocString" /> is null or its localization key does not exist in the table.
+    ///     This prevents <c>LocException</c> from being thrown for missing keys (e.g., Neow event).
+    /// </summary>
+    public static string? GetLocText(LocString? locString)
+    {
+        if (locString == null)
+            return null;
+
+        try
+        {
+            if (!locString.Exists())
+                return null;
+
+            return StripGameTags(locString.GetFormattedText());
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

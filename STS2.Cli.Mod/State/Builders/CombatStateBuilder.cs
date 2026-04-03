@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Models;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
+using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State.Builders;
 
@@ -47,11 +48,12 @@ public static class CombatStateBuilder
         var player = combatState.Players.Count > 0 ? combatState.Players[0] : null;
         if (player != null)
         {
+            var pcs = player.PlayerCombatState;
             result.Player = PlayerStateBuilder.Build(player);
-            result.Hand = BuildHand(player);
-            result.DrawPile = BuildDrawPile(player, includePileDetails);
-            result.DiscardPile = BuildDiscardPile(player, includePileDetails);
-            result.ExhaustPile = BuildExhaustPile(player, includePileDetails);
+            result.Hand = BuildHand(pcs);
+            result.DrawPile = BuildPile(pcs?.DrawPile, includePileDetails, shuffle: true);
+            result.DiscardPile = BuildPile(pcs?.DiscardPile, includePileDetails);
+            result.ExhaustPile = BuildPile(pcs?.ExhaustPile, includePileDetails);
         }
 
         result.Enemies = BuildEnemies(combatState);
@@ -62,14 +64,12 @@ public static class CombatStateBuilder
     /// <summary>
     ///     Builds the hand state from the player's combat state.
     /// </summary>
-    public static List<CardStateDto> BuildHand(Player player)
+    private static List<CardStateDto> BuildHand(PlayerCombatState? pcs)
     {
         var hand = new List<CardStateDto>();
+        if (pcs?.Hand == null) return hand;
 
-        var playerCombatState = player.PlayerCombatState;
-        if (playerCombatState?.Hand == null) return hand;
-
-        var cards = playerCombatState.Hand.Cards;
+        var cards = pcs.Hand.Cards;
         for (var i = 0; i < cards.Count; i++)
             try
             {
@@ -87,7 +87,7 @@ public static class CombatStateBuilder
     ///     Builds the enemies state from combat state.
     ///     Includes all enemies (alive and dead) with IsAlive flag for each.
     /// </summary>
-    public static List<EnemyStateDto> BuildEnemies(CombatState combatState)
+    private static List<EnemyStateDto> BuildEnemies(CombatState combatState)
     {
         var enemies = new List<EnemyStateDto>();
 
@@ -105,84 +105,30 @@ public static class CombatStateBuilder
     }
 
     /// <summary>
-    ///     Builds the draw pile state (shuffled to hide draw order).
+    ///     Builds a pile state from a <see cref="CardPile" />.
+    ///     Optionally shuffles the result to hide draw order (for draw pile).
     /// </summary>
-    /// <param name="player">The player.</param>
-    /// <param name="includeDescription">Whether to include card descriptions.</param>
-    public static List<PileCardDto> BuildDrawPile(Player player, bool includeDescription = false)
+    private static List<PileCardDto> BuildPile(CardPile? cardPile, bool includeDescription,
+        bool shuffle = false)
     {
         var pile = new List<PileCardDto>();
+        if (cardPile == null) return pile;
 
-        var playerCombatState = player.PlayerCombatState;
-        if (playerCombatState?.DrawPile == null) return pile;
-
-        var cards = playerCombatState.DrawPile.Cards;
-        foreach (var card in cards)
+        foreach (var card in cardPile.Cards)
             try
             {
                 pile.Add(BuildPileCard(card, includeDescription));
             }
             catch (Exception ex)
             {
-                Logger.Warning($"Failed to build draw pile card state: {ex.Message}");
+                Logger.Warning($"Failed to build pile card state: {ex.Message}");
             }
 
-        // Shuffle to hide draw order (matches in-game behavior)
-        // Using a deterministic seed based on card count for consistency
-        var rng = new Random(pile.Count + DateTime.Now.Millisecond);
-        pile = pile.OrderBy(_ => rng.Next()).ToList();
-
-        return pile;
-    }
-
-    /// <summary>
-    ///     Builds the discard pile state.
-    /// </summary>
-    /// <param name="player">The player.</param>
-    /// <param name="includeDescription">Whether to include card descriptions.</param>
-    public static List<PileCardDto> BuildDiscardPile(Player player, bool includeDescription = false)
-    {
-        var pile = new List<PileCardDto>();
-
-        var playerCombatState = player.PlayerCombatState;
-        if (playerCombatState?.DiscardPile == null) return pile;
-
-        var cards = playerCombatState.DiscardPile.Cards;
-        foreach (var card in cards)
-            try
-            {
-                pile.Add(BuildPileCard(card, includeDescription));
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning($"Failed to build discard pile card state: {ex.Message}");
-            }
-
-        return pile;
-    }
-
-    /// <summary>
-    ///     Builds the exhaust pile state.
-    /// </summary>
-    /// <param name="player">The player.</param>
-    /// <param name="includeDescription">Whether to include card descriptions.</param>
-    public static List<PileCardDto> BuildExhaustPile(Player player, bool includeDescription = false)
-    {
-        var pile = new List<PileCardDto>();
-
-        var playerCombatState = player.PlayerCombatState;
-        if (playerCombatState?.ExhaustPile == null) return pile;
-
-        var cards = playerCombatState.ExhaustPile.Cards;
-        foreach (var card in cards)
-            try
-            {
-                pile.Add(BuildPileCard(card, includeDescription));
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning($"Failed to build exhaust pile card state: {ex.Message}");
-            }
+        if (shuffle)
+        {
+            var rng = new Random(pile.Count + DateTime.Now.Millisecond);
+            pile = pile.OrderBy(_ => rng.Next()).ToList();
+        }
 
         return pile;
     }
@@ -192,57 +138,23 @@ public static class CombatStateBuilder
     /// </summary>
     private static PileCardDto BuildPileCard(CardModel card, bool includeDescription)
     {
-        // Get energy cost (handle X cost as -1)
-        int cost = 0;
-        try
-        {
-            if (card.EnergyCost.CostsX)
-                cost = -1;
-            else
-                cost = card.EnergyCost.GetAmountToSpend();
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read energy cost for pile card {card.Id}: {ex.Message}");
-        }
-
-        // Get description if requested
-        string? description = null;
-        if (includeDescription)
-        {
-            try
-            {
-                description = TextUtils.StripGameTags(card.GetDescriptionForPile(PileType.Hand));
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning($"Failed to read description for pile card {card.Id}: {ex.Message}");
-            }
-        }
-
-        // Get keywords
         var keywords = new List<string>();
-        try
-        {
-            foreach (var keyword in card.Keywords)
-                if (keyword != CardKeyword.None)
-                    keywords.Add(keyword.ToString());
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read keywords for pile card {card.Id}: {ex.Message}");
-        }
+        foreach (var keyword in card.Keywords)
+            if (keyword != CardKeyword.None)
+                keywords.Add(keyword.ToString());
 
         return new PileCardDto
         {
             Id = card.Id.Entry,
-            Name = TextUtils.StripGameTags(card.Title),
+            Name = StripGameTags(card.Title),
             Type = card.Type.ToString(),
             Rarity = card.Rarity.ToString(),
-            Cost = cost,
+            Cost = card.EnergyCost.CostsX ? -1 : card.EnergyCost.GetAmountToSpend(),
             Keywords = keywords,
             IsUpgraded = card.IsUpgraded,
-            Description = description
+            Description = includeDescription
+                ? StripGameTags(card.GetDescriptionForPile(PileType.Hand))
+                : null
         };
     }
 }

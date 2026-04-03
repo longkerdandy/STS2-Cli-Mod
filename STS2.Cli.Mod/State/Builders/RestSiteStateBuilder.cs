@@ -39,8 +39,8 @@ public static class RestSiteStateBuilder
                     {
                         Index = i,
                         OptionId = option.OptionId,
-                        Name = SafeGetText(option.Title) ?? option.OptionId,
-                        Description = SafeGetText(option.Description),
+                        Name = GetLocText(option.Title) ?? option.OptionId,
+                        Description = GetLocText(option.Description),
                         IsEnabled = option.IsEnabled
                     });
                 }
@@ -63,32 +63,6 @@ public static class RestSiteStateBuilder
         catch (Exception ex)
         {
             Logger.Error($"Failed to build rest site state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Safely resolves a <see cref="MegaCrit.Sts2.Core.Localization.LocString" /> to its formatted text.
-    ///     Returns null if the LocString is null or its localization key does not exist.
-    /// </summary>
-    private static string? SafeGetText(MegaCrit.Sts2.Core.Localization.LocString? locString)
-    {
-        if (locString == null)
-            return null;
-
-        try
-        {
-            if (!locString.Exists())
-            {
-                Logger.Warning($"LocString key not found: table={locString.LocTable}, key={locString.LocEntryKey}");
-                return null;
-            }
-
-            return StripGameTags(locString.GetFormattedText());
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to resolve LocString: {ex.Message}");
             return null;
         }
     }

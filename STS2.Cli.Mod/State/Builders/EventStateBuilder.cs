@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Reflection;
-using MegaCrit.Sts2.Core.Localization;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
@@ -68,8 +67,8 @@ public static class EventStateBuilder
             var result = new EventStateDto
             {
                 EventId = eventModel.Id.Entry,
-                Title = SafeGetText(eventModel.Title) ?? eventModel.Id.Entry,
-                Description = SafeGetText(eventModel.Description),
+                Title = GetLocText(eventModel.Title) ?? eventModel.Id.Entry,
+                Description = GetLocText(eventModel.Description),
                 LayoutType = eventModel.LayoutType.ToString(),
                 IsFinished = eventModel.IsFinished,
                 Options = options
@@ -104,8 +103,8 @@ public static class EventStateBuilder
                 var optionDto = new EventOptionDto
                 {
                     Index = index,
-                    Title = SafeGetText(option.Title) ?? option.TextKey,
-                    Description = SafeGetText(option.Description),
+                    Title = GetLocText(option.Title) ?? option.TextKey,
+                    Description = GetLocText(option.Description),
                     TextKey = option.TextKey,
                     IsLocked = option.IsLocked,
                     IsProceed = option.IsProceed,
@@ -116,7 +115,7 @@ public static class EventStateBuilder
                 if (option.Relic != null)
                 {
                     optionDto.RelicId = option.Relic.Id.Entry;
-                    optionDto.RelicName = SafeGetText(option.Relic.Title);
+                    optionDto.RelicName = GetLocText(option.Relic.Title);
                 }
 
                 options.Add(optionDto);
@@ -168,33 +167,6 @@ public static class EventStateBuilder
         {
             Logger.Warning($"Failed to extract Ancient dialogue info: {ex.Message}");
             // Don't fail the whole state extraction, just leave dialogue fields unset
-        }
-    }
-
-    /// <summary>
-    ///     Safely resolves a <see cref="LocString" /> to its formatted text.
-    ///     Returns null if the <see cref="LocString" /> is null or its localization key does not exist in the table.
-    ///     This prevents <c>LocException</c> from being thrown for missing keys (e.g., Neow event).
-    /// </summary>
-    private static string? SafeGetText(LocString? locString)
-    {
-        if (locString == null)
-            return null;
-
-        try
-        {
-            if (!locString.Exists())
-            {
-                Logger.Warning($"LocString key not found: table={locString.LocTable}, key={locString.LocEntryKey}");
-                return null;
-            }
-
-            return StripGameTags(locString.GetFormattedText());
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to resolve LocString: {ex.Message}");
-            return null;
         }
     }
 }
