@@ -23,7 +23,7 @@ internal static class ReturnToMenuHandler
         Logger.Info("Executing return to menu");
 
         // Verify we're on the game over screen
-        var currentScreen = StateHandler.DetectCurrentScreen();
+        var currentScreen = StateHandler.DetectScreen();
         if (currentScreen != "GAME_OVER")
         {
             Logger.Warning($"Cannot return to menu: not on game over screen (current: {currentScreen})");

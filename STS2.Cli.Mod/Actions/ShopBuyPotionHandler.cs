@@ -78,7 +78,7 @@ public static class ShopBuyPotionHandler
 
             Logger.Info($"Successfully purchased potion: {potionId}");
 
-            var screen = StateHandler.DetectCurrentScreen();
+            var screen = StateHandler.DetectScreen();
             return new
             {
                 ok = true,

@@ -35,7 +35,7 @@ public static class AbandonRunHandler
     private static object Execute()
     {
         // Guard: Must be on the MENU screen
-        var currentScreen = StateHandler.DetectCurrentScreen();
+        var currentScreen = StateHandler.DetectScreen();
         if (currentScreen != "MENU")
         {
             Logger.Warning($"Cannot abandon run: not on menu screen (current: {currentScreen})");

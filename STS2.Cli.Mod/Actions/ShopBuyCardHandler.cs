@@ -74,7 +74,7 @@ public static class ShopBuyCardHandler
 
             Logger.Info($"Successfully purchased card: {cardId}");
 
-            var screen = StateHandler.DetectCurrentScreen();
+            var screen = StateHandler.DetectScreen();
             return new
             {
                 ok = true,

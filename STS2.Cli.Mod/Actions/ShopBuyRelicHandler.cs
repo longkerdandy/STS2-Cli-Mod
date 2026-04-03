@@ -74,7 +74,7 @@ public static class ShopBuyRelicHandler
 
             Logger.Info($"Successfully purchased relic: {relicId}");
 
-            var screen = StateHandler.DetectCurrentScreen();
+            var screen = StateHandler.DetectScreen();
             return new
             {
                 ok = true,

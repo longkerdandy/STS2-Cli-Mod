@@ -83,14 +83,10 @@ public static class StateHandler
                     state.CharacterSelect = CharacterSelectStateBuilder.Build();
                     break;
                 case "GRID_CARD_SELECT":
-                {
-                    var gridScreen = ScreenUtils.FindGridSelectionScreen();
-                    if (gridScreen != null)
-                        state.GridCardSelect = GridCardSelectStateBuilder.Build(gridScreen);
+                    state.GridCardSelect = GridCardSelectStateBuilder.Build();
                     if (CombatManager.Instance.IsInProgress)
                         state.Combat = ExtractCombatState(includePileDetails);
                     break;
-                }
                 case "REST_SITE":
                     state.RestSite = RestSiteStateBuilder.Build();
                     break;
@@ -130,20 +126,11 @@ public static class StateHandler
     }
 
     /// <summary>
-    ///     Public accessor for the current screen detection.
-    ///     Used by action handlers that need to report the resulting screen after an action.
-    /// </summary>
-    public static string DetectCurrentScreen()
-    {
-        return DetectScreen();
-    }
-
-    /// <summary>
     ///     Detects which screen the player is currently on.
     ///     Checks pre-run screens (menu / submenus) first, then in-run screens
     ///     grouped by: combat → map → overlays → rooms → game over.
     /// </summary>
-    private static string DetectScreen()
+    public static string DetectScreen()
     {
         // --- Pre-run: main menu and its submenu stack ---
         if (ScreenUtils.FindCharacterSelectScreen() != null) return "CHARACTER_SELECT";

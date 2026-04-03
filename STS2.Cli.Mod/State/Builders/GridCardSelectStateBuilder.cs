@@ -18,6 +18,15 @@ public static class GridCardSelectStateBuilder
     private static readonly ModLogger Logger = new("GridCardSelectStateBuilder");
 
     /// <summary>
+    ///     Finds the grid selection screen via <see cref="ScreenUtils" /> and builds the state DTO.
+    /// </summary>
+    public static GridCardSelectStateDto? Build()
+    {
+        var screen = ScreenUtils.FindGridSelectionScreen();
+        return screen != null ? Build(screen) : null;
+    }
+
+    /// <summary>
     ///     Builds the grid card selection state DTO from the given screen.
     /// </summary>
     /// <param name="screen">A <see cref="NCardGridSelectionScreen" /> subtype from the overlay stack.</param>

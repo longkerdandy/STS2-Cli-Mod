@@ -83,7 +83,7 @@ public static class ShopRemoveCardHandler
             }, ActionUtils.UiTimeoutMs);
 
             // --- Detect resulting screen ---
-            var screen = StateHandler.DetectCurrentScreen();
+            var screen = StateHandler.DetectScreen();
             Logger.Info($"After requesting card removal, detected screen: {screen}");
 
             return new

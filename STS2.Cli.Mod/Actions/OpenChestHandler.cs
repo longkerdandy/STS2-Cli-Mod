@@ -100,7 +100,7 @@ public static class OpenChestHandler
             }, ActionUtils.UiTimeoutMs);
 
             // --- Return updated screen state ---
-            var screen = StateHandler.DetectCurrentScreen();
+            var screen = StateHandler.DetectScreen();
             Logger.Info($"After opening chest, detected screen: {screen}");
 
             return new

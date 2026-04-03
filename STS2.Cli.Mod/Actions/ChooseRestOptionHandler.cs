@@ -125,7 +125,7 @@ public static class ChooseRestOptionHandler
             }, ActionUtils.UiTimeoutMs);
 
             // --- Detect resulting screen and return appropriate state ---
-            var screen = StateHandler.DetectCurrentScreen();
+            var screen = StateHandler.DetectScreen();
             Logger.Info($"After choosing '{optionId}', detected screen: {screen}");
 
             return new

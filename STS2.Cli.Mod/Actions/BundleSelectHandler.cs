@@ -118,7 +118,7 @@ public static class BundleSelectHandler
             await Task.Delay(ActionUtils.PreviewAppearDelayMs);
 
             // --- Return result ---
-            var resultScreen = StateHandler.DetectCurrentScreen();
+            var resultScreen = StateHandler.DetectScreen();
             return new
             {
                 ok = true,
@@ -177,7 +177,7 @@ public static class BundleSelectHandler
             }, ActionUtils.UiTimeoutMs);
 
             // --- Return result ---
-            var resultScreen = StateHandler.DetectCurrentScreen();
+            var resultScreen = StateHandler.DetectScreen();
             Logger.Info($"After confirming bundle, detected screen: {resultScreen}");
 
             return new
@@ -233,7 +233,7 @@ public static class BundleSelectHandler
             await Task.Delay(ActionUtils.PreviewAppearDelayMs);
 
             // --- Return result ---
-            var resultScreen = StateHandler.DetectCurrentScreen();
+            var resultScreen = StateHandler.DetectScreen();
             Logger.Info($"After cancelling bundle preview, detected screen: {resultScreen}");
 
             return new

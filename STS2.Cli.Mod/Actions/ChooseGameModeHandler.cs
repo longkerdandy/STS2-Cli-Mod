@@ -47,7 +47,7 @@ public static class ChooseGameModeHandler
     private static object Execute(string mode)
     {
         // Guard: Must be on the SINGLEPLAYER_SUBMENU screen
-        var currentScreen = StateHandler.DetectCurrentScreen();
+        var currentScreen = StateHandler.DetectScreen();
         if (currentScreen != "SINGLEPLAYER_SUBMENU")
         {
             Logger.Warning($"Cannot choose game mode: not on singleplayer submenu (current: {currentScreen})");

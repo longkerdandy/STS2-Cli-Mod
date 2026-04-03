@@ -83,7 +83,7 @@ public static class PickRelicHandler
             }, ActionUtils.UiTimeoutMs);
 
             // --- Return result ---
-            var screen = StateHandler.DetectCurrentScreen();
+            var screen = StateHandler.DetectScreen();
             Logger.Info($"After picking relic, detected screen: {screen}");
 
             return new

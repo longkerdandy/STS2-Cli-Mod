@@ -141,7 +141,7 @@ public static class CrystalSphereHandler
             await Task.Delay(ActionUtils.PostClickDelayMs);
 
             // --- Return result ---
-            var resultScreen = StateHandler.DetectCurrentScreen();
+            var resultScreen = StateHandler.DetectScreen();
             return new
             {
                 ok = true,
@@ -238,7 +238,7 @@ public static class CrystalSphereHandler
             }
 
             // --- Return result ---
-            var resultScreen = StateHandler.DetectCurrentScreen();
+            var resultScreen = StateHandler.DetectScreen();
             var divLeft = entity?.DivinationCount ?? 0;
 
             return new
@@ -299,7 +299,7 @@ public static class CrystalSphereHandler
             }, ActionUtils.UiTimeoutMs);
 
             // --- Return result ---
-            var resultScreen = StateHandler.DetectCurrentScreen();
+            var resultScreen = StateHandler.DetectScreen();
             Logger.Info($"After proceeding from Crystal Sphere, detected screen: {resultScreen}");
 
             return new

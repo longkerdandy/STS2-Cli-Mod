@@ -42,7 +42,7 @@ public static class ContinueRunHandler
     private static async Task<object> ExecuteAsync()
     {
         // Guard: Must be on the MENU screen
-        var currentScreen = StateHandler.DetectCurrentScreen();
+        var currentScreen = StateHandler.DetectScreen();
         if (currentScreen != "MENU")
         {
             Logger.Warning($"Cannot continue run: not on menu screen (current: {currentScreen})");

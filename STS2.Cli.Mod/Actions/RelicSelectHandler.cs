@@ -105,7 +105,7 @@ public static class RelicSelectHandler
             }, ActionUtils.UiTimeoutMs);
 
             // --- Return result ---
-            var resultScreen = StateHandler.DetectCurrentScreen();
+            var resultScreen = StateHandler.DetectScreen();
             Logger.Info($"After selecting relic, detected screen: {resultScreen}");
 
             return new
@@ -166,7 +166,7 @@ public static class RelicSelectHandler
             }, ActionUtils.UiTimeoutMs);
 
             // --- Return result ---
-            var resultScreen = StateHandler.DetectCurrentScreen();
+            var resultScreen = StateHandler.DetectScreen();
             Logger.Info($"After skipping relic selection, detected screen: {resultScreen}");
 
             return new
