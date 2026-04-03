@@ -15,6 +15,51 @@ public static class CombatStateBuilder
     private static readonly ModLogger Logger = new("CombatStateBuilder");
 
     /// <summary>
+    ///     Builds the full combat state DTO from <see cref="CombatManager" />.
+    ///     Returns null if combat is not in progress.
+    /// </summary>
+    /// <param name="includePileDetails">Whether to include full card descriptions in pile listings.</param>
+    public static CombatStateDto? Build(bool includePileDetails = false)
+    {
+        var combatManager = CombatManager.Instance;
+        if (!combatManager.IsInProgress)
+        {
+            Logger.Warning("CombatManager reports IsInProgress = false");
+            return null;
+        }
+
+        var combatState = combatManager.DebugOnlyGetState();
+        if (combatState == null)
+        {
+            Logger.Warning("CombatState is null");
+            return null;
+        }
+
+        var result = new CombatStateDto
+        {
+            Encounter = combatState.Encounter?.Id.Entry,
+            TurnNumber = combatState.RoundNumber,
+            IsPlayerTurn = combatManager.IsPlayPhase,
+            IsPlayerActionsDisabled = combatManager.PlayerActionsDisabled,
+            IsCombatEnding = combatManager.IsOverOrEnding
+        };
+
+        var player = combatState.Players.Count > 0 ? combatState.Players[0] : null;
+        if (player != null)
+        {
+            result.Player = PlayerStateBuilder.Build(player);
+            result.Hand = BuildHand(player);
+            result.DrawPile = BuildDrawPile(player, includePileDetails);
+            result.DiscardPile = BuildDiscardPile(player, includePileDetails);
+            result.ExhaustPile = BuildExhaustPile(player, includePileDetails);
+        }
+
+        result.Enemies = BuildEnemies(combatState);
+
+        return result;
+    }
+
+    /// <summary>
     ///     Builds the hand state from the player's combat state.
     /// </summary>
     public static List<CardStateDto> BuildHand(Player player)

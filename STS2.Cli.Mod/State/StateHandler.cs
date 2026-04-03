@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Combat;
-using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Events.Custom.CrystalSphere;
@@ -59,10 +58,10 @@ public static class StateHandler
             switch (state.Screen)
             {
                 case "COMBAT":
-                    state.Combat = ExtractCombatState(includePileDetails);
+                    state.Combat = CombatStateBuilder.Build(includePileDetails);
                     break;
                 case "HAND_SELECT":
-                    state.Combat = ExtractCombatState(includePileDetails);
+                    state.Combat = CombatStateBuilder.Build(includePileDetails);
                     state.HandSelect = HandSelectStateBuilder.Build();
                     break;
                 case "MAP":
@@ -77,7 +76,7 @@ public static class StateHandler
                 case "TRI_SELECT":
                     state.TriSelect = TriSelectStateBuilder.Build();
                     if (CombatManager.Instance.IsInProgress)
-                        state.Combat = ExtractCombatState(includePileDetails);
+                        state.Combat = CombatStateBuilder.Build(includePileDetails);
                     break;
                 case "CHARACTER_SELECT":
                     state.CharacterSelect = CharacterSelectStateBuilder.Build();
@@ -85,7 +84,7 @@ public static class StateHandler
                 case "GRID_CARD_SELECT":
                     state.GridCardSelect = GridCardSelectStateBuilder.Build();
                     if (CombatManager.Instance.IsInProgress)
-                        state.Combat = ExtractCombatState(includePileDetails);
+                        state.Combat = CombatStateBuilder.Build(includePileDetails);
                     break;
                 case "REST_SITE":
                     state.RestSite = RestSiteStateBuilder.Build();
@@ -201,77 +200,4 @@ public static class StateHandler
         return "UNKNOWN";
     }
 
-    /// <summary>
-    ///     Extracts combat state from CombatManager.
-    /// </summary>
-    /// <param name="includePileDetails">Whether to include full card descriptions in pile listings.</param>
-    private static CombatStateDto? ExtractCombatState(bool includePileDetails = false)
-    {
-        try
-        {
-            var combatManager = CombatManager.Instance;
-            if (!combatManager.IsInProgress)
-            {
-                Logger.Warning("CombatManager reports IsInProgress = false");
-                return null;
-            }
-
-            // Get CombatState via DebugOnlyGetState
-            var combatState = combatManager.DebugOnlyGetState();
-            if (combatState == null)
-            {
-                Logger.Warning("CombatState is null");
-                return null;
-            }
-
-            var result = new CombatStateDto
-            {
-                Encounter = combatState.Encounter?.Id.Entry,
-                TurnNumber = combatState.RoundNumber,
-                IsPlayerTurn = combatManager.IsPlayPhase,
-                IsPlayerActionsDisabled = combatManager.PlayerActionsDisabled,
-                IsCombatEnding = combatManager.IsOverOrEnding
-            };
-
-            // Extract player state
-            var player = GetLocalPlayer(combatState);
-            if (player != null)
-            {
-                result.Player = PlayerStateBuilder.Build(player);
-                result.Hand = CombatStateBuilder.BuildHand(player);
-                result.DrawPile = CombatStateBuilder.BuildDrawPile(player, includePileDetails);
-                result.DiscardPile = CombatStateBuilder.BuildDiscardPile(player, includePileDetails);
-                result.ExhaustPile = CombatStateBuilder.BuildExhaustPile(player, includePileDetails);
-            }
-
-            // Extract enemies
-            result.Enemies = CombatStateBuilder.BuildEnemies(combatState);
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract combat state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets the local player from the combat state.
-    /// </summary>
-    private static Player? GetLocalPlayer(CombatState combatState)
-    {
-        try
-        {
-            // In a single player game, get the first player
-            var players = combatState.Players;
-            if (players.Count > 0) return players[0];
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get local player: {ex.Message}");
-        }
-
-        return null;
-    }
 }
