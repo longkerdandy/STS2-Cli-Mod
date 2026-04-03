@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Combat;
@@ -113,7 +112,7 @@ public static class StateHandler
                     state.CrystalSphere = CrystalSphereStateBuilder.Build();
                     break;
                 case "GAME_OVER":
-                    state.GameOver = ExtractGameOverState();
+                    state.GameOver = GameOverStateBuilder.Build();
                     break;
                 case "MENU":
                     state.Menu = ExtractMenuState();
@@ -311,92 +310,6 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract grid card select state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the game over screen state from <see cref="NGameOverScreen" />.
-    /// </summary>
-    private static GameOverStateDto? ExtractGameOverState()
-    {
-        try
-        {
-            var overlayStack = NOverlayStack.Instance;
-            if (overlayStack == null)
-            {
-                Logger.Warning("NOverlayStack.Instance is null, cannot extract game over state");
-                return null;
-            }
-
-            var gameOverScreen = overlayStack.Peek() as NGameOverScreen;
-            if (gameOverScreen == null)
-            {
-                Logger.Warning("Game over screen detected but NGameOverScreen not found in overlay stack");
-                return null;
-            }
-
-            // Use reflection to access private fields for run state info
-            var runStateField = typeof(NGameOverScreen).GetField("_runState",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            var runState = runStateField?.GetValue(gameOverScreen);
-
-            var scoreField = typeof(NGameOverScreen).GetField("_score",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            var score = scoreField?.GetValue(gameOverScreen) as int? ?? 0;
-
-            // Check button availability
-            var mainMenuButton = gameOverScreen.GetNodeOrNull<Node>("%MainMenuButton");
-            var continueButton = gameOverScreen.GetNodeOrNull<Node>("%ContinueButton");
-
-            // Determine victory status from run state
-            var isVictory = false;
-            var floor = 0;
-            string? characterId = null;
-
-            if (runState != null)
-            {
-                // Try to get victory status
-                var winProperty = runState.GetType().GetProperty("Win");
-                if (winProperty != null) isVictory = (bool)(winProperty.GetValue(runState) ?? false);
-
-                // Try to get current floor
-                var floorProperty = runState.GetType().GetProperty("CurrentFloor");
-                if (floorProperty != null) floor = (int)(floorProperty.GetValue(runState) ?? 0);
-
-                // Try to get character info from run state
-                var charactersProperty = runState.GetType().GetProperty("Characters");
-                if (charactersProperty != null)
-                {
-                    var characters = charactersProperty.GetValue(runState) as IList;
-                    if (characters != null && characters.Count > 0)
-                    {
-                        var firstChar = characters[0];
-                        var idProperty = firstChar?.GetType().GetProperty("Id");
-                        if (idProperty != null)
-                        {
-                            var idObj = idProperty.GetValue(firstChar);
-                            var entryProperty = idObj?.GetType().GetProperty("Entry");
-                            if (entryProperty != null) characterId = entryProperty.GetValue(idObj) as string;
-                        }
-                    }
-                }
-            }
-
-            return new GameOverStateDto
-            {
-                IsVictory = isVictory,
-                Floor = floor,
-                CharacterId = characterId,
-                Score = score,
-                EpochsDiscovered = 0,
-                CanReturnToMenu = mainMenuButton != null,
-                CanContinue = continueButton != null
-            };
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract game over state: {ex.Message}");
             return null;
         }
     }
