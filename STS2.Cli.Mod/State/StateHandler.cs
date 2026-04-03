@@ -174,18 +174,9 @@ public static class StateHandler
             var combatOverlay = NOverlayStack.Instance;
             if (combatOverlay != null)
             {
-                var topOverlay = combatOverlay.Peek();
-                switch (topOverlay)
-                {
-                    case NCardGridSelectionScreen: return "GRID_CARD_SELECT";
-                    case NChooseACardSelectionScreen: return "TRI_SELECT";
-                    case NChooseABundleSelectionScreen: return "BUNDLE_SELECT";
-                    case NCrystalSphereScreen: return "CRYSTAL_SPHERE";
-                }
-
-                // Fallback: check children in case the screen is not on top
-                foreach (var child in combatOverlay.GetChildren())
-                    switch (child)
+                var children = combatOverlay.GetChildren();
+                for (var i = children.Count - 1; i >= 0; i--)
+                    switch (children[i])
                     {
                         case NCardGridSelectionScreen: return "GRID_CARD_SELECT";
                         case NChooseACardSelectionScreen: return "TRI_SELECT";
@@ -205,9 +196,9 @@ public static class StateHandler
         var overlayStack = NOverlayStack.Instance;
         if (overlayStack != null)
         {
-            var overlay = overlayStack.Peek();
-            if (overlay != null)
-                switch (overlay)
+            var children = overlayStack.GetChildren();
+            for (var i = children.Count - 1; i >= 0; i--)
+                switch (children[i])
                 {
                     case NCardRewardSelectionScreen: return "CARD_REWARD";
                     case NCrystalSphereScreen: return "CRYSTAL_SPHERE";
@@ -216,18 +207,6 @@ public static class StateHandler
                     case NCardGridSelectionScreen: return "GRID_CARD_SELECT";
                     case NChooseARelicSelection: return "RELIC_SELECT";
                     case NChooseABundleSelectionScreen: return "BUNDLE_SELECT";
-                    case NGameOverScreen: return "GAME_OVER";
-                }
-
-            // Fallback: check children for screens that may not be on top
-            foreach (var child in overlayStack.GetChildren())
-                switch (child)
-                {
-                    case NChooseACardSelectionScreen: return "TRI_SELECT";
-                    case NCardGridSelectionScreen: return "GRID_CARD_SELECT";
-                    case NChooseARelicSelection: return "RELIC_SELECT";
-                    case NChooseABundleSelectionScreen: return "BUNDLE_SELECT";
-                    case NCrystalSphereScreen: return "CRYSTAL_SPHERE";
                     case NGameOverScreen: return "GAME_OVER";
                 }
         }
