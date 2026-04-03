@@ -1,5 +1,6 @@
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
@@ -76,7 +77,7 @@ public static class SelectCharacterHandler
         NCharacterSelectButton? targetBtn = null;
         foreach (var btn in buttons)
         {
-            var model = CharacterSelectUtils.GetCharacterModel(btn);
+            var model = SelectCharacterUtils.GetCharacterModel(btn);
             if (model?.Id.Entry.Equals(characterId, StringComparison.OrdinalIgnoreCase) == true)
             {
                 targetBtn = btn;
@@ -96,7 +97,7 @@ public static class SelectCharacterHandler
         }
 
         // Check if the character is locked
-        if (CharacterSelectUtils.GetIsLocked(targetBtn))
+        if (SelectCharacterUtils.GetIsLocked(targetBtn))
         {
             Logger.Warning($"Character '{characterId}' is locked");
             return new

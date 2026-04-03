@@ -1,14 +1,16 @@
+using System.Reflection;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using STS2.Cli.Mod.Utils;
 
-namespace STS2.Cli.Mod.Utils;
+namespace STS2.Cli.Mod.Actions.Utils;
 
 /// <summary>
 ///     Utility methods for character select screen operations.
 /// </summary>
-public static class CharacterSelectUtils
+public static class SelectCharacterUtils
 {
-    private static readonly ModLogger Logger = new("CharacterSelectUtils");
+    private static readonly ModLogger Logger = new("SelectCharacterUtils");
 
     /// <summary>
     ///     Gets the CharacterModel from a character select button.
@@ -53,7 +55,7 @@ public static class CharacterSelectUtils
         try
         {
             var field = typeof(NCharacterSelectScreen).GetField("_selectedButton",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                BindingFlags.NonPublic | BindingFlags.Instance);
             return field?.GetValue(screen) as NCharacterSelectButton;
         }
         catch (Exception ex)

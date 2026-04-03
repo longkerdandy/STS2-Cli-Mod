@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
+using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
@@ -48,7 +49,7 @@ public static class EmbarkHandler
         }
 
         // Check if a character is selected
-        var selectedBtn = CharacterSelectUtils.GetSelectedButton(screen);
+        var selectedBtn = SelectCharacterUtils.GetSelectedButton(screen);
         if (selectedBtn == null)
         {
             Logger.Warning("Embark requested but no character selected");
