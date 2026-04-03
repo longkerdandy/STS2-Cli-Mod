@@ -82,7 +82,7 @@ public static class RewardCardHandler
         {
             // --- Validation ---
 
-            var screen = CommonUiUtils.FindScreenInOverlay<NRewardsScreen>();
+            var screen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 
@@ -193,7 +193,7 @@ public static class RewardCardHandler
         {
             // --- Validation ---
 
-            var screen = CommonUiUtils.FindScreenInOverlay<NRewardsScreen>();
+            var screen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
             if (screen == null)
                 return new { ok = false, error = "NOT_ON_REWARD_SCREEN", message = "Reward screen is not active" };
 

@@ -18,11 +18,11 @@ public static class GridCardSelectStateBuilder
     private static readonly ModLogger Logger = new("GridCardSelectStateBuilder");
 
     /// <summary>
-    ///     Finds the grid selection screen via <see cref="ScreenUtils" /> and builds the state DTO.
+    ///     Finds the grid selection screen via <see cref="UiUtils" /> and builds the state DTO.
     /// </summary>
     public static GridCardSelectStateDto? Build()
     {
-        var screen = ScreenUtils.FindGridSelectionScreen();
+        var screen = UiUtils.FindGridSelectionScreen();
         return screen != null ? Build(screen) : null;
     }
 

@@ -29,12 +29,12 @@ public static class CrystalSphereStateBuilder
 
     /// <summary>
     ///     Builds the Crystal Sphere state from the currently open <see cref="NCrystalSphereScreen" />.
-    ///     Finds the screen via <see cref="CommonUiUtils.FindScreenInOverlay{T}" />.
+    ///     Finds the screen via <see cref="UiUtils.FindScreenInOverlay{T}" />.
     ///     Returns null if no screen is found.
     /// </summary>
     public static CrystalSphereStateDto? Build()
     {
-        var screen = CommonUiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
+        var screen = UiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
         if (screen == null)
         {
             Logger.Warning("No NCrystalSphereScreen found in overlay stack");
@@ -68,7 +68,7 @@ public static class CrystalSphereStateBuilder
             var cellContainer = screen.GetNodeOrNull<Control>("%Cells");
             if (cellContainer != null)
             {
-                var cellNodes = CommonUiUtils.FindAll<NCrystalSphereCell>(cellContainer);
+                var cellNodes = UiUtils.FindAll<NCrystalSphereCell>(cellContainer);
                 foreach (var cellNode in cellNodes)
                 {
                     var cell = cellNode.Entity;

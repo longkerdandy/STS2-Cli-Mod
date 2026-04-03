@@ -40,7 +40,7 @@ public static class RewardStateBuilder
     /// </summary>
     public static RewardStateDto? Build()
     {
-        var screen = CommonUiUtils.FindScreenInOverlay<NRewardsScreen>();
+        var screen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
         if (screen == null)
         {
             Logger.Warning("NRewardsScreen not found in overlay stack");

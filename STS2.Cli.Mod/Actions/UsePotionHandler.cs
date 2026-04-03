@@ -200,7 +200,7 @@ public static class UsePotionHandler
 
             case "grid_select":
             {
-                var gridScreen = CommonUiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
+                var gridScreen = UiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
                 if (gridScreen != null)
                     return PotionUtils.BuildGridSelectResponse(potion, slot, gridScreen);
                 break;

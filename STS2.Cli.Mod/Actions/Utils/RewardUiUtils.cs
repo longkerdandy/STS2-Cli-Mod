@@ -12,7 +12,7 @@ namespace STS2.Cli.Mod.Actions.Utils;
 ///     Provides node traversal and polling utilities for reward screens
 ///     used by <see cref="RewardClaimHandler" />, <see cref="RewardCardHandler" />,
 ///     and <see cref="ProceedHandler" />.
-///     For generic screen discovery, use <see cref="CommonUiUtils.FindScreenInOverlay{T}" /> directly.
+///     For generic screen discovery, use <see cref="UiUtils.FindScreenInOverlay{T}" /> directly.
 /// </summary>
 public static class RewardCommonUiUtils
 {
@@ -57,7 +57,7 @@ public static class RewardCommonUiUtils
 
         await ActionUtils.PollUntilAsync(() =>
         {
-            var cardScreen = CommonUiUtils.FindScreenInOverlay<NCardRewardSelectionScreen>();
+            var cardScreen = UiUtils.FindScreenInOverlay<NCardRewardSelectionScreen>();
             if (cardScreen != null)
             {
                 result = cardScreen;

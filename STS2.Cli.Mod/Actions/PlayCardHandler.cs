@@ -128,7 +128,7 @@ public static class PlayCardHandler
                 }
 
                 // Type B — Grid Overlay: fullscreen grid showing draw/discard pile cards
-                var gridScreen = CommonUiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
+                var gridScreen = UiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
                 if (gridScreen != null)
                 {
                     Logger.Info($"Grid select screen detected for card '{card.Title}'");

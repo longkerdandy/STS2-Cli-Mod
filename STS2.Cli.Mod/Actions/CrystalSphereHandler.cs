@@ -104,7 +104,7 @@ public static class CrystalSphereHandler
                 };
 
             // --- Guard: Check Crystal Sphere screen ---
-            var screen = CommonUiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
+            var screen = UiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
             if (screen == null)
                 return new
                 {
@@ -169,7 +169,7 @@ public static class CrystalSphereHandler
         try
         {
             // --- Guard: Check Crystal Sphere screen ---
-            var screen = CommonUiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
+            var screen = UiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
             if (screen == null)
                 return new
                 {
@@ -195,7 +195,7 @@ public static class CrystalSphereHandler
                     message = "Could not find the cells container on the Crystal Sphere screen."
                 };
 
-            var cellNodes = CommonUiUtils.FindAll<NCrystalSphereCell>(cellContainer);
+            var cellNodes = UiUtils.FindAll<NCrystalSphereCell>(cellContainer);
             NCrystalSphereCell? targetCell = null;
             foreach (var cellNode in cellNodes)
             {
@@ -269,7 +269,7 @@ public static class CrystalSphereHandler
         try
         {
             // --- Guard: Check Crystal Sphere screen ---
-            var screen = CommonUiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
+            var screen = UiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
             if (screen == null)
                 return new
                 {
@@ -294,7 +294,7 @@ public static class CrystalSphereHandler
             // --- Poll for the overlay to be removed ---
             await ActionUtils.PollUntilAsync(() =>
             {
-                var current = CommonUiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
+                var current = UiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
                 return current == null;
             }, ActionUtils.UiTimeoutMs);
 

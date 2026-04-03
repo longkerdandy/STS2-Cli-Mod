@@ -41,7 +41,7 @@ public static class TriSelectStateBuilder
     {
         try
         {
-            var cardHolders = CommonUiUtils.FindAll<NCardHolder>(screen);
+            var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
             var canSkip = CardSelectionUtils.ReadCanSkip(screen);
             var cards = new List<SelectableCardDto>();
 

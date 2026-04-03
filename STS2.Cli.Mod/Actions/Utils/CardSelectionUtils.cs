@@ -22,7 +22,7 @@ public static class CardSelectionUtils
     /// <returns>The card selection screen if found, or <c>null</c>.</returns>
     public static NChooseACardSelectionScreen? FindCardSelectionScreen()
     {
-        return CommonUiUtils.FindScreenInOverlay<NChooseACardSelectionScreen>();
+        return UiUtils.FindScreenInOverlay<NChooseACardSelectionScreen>();
     }
 
     /// <summary>
@@ -34,7 +34,7 @@ public static class CardSelectionUtils
     public static List<SelectableCardDto> ExtractSelectableCards(NChooseACardSelectionScreen screen)
     {
         var cards = new List<SelectableCardDto>();
-        var cardHolders = CommonUiUtils.FindAll<NCardHolder>(screen);
+        var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
 
         for (var i = 0; i < cardHolders.Count; i++)
         {
@@ -65,7 +65,7 @@ public static class CardSelectionUtils
     /// <returns>The matching card holder, or <c>null</c> if not found or nth is out of range.</returns>
     public static NCardHolder? FindCardHolderById(NChooseACardSelectionScreen screen, string cardId, int nth)
     {
-        var cardHolders = CommonUiUtils.FindAll<NCardHolder>(screen);
+        var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
         var matchingHolders = new List<NCardHolder>();
 
         foreach (var holder in cardHolders)

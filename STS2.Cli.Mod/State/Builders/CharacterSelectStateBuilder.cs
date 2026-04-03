@@ -28,7 +28,7 @@ public static class CharacterSelectStateBuilder
     /// </summary>
     public static CharacterSelectStateDto? Build()
     {
-        var screen = ScreenUtils.FindCharacterSelectScreen();
+        var screen = UiUtils.FindCharacterSelectScreen();
         if (screen == null)
         {
             Logger.Warning("NCharacterSelectScreen not found");
@@ -42,7 +42,7 @@ public static class CharacterSelectStateBuilder
             return null;
         }
 
-        var buttons = CommonUiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
+        var buttons = UiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
         var characters = new List<CharacterOptionDto>();
         string? selectedCharacter = null;
         var selectedButton = SelectedButtonField?.GetValue(screen) as NCharacterSelectButton;

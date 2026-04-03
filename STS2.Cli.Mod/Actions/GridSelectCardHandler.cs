@@ -303,7 +303,7 @@ public static class GridSelectCardHandler
     /// </summary>
     private static NCardGridSelectionScreen? FindGridSelectionScreen()
     {
-        return CommonUiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
+        return UiUtils.FindScreenInOverlay<NCardGridSelectionScreen>();
     }
 
     /// <summary>
@@ -394,7 +394,7 @@ public static class GridSelectCardHandler
             }
 
             // Generic fallback: search for confirmation buttons in the tree
-            return CommonUiUtils.FindFirst<NConfirmButton>(screen);
+            return UiUtils.FindFirst<NConfirmButton>(screen);
         }
         catch (Exception ex)
         {

@@ -12,11 +12,11 @@ public static class CharacterSelectUtils
 
     /// <summary>
     ///     Finds the Character Select screen via the main menu's submenu stack.
-    ///     Delegates to <see cref="ScreenUtils.FindCharacterSelectScreen" />.
+    ///     Delegates to <see cref="UiUtils.FindCharacterSelectScreen" />.
     /// </summary>
     public static NCharacterSelectScreen? FindScreen()
     {
-        return ScreenUtils.FindCharacterSelectScreen();
+        return UiUtils.FindCharacterSelectScreen();
     }
 
     /// <summary>

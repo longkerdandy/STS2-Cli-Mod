@@ -71,7 +71,7 @@ public static class BundleSelectHandler
         try
         {
             // --- Guard: Check bundle selection screen ---
-            var screen = CommonUiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
+            var screen = UiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
             if (screen == null)
                 return new
                 {
@@ -91,7 +91,7 @@ public static class BundleSelectHandler
                 };
 
             // --- Guard: Find bundles ---
-            var bundles = CommonUiUtils.FindAll<NCardBundle>(screen);
+            var bundles = UiUtils.FindAll<NCardBundle>(screen);
             if (bundles.Count == 0)
                 return new
                 {
@@ -146,7 +146,7 @@ public static class BundleSelectHandler
         try
         {
             // --- Guard: Check bundle selection screen ---
-            var screen = CommonUiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
+            var screen = UiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
             if (screen == null)
                 return new
                 {
@@ -172,7 +172,7 @@ public static class BundleSelectHandler
             // --- Poll for the overlay to be removed ---
             await ActionUtils.PollUntilAsync(() =>
             {
-                var current = CommonUiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
+                var current = UiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
                 return current == null;
             }, ActionUtils.UiTimeoutMs);
 
@@ -206,7 +206,7 @@ public static class BundleSelectHandler
         try
         {
             // --- Guard: Check bundle selection screen ---
-            var screen = CommonUiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
+            var screen = UiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
             if (screen == null)
                 return new
                 {

@@ -141,9 +141,9 @@ public static class StateHandler
     public static string DetectScreen()
     {
         // --- Pre-run: main menu and its submenu stack ---
-        if (ScreenUtils.FindCharacterSelectScreen() != null) return "CHARACTER_SELECT";
-        if (ScreenUtils.FindSingleplayerSubmenu() != null) return "SINGLEPLAYER_SUBMENU";
-        if (ScreenUtils.FindMainMenu() != null) return "MENU";
+        if (UiUtils.FindCharacterSelectScreen() != null) return "CHARACTER_SELECT";
+        if (UiUtils.FindSingleplayerSubmenu() != null) return "SINGLEPLAYER_SUBMENU";
+        if (UiUtils.FindMainMenu() != null) return "MENU";
 
         // All screens below require an active run
         if (!RunManager.Instance.IsInProgress) return "UNKNOWN";

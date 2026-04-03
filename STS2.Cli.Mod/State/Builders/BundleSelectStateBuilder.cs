@@ -20,12 +20,12 @@ public static class BundleSelectStateBuilder
 
     /// <summary>
     ///     Builds the bundle selection state from the currently open <see cref="NChooseABundleSelectionScreen" />.
-    ///     Finds the screen via <see cref="CommonUiUtils.FindScreenInOverlay{T}" />.
+    ///     Finds the screen via <see cref="UiUtils.FindScreenInOverlay{T}" />.
     ///     Returns null if no screen is found.
     /// </summary>
     public static BundleSelectStateDto? Build()
     {
-        var screen = CommonUiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
+        var screen = UiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
         if (screen == null)
         {
             Logger.Warning("No NChooseABundleSelectionScreen found in overlay stack");
@@ -45,7 +45,7 @@ public static class BundleSelectStateBuilder
         try
         {
             // Extract all NCardBundle nodes from the screen
-            var bundleNodes = CommonUiUtils.FindAll<NCardBundle>(screen);
+            var bundleNodes = UiUtils.FindAll<NCardBundle>(screen);
             var bundles = new List<BundleDto>();
 
             for (var i = 0; i < bundleNodes.Count; i++)
@@ -55,21 +55,18 @@ public static class BundleSelectStateBuilder
 
                 // Each NCardBundle.Bundle is IReadOnlyList<CardModel>
                 var cardModels = bundleNode.Bundle;
-                if (cardModels != null)
+                for (var j = 0; j < cardModels.Count; j++)
                 {
-                    for (var j = 0; j < cardModels.Count; j++)
+                    var card = cardModels[j];
+                    cards.Add(new SelectableCardDto
                     {
-                        var card = cardModels[j];
-                        cards.Add(new SelectableCardDto
-                        {
-                            Index = j,
-                            CardId = card.Id.Entry,
-                            CardName = StripGameTags(card.Title),
-                            CardType = card.Type.ToString(),
-                            Cost = card.EnergyCost.Canonical,
-                            Description = StripGameTags(card.Description.GetFormattedText())
-                        });
-                    }
+                        Index = j,
+                        CardId = card.Id.Entry,
+                        CardName = StripGameTags(card.Title),
+                        CardType = card.Type.ToString(),
+                        Cost = card.EnergyCost.Canonical,
+                        Description = StripGameTags(card.Description.GetFormattedText())
+                    });
                 }
 
                 bundles.Add(new BundleDto
@@ -91,7 +88,7 @@ public static class BundleSelectStateBuilder
                 var cardsContainer = screen.GetNodeOrNull<Control>("%Cards");
                 if (cardsContainer != null)
                 {
-                    var previewHolders = CommonUiUtils.FindAll<NPreviewCardHolder>(cardsContainer);
+                    var previewHolders = UiUtils.FindAll<NPreviewCardHolder>(cardsContainer);
                     for (var i = 0; i < previewHolders.Count; i++)
                     {
                         var card = previewHolders[i].CardModel;

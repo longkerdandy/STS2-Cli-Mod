@@ -56,8 +56,8 @@ public static class ChooseGameModeHandler
 
         try
         {
-            // Find the singleplayer submenu via ScreenUtils
-            var submenu = ScreenUtils.FindSingleplayerSubmenu();
+            // Find the singleplayer submenu via UiUtils
+            var submenu = UiUtils.FindSingleplayerSubmenu();
             if (submenu == null)
             {
                 Logger.Error("NSingleplayerSubmenu not found");
