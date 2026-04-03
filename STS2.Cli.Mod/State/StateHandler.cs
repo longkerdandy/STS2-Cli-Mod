@@ -63,75 +63,65 @@ public static class StateHandler
                 Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
             };
 
-            // Extract combat state if in combat
-            if (state.Screen == "COMBAT") state.Combat = ExtractCombatState(includePileDetails);
-
-            // Extract hand selection state if in hand card selection (combat sub-state)
-            // Also include combat state so the AI has full context
-            if (state.Screen == "HAND_SELECT")
+            switch (state.Screen)
             {
-                state.Combat = ExtractCombatState(includePileDetails);
-                state.HandSelect = ExtractHandSelectState();
-            }
-
-            // Extract map state if on map screen
-            if (state.Screen == "MAP") state.Map = ExtractMapState();
-
-            // Extract reward state if on reward screen
-            if (state.Screen == "REWARD") state.Rewards = ExtractRewardState();
-
-            // Extract event state if at an event
-            if (state.Screen == "EVENT") state.Event = ExtractEventState();
-
-            // Extract tri-select (choose-a-card) state if on tri-select screen
-            // Also include combat state when tri-select is triggered during combat
-            // so the AI has full context (e.g., Discovery/Quasar/Splash mid-combat)
-            if (state.Screen == "TRI_SELECT")
-            {
-                state.TriSelect = ExtractTriSelectState();
-                if (CombatManager.Instance.IsInProgress)
+                case "COMBAT":
                     state.Combat = ExtractCombatState(includePileDetails);
-            }
-
-            // Extract character select state if on character select screen
-            if (state.Screen == "CHARACTER_SELECT") state.CharacterSelect = ExtractCharacterSelectState();
-
-            // Extract grid card selection state if on a grid-based card selection screen
-            // Also include combat state when grid select is triggered during combat
-            // so the AI has full context (e.g., Headbutt selecting from discard pile)
-            if (state.Screen == "GRID_CARD_SELECT")
-            {
-                state.GridCardSelect = ExtractGridCardSelectState();
-                if (CombatManager.Instance.IsInProgress)
+                    break;
+                case "HAND_SELECT":
                     state.Combat = ExtractCombatState(includePileDetails);
+                    state.HandSelect = SafeExtract(HandSelectStateBuilder.Build, "hand select");
+                    break;
+                case "MAP":
+                    state.Map = SafeExtract(MapStateBuilder.Build, "map");
+                    break;
+                case "REWARD":
+                    state.Rewards = SafeExtract(RewardStateBuilder.Build, "reward");
+                    break;
+                case "EVENT":
+                    state.Event = SafeExtract(EventStateBuilder.Build, "event");
+                    break;
+                case "TRI_SELECT":
+                    state.TriSelect = SafeExtract(TriSelectStateBuilder.Build, "tri-select");
+                    if (CombatManager.Instance.IsInProgress)
+                        state.Combat = ExtractCombatState(includePileDetails);
+                    break;
+                case "CHARACTER_SELECT":
+                    state.CharacterSelect = ExtractCharacterSelectState();
+                    break;
+                case "GRID_CARD_SELECT":
+                    state.GridCardSelect = ExtractGridCardSelectState();
+                    if (CombatManager.Instance.IsInProgress)
+                        state.Combat = ExtractCombatState(includePileDetails);
+                    break;
+                case "REST_SITE":
+                    state.RestSite = SafeExtract(RestSiteStateBuilder.Build, "rest site");
+                    break;
+                case "TREASURE":
+                    state.Treasure = SafeExtract(TreasureStateBuilder.Build, "treasure");
+                    break;
+                case "SHOP":
+                    state.Shop = SafeExtract(ShopStateBuilder.Build, "shop");
+                    break;
+                case "RELIC_SELECT":
+                    state.RelicSelect = SafeExtract(RelicSelectStateBuilder.Build, "relic select");
+                    break;
+                case "BUNDLE_SELECT":
+                    state.BundleSelect = SafeExtract(BundleSelectStateBuilder.Build, "bundle select");
+                    break;
+                case "CRYSTAL_SPHERE":
+                    state.CrystalSphere = SafeExtract(CrystalSphereStateBuilder.Build, "crystal sphere");
+                    break;
+                case "GAME_OVER":
+                    state.GameOver = ExtractGameOverState();
+                    break;
+                case "MENU":
+                    state.Menu = ExtractMenuState();
+                    break;
+                case "SINGLEPLAYER_SUBMENU":
+                    state.SingleplayerSubmenu = ExtractSingleplayerSubmenuState();
+                    break;
             }
-
-            // Extract rest site state if at a rest site
-            if (state.Screen == "REST_SITE") state.RestSite = ExtractRestSiteState();
-
-            // Extract treasure room state if at a treasure room
-            if (state.Screen == "TREASURE") state.Treasure = ExtractTreasureState();
-
-            // Extract shop state if at a merchant room
-            if (state.Screen == "SHOP") state.Shop = ExtractShopState();
-
-            // Extract relic selection state if a "choose a relic" overlay is open
-            if (state.Screen == "RELIC_SELECT") state.RelicSelect = ExtractRelicSelectState();
-
-            // Extract bundle selection state if a "choose a bundle" overlay is open
-            if (state.Screen == "BUNDLE_SELECT") state.BundleSelect = ExtractBundleSelectState();
-
-            // Extract Crystal Sphere mini-game state if the overlay is open
-            if (state.Screen == "CRYSTAL_SPHERE") state.CrystalSphere = ExtractCrystalSphereState();
-
-            // Extract game over state if on game over screen
-            if (state.Screen == "GAME_OVER") state.GameOver = ExtractGameOverState();
-
-            // Extract menu state if on main menu
-            if (state.Screen == "MENU") state.Menu = ExtractMenuState();
-
-            // Extract singleplayer submenu state if on singleplayer submenu
-            if (state.Screen == "SINGLEPLAYER_SUBMENU") state.SingleplayerSubmenu = ExtractSingleplayerSubmenuState();
 
             return state;
         }
@@ -139,6 +129,22 @@ public static class StateHandler
         {
             Logger.Error($"Failed to extract game state: {ex.Message}");
             return new GameStateDto { Screen = "ERROR", Error = ex.Message };
+        }
+    }
+
+    /// <summary>
+    ///     Safely calls an extractor function, returning null and logging on failure.
+    /// </summary>
+    private static T? SafeExtract<T>(Func<T?> extractor, string name) where T : class
+    {
+        try
+        {
+            return extractor();
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to extract {name} state: {ex.Message}");
+            return null;
         }
     }
 
@@ -283,22 +289,6 @@ public static class StateHandler
     }
 
     /// <summary>
-    ///     Extracts map state from <see cref="NMapScreen" /> and <see cref="RunState" />.
-    /// </summary>
-    private static MapStateDto? ExtractMapState()
-    {
-        try
-        {
-            return MapStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract map state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
     ///     Gets the local player from the combat state.
     /// </summary>
     private static Player? GetLocalPlayer(CombatState combatState)
@@ -315,57 +305,6 @@ public static class StateHandler
         }
 
         return null;
-    }
-
-    /// <summary>
-    ///     Extracts the reward state from the <see cref="NRewardsScreen" />.
-    ///     Finds the rewards screen in the overlay stack and reads reward buttons.
-    /// </summary>
-    private static RewardStateDto? ExtractRewardState()
-    {
-        try
-        {
-            return RewardStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract reward state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the event state from the <see cref="NEventRoom" />.
-    ///     Uses reflection to access the private EventModel field.
-    /// </summary>
-    private static EventStateDto? ExtractEventState()
-    {
-        try
-        {
-            return EventStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract event state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the tri-select (choose-a-card) state from <see cref="NChooseACardSelectionScreen" />.
-    ///     Delegates to <see cref="TriSelectStateBuilder" /> for the actual extraction.
-    /// </summary>
-    private static TriSelectStateDto? ExtractTriSelectState()
-    {
-        try
-        {
-            return TriSelectStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract tri-select state: {ex.Message}");
-            return null;
-        }
     }
 
     /// <summary>
@@ -388,121 +327,6 @@ public static class StateHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to extract grid card select state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the rest site (campfire) state from <see cref="NRestSiteRoom" />.
-    /// </summary>
-    private static RestSiteStateDto? ExtractRestSiteState()
-    {
-        try
-        {
-            return RestSiteStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract rest site state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the treasure room state from <see cref="NTreasureRoom" />.
-    /// </summary>
-    private static TreasureStateDto? ExtractTreasureState()
-    {
-        try
-        {
-            return TreasureStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract treasure state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the shop (merchant room) state from <see cref="NMerchantRoom" />.
-    /// </summary>
-    private static ShopStateDto? ExtractShopState()
-    {
-        try
-        {
-            return ShopStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract shop state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the relic selection state from <see cref="NChooseARelicSelection" />.
-    ///     Delegates to <see cref="RelicSelectStateBuilder" /> for the actual extraction.
-    /// </summary>
-    private static RelicSelectStateDto? ExtractRelicSelectState()
-    {
-        try
-        {
-            return RelicSelectStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract relic select state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the bundle selection state from <see cref="NChooseABundleSelectionScreen" />.
-    ///     Delegates to <see cref="BundleSelectStateBuilder" /> for the actual extraction.
-    /// </summary>
-    private static BundleSelectStateDto? ExtractBundleSelectState()
-    {
-        try
-        {
-            return BundleSelectStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract bundle select state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the Crystal Sphere mini-game state from <see cref="NCrystalSphereScreen" />.
-    ///     Delegates to <see cref="CrystalSphereStateBuilder" /> for the actual extraction.
-    /// </summary>
-    private static CrystalSphereStateDto? ExtractCrystalSphereState()
-    {
-        try
-        {
-            return CrystalSphereStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract Crystal Sphere state: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Extracts the hand card selection state from <see cref="NPlayerHand" />.
-    /// </summary>
-    private static HandSelectStateDto? ExtractHandSelectState()
-    {
-        try
-        {
-            return HandSelectStateBuilder.Build();
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to extract hand select state: {ex.Message}");
             return null;
         }
     }
@@ -601,15 +425,10 @@ public static class StateHandler
         var overlayStack = NOverlayStack.Instance;
         if (overlayStack == null) return null;
 
-        // Check the top of the stack first
-        var overlay = overlayStack.Peek();
-        if (overlay is NCardGridSelectionScreen gridScreen)
-            return gridScreen;
-
-        // Check children
-        foreach (var child in overlayStack.GetChildren())
-            if (child is NCardGridSelectionScreen childScreen)
-                return childScreen;
+        var children = overlayStack.GetChildren();
+        for (var i = children.Count - 1; i >= 0; i--)
+            if (children[i] is NCardGridSelectionScreen gridScreen)
+                return gridScreen;
 
         return null;
     }
@@ -641,12 +460,11 @@ public static class StateHandler
             string? selectedCharacter = null;
 
             // Get the currently selected button via reflection
-            var selectedButton = GetSelectedButton(screen);
+            var selectedButton = CharacterSelectUtils.GetSelectedButton(screen);
 
             foreach (var btn in buttons)
             {
-                // Get character model from public Character property
-                var characterModel = GetCharacterModel(btn);
+                var characterModel = CharacterSelectUtils.GetCharacterModel(btn);
                 if (characterModel == null) continue;
 
                 var isSelected = btn == selectedButton;
@@ -657,7 +475,7 @@ public static class StateHandler
                 {
                     CharacterId = characterModel.Id.Entry,
                     CharacterName = TextUtils.StripGameTags(characterModel.Title.GetFormattedText()),
-                    IsLocked = GetIsLocked(btn),
+                    IsLocked = CharacterSelectUtils.GetIsLocked(btn),
                     IsSelected = isSelected
                 });
             }
@@ -708,30 +526,6 @@ public static class StateHandler
             Logger.Warning($"Failed to get ascension info: {ex.Message}");
             return (0, 20);
         }
-    }
-
-    /// <summary>
-    ///     Gets the selected character button from the screen via reflection.
-    /// </summary>
-    private static NCharacterSelectButton? GetSelectedButton(NCharacterSelectScreen screen)
-    {
-        return CharacterSelectUtils.GetSelectedButton(screen);
-    }
-
-    /// <summary>
-    ///     Gets the CharacterModel from a character select button's public Character property.
-    /// </summary>
-    private static CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
-    {
-        return CharacterSelectUtils.GetCharacterModel(btn);
-    }
-
-    /// <summary>
-    ///     Gets the locked status from a character select button.
-    /// </summary>
-    private static bool GetIsLocked(NCharacterSelectButton btn)
-    {
-        return CharacterSelectUtils.GetIsLocked(btn);
     }
 
     /// <summary>
