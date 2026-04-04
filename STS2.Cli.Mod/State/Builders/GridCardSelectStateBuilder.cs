@@ -1,4 +1,3 @@
-using System.Reflection;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
@@ -115,17 +114,7 @@ public static class GridCardSelectStateBuilder
     /// </summary>
     private static IReadOnlyList<CardModel>? GetCards(NCardGridSelectionScreen screen)
     {
-        try
-        {
-            var field = typeof(NCardGridSelectionScreen).GetField("_cards",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(screen) as IReadOnlyList<CardModel>;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get _cards via reflection: {ex.Message}");
-            return null;
-        }
+        return UiUtils.GetPrivateField<IReadOnlyList<CardModel>>(typeof(NCardGridSelectionScreen), screen, "_cards");
     }
 
     /// <summary>
@@ -134,24 +123,8 @@ public static class GridCardSelectStateBuilder
     /// </summary>
     private static CardSelectorPrefs? GetPrefs(NCardGridSelectionScreen screen)
     {
-        try
-        {
-            // _prefs is declared on each concrete subclass, not on the base
-            var field = screen.GetType().GetField("_prefs",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            if (field == null)
-            {
-                Logger.Warning($"_prefs field not found on {screen.GetType().Name}");
-                return null;
-            }
-
-            return (CardSelectorPrefs?)field.GetValue(screen);
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get _prefs via reflection: {ex.Message}");
-            return null;
-        }
+        // _prefs is declared on each concrete subclass, not on the base
+        return UiUtils.GetPrivateFieldValue<CardSelectorPrefs>(screen, "_prefs");
     }
 
     /// <summary>

@@ -1,4 +1,3 @@
-using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
@@ -19,20 +18,6 @@ namespace STS2.Cli.Mod.State.Builders;
 public static class RewardStateBuilder
 {
     private static readonly ModLogger Logger = new("RewardStateBuilder");
-
-    /// <summary>
-    ///     Cached reflection field for <see cref="RelicReward" />._relic (private).
-    ///     <c>ClaimedRelic</c> is only set after claim, so we must use reflection to read
-    ///     the relic before the player claims it.
-    /// </summary>
-    private static readonly FieldInfo? RelicField =
-        typeof(RelicReward).GetField("_relic", BindingFlags.NonPublic | BindingFlags.Instance);
-
-    /// <summary>
-    ///     Cached reflection field for <see cref="SpecialCardReward" />._card (private readonly).
-    /// </summary>
-    private static readonly FieldInfo? SpecialCardField =
-        typeof(SpecialCardReward).GetField("_card", BindingFlags.NonPublic | BindingFlags.Instance);
 
     /// <summary>
     ///     Builds the reward state from the current <see cref="NRewardsScreen" />.
@@ -136,7 +121,7 @@ public static class RewardStateBuilder
             case RelicReward relicReward:
             {
                 // _relic is private — use reflection; fallback to ClaimedRelic (set after claim)
-                var relic = RelicField?.GetValue(relicReward) as RelicModel ?? relicReward.ClaimedRelic;
+                var relic = UiUtils.GetPrivateField<RelicModel>(relicReward, "_relic") ?? relicReward.ClaimedRelic;
                 if (relic != null)
                 {
                     item.RelicId = relic.Id.Entry;
@@ -171,7 +156,7 @@ public static class RewardStateBuilder
 
             case SpecialCardReward specialCardReward:
             {
-                if (SpecialCardField?.GetValue(specialCardReward) is CardModel card)
+                if (UiUtils.GetPrivateField<CardModel>(specialCardReward, "_card") is { } card)
                 {
                     item.CardId = card.Id.Entry;
                     item.CardName = StripGameTags(card.Title);

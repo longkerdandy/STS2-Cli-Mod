@@ -1,4 +1,5 @@
 using System.Reflection;
+using Godot;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Combat;
@@ -16,12 +17,6 @@ namespace STS2.Cli.Mod.State.Builders;
 public static class HandSelectStateBuilder
 {
     private static readonly ModLogger Logger = new("HandSelectStateBuilder");
-
-    private static readonly FieldInfo? PrefsField =
-        typeof(NPlayerHand).GetField("_prefs", BindingFlags.NonPublic | BindingFlags.Instance);
-
-    private static readonly FieldInfo? SelectedCardsField =
-        typeof(NPlayerHand).GetField("_selectedCards", BindingFlags.NonPublic | BindingFlags.Instance);
 
     /// <summary>
     ///     Cached PropertyInfo for NClickableControl.IsEnabled (public).
@@ -72,15 +67,7 @@ public static class HandSelectStateBuilder
     /// </summary>
     internal static CardSelectorPrefs? GetPrefs(NPlayerHand hand)
     {
-        try
-        {
-            return PrefsField == null ? null : (CardSelectorPrefs?)PrefsField.GetValue(hand);
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get _prefs: {ex.Message}");
-            return null;
-        }
+        return UiUtils.GetPrivateFieldValue<CardSelectorPrefs>(hand, "_prefs");
     }
 
     /// <summary>
@@ -88,15 +75,7 @@ public static class HandSelectStateBuilder
     /// </summary>
     internal static List<CardModel>? GetSelectedCards(NPlayerHand hand)
     {
-        try
-        {
-            return SelectedCardsField?.GetValue(hand) as List<CardModel>;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get _selectedCards: {ex.Message}");
-            return null;
-        }
+        return UiUtils.GetPrivateField<List<CardModel>>(hand, "_selectedCards");
     }
 
     /// <summary>
@@ -106,13 +85,10 @@ public static class HandSelectStateBuilder
     {
         try
         {
-            var confirmButton = hand.GetNodeOrNull<Godot.Control>("%SelectModeConfirmButton");
+            var confirmButton = hand.GetNodeOrNull<Control>("%SelectModeConfirmButton");
             if (confirmButton == null) return false;
 
-            _confirmIsEnabledProp ??= confirmButton.GetType().GetProperty("IsEnabled",
-                BindingFlags.Public | BindingFlags.Instance);
-
-            return _confirmIsEnabledProp?.GetValue(confirmButton) as bool? ?? false;
+            return UiUtils.GetCachedBoolProperty(ref _confirmIsEnabledProp, confirmButton, "IsEnabled") ?? false;
         }
         catch (Exception ex)
         {

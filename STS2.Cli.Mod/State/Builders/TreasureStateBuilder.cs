@@ -1,4 +1,3 @@
-using System.Reflection;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Runs;
@@ -15,10 +14,6 @@ public static class TreasureStateBuilder
 {
     private static readonly ModLogger Logger = new("TreasureStateBuilder");
 
-    private static readonly FieldInfo? HasChestBeenOpenedField =
-        typeof(NTreasureRoom).GetField("_hasChestBeenOpened",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-
     /// <summary>
     ///     Builds the treasure room state from the current <see cref="NTreasureRoom" />.
     ///     Returns null if the treasure room is not found or not in the scene tree.
@@ -34,7 +29,7 @@ public static class TreasureStateBuilder
                 return null;
             }
 
-            var isChestOpened = GetHasChestBeenOpened(treasureRoom);
+            var isChestOpened = UiUtils.GetPrivateFieldValue<bool>(treasureRoom, "_hasChestBeenOpened") ?? false;
             var relics = new List<TreasureRelicDto>();
 
             // Check proceed button state
@@ -49,9 +44,7 @@ public static class TreasureStateBuilder
                 var currentRelics = synchronizer.CurrentRelics;
 
                 if (currentRelics != null)
-                {
                     for (var i = 0; i < currentRelics.Count; i++)
-                    {
                         try
                         {
                             var relic = currentRelics[i];
@@ -68,11 +61,10 @@ public static class TreasureStateBuilder
                         {
                             Logger.Warning($"Failed to build treasure relic at index {i}: {ex.Message}");
                         }
-                    }
-                }
             }
 
-            Logger.Info($"Built treasure state: chestOpened={isChestOpened}, relics={relics.Count}, canProceed={canProceed}, canSkip={canSkip}");
+            Logger.Info(
+                $"Built treasure state: chestOpened={isChestOpened}, relics={relics.Count}, canProceed={canProceed}, canSkip={canSkip}");
 
             return new TreasureStateDto
             {
@@ -86,26 +78,6 @@ public static class TreasureStateBuilder
         {
             Logger.Error($"Failed to build treasure state: {ex.Message}");
             return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets the _hasChestBeenOpened private field value via reflection.
-    /// </summary>
-    private static bool GetHasChestBeenOpened(NTreasureRoom treasureRoom)
-    {
-        try
-        {
-            if (HasChestBeenOpenedField != null)
-                return (bool)(HasChestBeenOpenedField.GetValue(treasureRoom) ?? false);
-
-            Logger.Warning("_hasChestBeenOpened field not found via reflection");
-            return false;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to read _hasChestBeenOpened: {ex.Message}");
-            return false;
         }
     }
 }

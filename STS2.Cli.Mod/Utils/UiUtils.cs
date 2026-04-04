@@ -1,5 +1,7 @@
+using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
@@ -189,5 +191,181 @@ public static class UiUtils
 
         foreach (var child in node.GetChildren())
             FindAllRecursive(child, results);
+    }
+
+    // ── Reflection helpers ───────────────────────────────────────────
+
+    /// <summary>
+    ///     Gets a private field value from an object via reflection.
+    /// </summary>
+    /// <typeparam name="T">The expected type of the field value.</typeparam>
+    /// <param name="obj">The object to get the field from.</param>
+    /// <param name="fieldName">The name of the private field.</param>
+    /// <returns>The field value cast to <typeparamref name="T" />, or <c>null</c> if not found or type mismatch.</returns>
+    public static T? GetPrivateField<T>(object obj, string fieldName) where T : class
+    {
+        try
+        {
+            var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            return field?.GetValue(obj) as T;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get private field '{fieldName}' from {obj.GetType().Name}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets a private field value from a specific type via reflection.
+    ///     Use this when the field is declared on a base class or specific type.
+    /// </summary>
+    /// <typeparam name="T">The expected type of the field value.</typeparam>
+    /// <param name="type">The type that declares the field.</param>
+    /// <param name="obj">The object instance to get the field from.</param>
+    /// <param name="fieldName">The name of the private field.</param>
+    /// <returns>The field value cast to <typeparamref name="T" />, or <c>null</c> if not found or type mismatch.</returns>
+    public static T? GetPrivateField<T>(Type type, object obj, string fieldName) where T : class
+    {
+        try
+        {
+            var field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            return field?.GetValue(obj) as T;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get private field '{fieldName}' from {type.Name}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets a private field value from an object via reflection.
+    ///     Use this overload for value types (structs).
+    /// </summary>
+    /// <typeparam name="T">The expected type of the field value (must be a value type).</typeparam>
+    /// <param name="obj">The object to get the field from.</param>
+    /// <param name="fieldName">The name of the private field.</param>
+    /// <returns>The field value cast to <typeparamref name="T" />, or null if not found or type mismatch.</returns>
+    public static T? GetPrivateFieldValue<T>(object obj, string fieldName) where T : struct
+    {
+        try
+        {
+            var field = obj.GetType().GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            if (field == null)
+            {
+                Logger.Warning($"Field '{fieldName}' not found on {obj.GetType().Name}");
+                return null;
+            }
+
+            var value = field.GetValue(obj);
+            return value is T typedValue ? typedValue : null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get private field '{fieldName}' from {obj.GetType().Name}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets a private property value from an object via reflection.
+    /// </summary>
+    /// <typeparam name="T">The expected type of the property value.</typeparam>
+    /// <param name="obj">The object to get the property from.</param>
+    /// <param name="propertyName">The name of the private property.</param>
+    /// <returns>The property value cast to <typeparamref name="T" />, or default if not found.</returns>
+    public static T? GetPrivateProperty<T>(object obj, string propertyName) where T : struct
+    {
+        try
+        {
+            var prop = obj.GetType().GetProperty(propertyName, BindingFlags.NonPublic | BindingFlags.Instance);
+            return prop != null ? (T?)(prop.GetValue(obj) ?? default(T)) : null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get private property '{propertyName}' from {obj.GetType().Name}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets a cached property value using a static cache field.
+    ///     The cache is lazily populated on first access.
+    /// </summary>
+    /// <typeparam name="T">The expected type of the property value.</typeparam>
+    /// <param name="cache">The static cache field to store the PropertyInfo.</param>
+    /// <param name="obj">The object to get the property from.</param>
+    /// <param name="propertyName">The name of the property.</param>
+    /// <returns>The property value cast to <typeparamref name="T" />, or <c>null</c> if not found.</returns>
+    public static T? GetCachedProperty<T>(ref PropertyInfo? cache, object obj, string propertyName) where T : class
+    {
+        try
+        {
+            cache ??= obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+            return cache?.GetValue(obj) as T;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get cached property '{propertyName}' from {obj.GetType().Name}: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets a cached boolean property value using a static cache field.
+    /// </summary>
+    /// <param name="cache">The static cache field to store the PropertyInfo.</param>
+    /// <param name="obj">The object to get the property from.</param>
+    /// <param name="propertyName">The name of the property.</param>
+    /// <returns>The boolean property value, or <c>null</c> if not found.</returns>
+    public static bool? GetCachedBoolProperty(ref PropertyInfo? cache, object obj, string propertyName)
+    {
+        try
+        {
+            cache ??= obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+            return cache?.GetValue(obj) as bool?;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(
+                $"Failed to get cached bool property '{propertyName}' from {obj.GetType().Name}: {ex.Message}");
+            return null;
+        }
+    }
+
+    // ── Button state helpers ─────────────────────────────────────────
+
+    /// <summary>
+    ///     Checks if a proceed button is available (enabled and not a skip button).
+    /// </summary>
+    /// <param name="button">The button to check.</param>
+    /// <returns><c>true</c> if the button is enabled and IsSkip is false.</returns>
+    public static bool IsProceedButton(NProceedButton? button)
+    {
+        return button is { IsEnabled: true, IsSkip: false };
+    }
+
+    /// <summary>
+    ///     Checks if a skip button is available (enabled and marked as skip).
+    /// </summary>
+    /// <param name="button">The button to check.</param>
+    /// <returns><c>true</c> if the button is enabled and IsSkip is true.</returns>
+    public static bool IsSkipButton(NProceedButton? button)
+    {
+        return button is { IsEnabled: true, IsSkip: true };
+    }
+
+    // ── Node existence helpers ───────────────────────────────────────
+
+    /// <summary>
+    ///     Checks if a parent node has a child with the given unique name.
+    /// </summary>
+    /// <param name="parent">The parent node to search.</param>
+    /// <param name="uniqueName">The unique name of the child node (e.g., "%ButtonName").</param>
+    /// <returns><c>true</c> if the child node exists.</returns>
+    public static bool HasChildNode(Node? parent, string uniqueName)
+    {
+        return parent?.GetNodeOrNull<Node>(uniqueName) != null;
     }
 }

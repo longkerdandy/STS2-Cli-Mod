@@ -1,4 +1,3 @@
-using System.Reflection;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
@@ -14,13 +13,6 @@ namespace STS2.Cli.Mod.State.Builders;
 public static class MapStateBuilder
 {
     private static readonly ModLogger Logger = new("MapStateBuilder");
-
-    /// <summary>
-    ///     Reflection accessor for the private <c>_mapPointDictionary</c> field on <see cref="NMapScreen" />.
-    ///     Maps <see cref="MapCoord" /> to <see cref="NMapPoint" /> UI nodes which carry travelability state.
-    /// </summary>
-    private static readonly FieldInfo? MapPointDictionaryField =
-        typeof(NMapScreen).GetField("_mapPointDictionary", BindingFlags.NonPublic | BindingFlags.Instance);
 
     /// <summary>
     ///     Builds the map state DTO from the current game state.
@@ -60,13 +52,11 @@ public static class MapStateBuilder
             // Current position
             var currentCoord = runState.CurrentMapCoord;
             if (currentCoord.HasValue)
-            {
                 result.CurrentCoord = new MapCoordDto
                 {
                     Col = currentCoord.Value.col,
                     Row = currentCoord.Value.row
                 };
-            }
 
             // Build all nodes from the ActMap data model
             var nodes = new List<MapNodeDto>();
@@ -84,16 +74,16 @@ public static class MapStateBuilder
             // Starting point (row 0)
             var startingPoint = map.StartingMapPoint;
             var startNode = BuildNode(startingPoint, pointStateMap);
-                nodes.Add(startNode);
-                if (startNode.State == "TRAVELABLE")
-                    travelableCoords.Add(new MapCoordDto { Col = startNode.Col, Row = startNode.Row });
+            nodes.Add(startNode);
+            if (startNode.State == "TRAVELABLE")
+                travelableCoords.Add(new MapCoordDto { Col = startNode.Col, Row = startNode.Row });
 
             // Boss point (row = GetRowCount(), outside grid)
             var bossPoint = map.BossMapPoint;
             var bossNode = BuildNode(bossPoint, pointStateMap);
-                nodes.Add(bossNode);
-                if (bossNode.State == "TRAVELABLE")
-                    travelableCoords.Add(new MapCoordDto { Col = bossNode.Col, Row = bossNode.Row });
+            nodes.Add(bossNode);
+            if (bossNode.State == "TRAVELABLE")
+                travelableCoords.Add(new MapCoordDto { Col = bossNode.Col, Row = bossNode.Row });
 
             // Second boss point (optional, row = GetRowCount() + 1)
             var secondBossPoint = map.SecondBossMapPoint;
@@ -142,15 +132,11 @@ public static class MapStateBuilder
 
         // Build children edges
         foreach (var child in point.Children)
-        {
             node.Children.Add(new MapCoordDto { Col = child.coord.col, Row = child.coord.row });
-        }
 
         // Build parent edges
         foreach (var parent in point.parents)
-        {
             node.Parents.Add(new MapCoordDto { Col = parent.coord.col, Row = parent.coord.row });
-        }
 
         return node;
     }
@@ -207,33 +193,16 @@ public static class MapStateBuilder
     /// </remarks>
     private static Dictionary<MapCoord, MapPointState>? GetMapPointStateDictionary(NMapScreen mapScreen)
     {
-        try
+        var dict = UiUtils.GetPrivateField<Dictionary<MapCoord, NMapPoint>>(mapScreen, "_mapPointDictionary");
+        if (dict == null)
         {
-            if (MapPointDictionaryField == null)
-            {
-                Logger.Warning("_mapPointDictionary field not found on NMapScreen");
-                return null;
-            }
-
-            var dict = MapPointDictionaryField.GetValue(mapScreen);
-            if (dict is not Dictionary<MapCoord, NMapPoint> mapPointDict)
-            {
-                Logger.Warning("_mapPointDictionary is not Dictionary<MapCoord, NMapPoint>");
-                return null;
-            }
-
-            var result = new Dictionary<MapCoord, MapPointState>(mapPointDict.Count);
-            foreach (var kvp in mapPointDict)
-            {
-                result[kvp.Key] = kvp.Value.State;
-            }
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to access _mapPointDictionary: {ex.Message}");
+            Logger.Warning("_mapPointDictionary field not found or not Dictionary<MapCoord, NMapPoint>");
             return null;
         }
+
+        var result = new Dictionary<MapCoord, MapPointState>(dict.Count);
+        foreach (var kvp in dict) result[kvp.Key] = kvp.Value.State;
+
+        return result;
     }
 }

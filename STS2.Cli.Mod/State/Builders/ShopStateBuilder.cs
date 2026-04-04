@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using STS2.Cli.Mod.Models.State;
@@ -67,7 +68,7 @@ public static class ShopStateBuilder
     ///     Combines character cards and colorless cards into a single indexed list.
     /// </summary>
     private static List<ShopCardDto> BuildCards(
-        MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory inventory)
+        MerchantInventory inventory)
     {
         var cards = new List<ShopCardDto>();
         var index = 0;
@@ -107,12 +108,11 @@ public static class ShopStateBuilder
     ///     Builds the list of relic DTOs from the merchant inventory.
     /// </summary>
     private static List<ShopRelicDto> BuildRelics(
-        MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory inventory)
+        MerchantInventory inventory)
     {
         var relics = new List<ShopRelicDto>();
 
         for (var i = 0; i < inventory.RelicEntries.Count; i++)
-        {
             try
             {
                 var entry = inventory.RelicEntries[i];
@@ -136,7 +136,6 @@ public static class ShopStateBuilder
             {
                 Logger.Warning($"Failed to build shop relic at index {i}: {ex.Message}");
             }
-        }
 
         return relics;
     }
@@ -145,12 +144,11 @@ public static class ShopStateBuilder
     ///     Builds the list of potion DTOs from the merchant inventory.
     /// </summary>
     private static List<ShopPotionDto> BuildPotions(
-        MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory inventory)
+        MerchantInventory inventory)
     {
         var potions = new List<ShopPotionDto>();
 
         for (var i = 0; i < inventory.PotionEntries.Count; i++)
-        {
             try
             {
                 var entry = inventory.PotionEntries[i];
@@ -174,7 +172,6 @@ public static class ShopStateBuilder
             {
                 Logger.Warning($"Failed to build shop potion at index {i}: {ex.Message}");
             }
-        }
 
         return potions;
     }
@@ -183,7 +180,7 @@ public static class ShopStateBuilder
     ///     Builds the card removal service DTO, or null if not available.
     /// </summary>
     private static ShopCardRemovalDto? BuildCardRemoval(
-        MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory inventory)
+        MerchantInventory inventory)
     {
         var entry = inventory.CardRemovalEntry;
         if (entry == null) return null;

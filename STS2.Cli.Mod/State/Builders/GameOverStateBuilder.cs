@@ -1,6 +1,4 @@
 using System.Collections;
-using System.Reflection;
-using Godot;
 using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Models.State;
@@ -14,14 +12,6 @@ namespace STS2.Cli.Mod.State.Builders;
 public static class GameOverStateBuilder
 {
     private static readonly ModLogger Logger = new("GameOverStateBuilder");
-
-    private static readonly FieldInfo? RunStateField =
-        typeof(NGameOverScreen).GetField("_runState",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-
-    private static readonly FieldInfo? ScoreField =
-        typeof(NGameOverScreen).GetField("_score",
-            BindingFlags.NonPublic | BindingFlags.Instance);
 
     /// <summary>
     ///     Builds the game over state from the current <see cref="NGameOverScreen" />.
@@ -44,8 +34,8 @@ public static class GameOverStateBuilder
                 return null;
             }
 
-            var runState = RunStateField?.GetValue(screen);
-            var score = ScoreField?.GetValue(screen) as int? ?? 0;
+            var runState = UiUtils.GetPrivateField<object>(screen, "_runState");
+            var score = UiUtils.GetPrivateFieldValue<int>(screen, "_score") ?? 0;
 
             var isVictory = false;
             var floor = 0;
@@ -65,8 +55,8 @@ public static class GameOverStateBuilder
                 CharacterId = characterId,
                 Score = score,
                 EpochsDiscovered = 0,
-                CanReturnToMenu = screen.GetNodeOrNull<Node>("%MainMenuButton") != null,
-                CanContinue = screen.GetNodeOrNull<Node>("%ContinueButton") != null
+                CanReturnToMenu = UiUtils.HasChildNode(screen, "%MainMenuButton"),
+                CanContinue = UiUtils.HasChildNode(screen, "%ContinueButton")
             };
         }
         catch (Exception ex)
@@ -90,7 +80,8 @@ public static class GameOverStateBuilder
     /// </summary>
     private static string? GetCharacterId(object runState)
     {
-        if (runState.GetType().GetProperty("Characters")?.GetValue(runState) is not IList { Count: > 0 } characters) return null;
+        if (runState.GetType().GetProperty("Characters")?.GetValue(runState) is not IList { Count: > 0 } characters)
+            return null;
 
         var id = characters[0]?.GetType().GetProperty("Id")?.GetValue(characters[0]);
         return id?.GetType().GetProperty("Entry")?.GetValue(id) as string;

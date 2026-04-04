@@ -1,9 +1,8 @@
-using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Events.Custom.CrystalSphereEvent;
+using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.Events.Custom.CrystalSphere;
-using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
 
@@ -17,15 +16,6 @@ namespace STS2.Cli.Mod.State.Builders;
 public static class CrystalSphereStateBuilder
 {
     private static readonly ModLogger Logger = new("CrystalSphereStateBuilder");
-
-    /// <summary>
-    ///     Cached reflection accessor for the private <c>_entity</c> field on
-    ///     <see cref="NCrystalSphereScreen" />, which holds the
-    ///     <see cref="CrystalSphereMinigame" /> instance.
-    /// </summary>
-    private static readonly FieldInfo? EntityField =
-        typeof(NCrystalSphereScreen).GetField("_entity",
-            BindingFlags.NonPublic | BindingFlags.Instance);
 
     /// <summary>
     ///     Builds the Crystal Sphere state from the currently open <see cref="NCrystalSphereScreen" />.
@@ -44,7 +34,7 @@ public static class CrystalSphereStateBuilder
             }
 
             // Access the CrystalSphereMinigame entity via reflection (_entity is private)
-            var entity = GetEntity(screen);
+            var entity = UiUtils.GetPrivateField<CrystalSphereMinigame>(screen, "_entity");
             if (entity == null)
             {
                 Logger.Warning("Failed to access CrystalSphereMinigame entity from screen");
@@ -129,21 +119,6 @@ public static class CrystalSphereStateBuilder
     }
 
     /// <summary>
-    ///     Gets the <see cref="CrystalSphereMinigame" /> entity from the screen via reflection.
-    ///     The <c>_entity</c> field is private on <see cref="NCrystalSphereScreen" />.
-    /// </summary>
-    private static CrystalSphereMinigame? GetEntity(NCrystalSphereScreen screen)
-    {
-        if (EntityField == null)
-        {
-            Logger.Warning("Could not find _entity field on NCrystalSphereScreen via reflection");
-            return null;
-        }
-
-        return EntityField.GetValue(screen) as CrystalSphereMinigame;
-    }
-
-    /// <summary>
     ///     Builds the list of fully revealed items. An item is considered revealed
     ///     when ALL cells it occupies have <c>IsHidden == false</c>.
     /// </summary>
@@ -182,7 +157,6 @@ public static class CrystalSphereStateBuilder
             }
 
             if (allCleared)
-            {
                 revealed.Add(new CrystalSphereRevealedItemDto
                 {
                     ItemType = item.GetType().Name,
@@ -192,7 +166,6 @@ public static class CrystalSphereStateBuilder
                     Width = item.Size.X,
                     Height = item.Size.Y
                 });
-            }
         }
 
         return revealed;

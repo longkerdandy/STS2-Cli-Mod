@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
 
 namespace STS2.Cli.Mod.Models.Messages;
@@ -5,6 +6,7 @@ namespace STS2.Cli.Mod.Models.Messages;
 /// <summary>
 /// Request model for pipe communication.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 public class Request
 {
     /// <summary>

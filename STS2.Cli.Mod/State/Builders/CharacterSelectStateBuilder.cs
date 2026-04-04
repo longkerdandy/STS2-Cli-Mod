@@ -1,4 +1,3 @@
-using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using STS2.Cli.Mod.Models.State;
@@ -13,14 +12,6 @@ namespace STS2.Cli.Mod.State.Builders;
 public static class CharacterSelectStateBuilder
 {
     private static readonly ModLogger Logger = new("CharacterSelectStateBuilder");
-
-    private static readonly FieldInfo? SelectedButtonField =
-        typeof(NCharacterSelectScreen).GetField("_selectedButton",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-
-    private static readonly FieldInfo? MaxAscensionField =
-        typeof(NAscensionPanel).GetField("_maxAscension",
-            BindingFlags.NonPublic | BindingFlags.Instance);
 
     /// <summary>
     ///     Builds the character selection state from the current <see cref="NCharacterSelectScreen" />.
@@ -47,7 +38,7 @@ public static class CharacterSelectStateBuilder
             var buttons = UiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
             var characters = new List<CharacterOptionDto>();
             string? selectedCharacter = null;
-            var selectedButton = SelectedButtonField?.GetValue(screen) as NCharacterSelectButton;
+            var selectedButton = UiUtils.GetPrivateField<NCharacterSelectButton>(screen, "_selectedButton");
 
             foreach (var btn in buttons)
             {
@@ -69,7 +60,7 @@ public static class CharacterSelectStateBuilder
             var ascensionPanel = screen.GetNodeOrNull<NAscensionPanel>("%AscensionPanel");
             var currentAsc = ascensionPanel?.Ascension ?? 0;
             var maxAsc = ascensionPanel != null
-                ? (int)(MaxAscensionField?.GetValue(ascensionPanel) ?? 20)
+                ? UiUtils.GetPrivateFieldValue<int>(ascensionPanel, "_maxAscension") ?? 20
                 : 20;
 
             return new CharacterSelectStateDto

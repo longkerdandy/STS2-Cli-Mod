@@ -51,7 +51,7 @@ public static class CombatStateBuilder
             var pcs = player.PlayerCombatState;
             result.Player = PlayerStateBuilder.Build(player);
             result.Hand = BuildHand(pcs);
-            result.DrawPile = BuildPile(pcs?.DrawPile, includePileDetails, shuffle: true);
+            result.DrawPile = BuildPile(pcs?.DrawPile, includePileDetails, true);
             result.DiscardPile = BuildPile(pcs?.DiscardPile, includePileDetails);
             result.ExhaustPile = BuildPile(pcs?.ExhaustPile, includePileDetails);
         }

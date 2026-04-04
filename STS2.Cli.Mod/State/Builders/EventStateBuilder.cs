@@ -17,18 +17,6 @@ public static class EventStateBuilder
     private static readonly ModLogger Logger = new("EventStateBuilder");
 
     /// <summary>
-    ///     Cached reflection field for <see cref="NAncientEventLayout" />._dialogue (private).
-    /// </summary>
-    private static readonly FieldInfo? AncientDialogueField =
-        typeof(NAncientEventLayout).GetField("_dialogue", BindingFlags.NonPublic | BindingFlags.Instance);
-
-    /// <summary>
-    ///     Cached reflection field for <see cref="NAncientEventLayout" />._currentDialogueLine (private).
-    /// </summary>
-    private static readonly FieldInfo? AncientCurrentLineField =
-        typeof(NAncientEventLayout).GetField("_currentDialogueLine", BindingFlags.NonPublic | BindingFlags.Instance);
-
-    /// <summary>
     ///     Builds the event state from the current <see cref="NEventRoom" />.
     ///     Returns null if the event room is not found or has no event model.
     /// </summary>
@@ -153,14 +141,13 @@ public static class EventStateBuilder
             if (result.IsInDialogue)
             {
                 // Extract current line index
-                var currentLine = AncientCurrentLineField?.GetValue(ancientLayout) as int?;
-                result.CurrentDialogueLine = currentLine;
+                result.CurrentDialogueLine = UiUtils.GetPrivateFieldValue<int>(ancientLayout, "_currentDialogueLine");
 
                 // Extract total lines count
-                var dialogue = AncientDialogueField?.GetValue(ancientLayout) as IList;
+                var dialogue = UiUtils.GetPrivateField<IList>(ancientLayout, "_dialogue");
                 if (dialogue != null) result.TotalDialogueLines = dialogue.Count;
 
-                Logger.Info($"Ancient event dialogue: line {currentLine + 1} of {dialogue?.Count}");
+                Logger.Info($"Ancient event dialogue: line {result.CurrentDialogueLine + 1} of {dialogue?.Count}");
             }
         }
         catch (Exception ex)

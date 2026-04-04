@@ -1,4 +1,3 @@
-using System.Reflection;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Models.State;
@@ -43,7 +42,7 @@ public static class TriSelectStateBuilder
         try
         {
             var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
-            var canSkip = ReadCanSkip(screen);
+            var canSkip = UiUtils.GetPrivateFieldValue<bool>(screen, "_canSkip") ?? false;
             var cards = new List<SelectableCardDto>();
 
             for (var i = 0; i < cardHolders.Count; i++)
@@ -92,23 +91,5 @@ public static class TriSelectStateBuilder
         }
 
         return cards.Count > 3 ? "choose_from_hand" : "unknown";
-    }
-
-    /// <summary>
-    ///     Reads the private <c>_canSkip</c> field from an <see cref="NChooseACardSelectionScreen" />
-    ///     via reflection to determine if the selection can be skipped.
-    /// </summary>
-    private static bool ReadCanSkip(NChooseACardSelectionScreen screen)
-    {
-        try
-        {
-            var field = typeof(NChooseACardSelectionScreen).GetField("_canSkip",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(screen) as bool? ?? false;
-        }
-        catch
-        {
-            return false;
-        }
     }
 }
