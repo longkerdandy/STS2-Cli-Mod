@@ -1,4 +1,3 @@
-using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Models;
@@ -311,17 +310,7 @@ public static class GridSelectCardHandler
     /// </summary>
     private static IReadOnlyList<CardModel>? GetCards(NCardGridSelectionScreen screen)
     {
-        try
-        {
-            var field = typeof(NCardGridSelectionScreen).GetField("_cards",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(screen) as IReadOnlyList<CardModel>;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get _cards: {ex.Message}");
-            return null;
-        }
+        return UiUtils.GetPrivateField<IReadOnlyList<CardModel>>(typeof(NCardGridSelectionScreen), screen, "_cards");
     }
 
     /// <summary>
@@ -329,17 +318,7 @@ public static class GridSelectCardHandler
     /// </summary>
     private static NCardGrid? GetGrid(NCardGridSelectionScreen screen)
     {
-        try
-        {
-            var field = typeof(NCardGridSelectionScreen).GetField("_grid",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(screen) as NCardGrid;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get _grid: {ex.Message}");
-            return null;
-        }
+        return UiUtils.GetPrivateField<NCardGrid>(typeof(NCardGridSelectionScreen), screen, "_grid");
     }
 
     /// <summary>
@@ -347,17 +326,7 @@ public static class GridSelectCardHandler
     /// </summary>
     private static CardSelectorPrefs? GetPrefs(NCardGridSelectionScreen screen)
     {
-        try
-        {
-            var field = screen.GetType().GetField("_prefs",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field == null ? null : (CardSelectorPrefs?)field.GetValue(screen);
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get _prefs: {ex.Message}");
-            return null;
-        }
+        return UiUtils.GetPrivateFieldValue<CardSelectorPrefs>(screen, "_prefs");
     }
 
     /// <summary>
@@ -373,24 +342,19 @@ public static class GridSelectCardHandler
             // NDeckCardSelectScreen: _previewConfirmButton is inside %PreviewContainer
             if (screen is NDeckCardSelectScreen)
             {
-                var field = typeof(NDeckCardSelectScreen).GetField("_previewConfirmButton",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                return field?.GetValue(screen) as NConfirmButton;
+                return UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckCardSelectScreen), screen, "_previewConfirmButton");
             }
 
             // NDeckUpgradeSelectScreen: has single and multi preview
             if (screen is NDeckUpgradeSelectScreen)
             {
                 // Try a single preview confirm first
-                var singleField = typeof(NDeckUpgradeSelectScreen).GetField("_singlePreviewConfirmButton",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                if (singleField?.GetValue(screen) is NConfirmButton singleBtn && GodotObject.IsInstanceValid(singleBtn))
+                var singleBtn = UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckUpgradeSelectScreen), screen, "_singlePreviewConfirmButton");
+                if (singleBtn != null && GodotObject.IsInstanceValid(singleBtn))
                     return singleBtn;
 
                 // Fall back to multi preview confirm
-                var multiField = typeof(NDeckUpgradeSelectScreen).GetField("_multiPreviewConfirmButton",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                return multiField?.GetValue(screen) as NConfirmButton;
+                return UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckUpgradeSelectScreen), screen, "_multiPreviewConfirmButton");
             }
 
             // Generic fallback: search for confirmation buttons in the tree
@@ -414,16 +378,12 @@ public static class GridSelectCardHandler
         {
             if (screen is NDeckCardSelectScreen)
             {
-                var field = typeof(NDeckCardSelectScreen).GetField("_confirmButton",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                return field?.GetValue(screen) as NConfirmButton;
+                return UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckCardSelectScreen), screen, "_confirmButton");
             }
 
             if (screen is NSimpleCardSelectScreen)
             {
-                var field = typeof(NSimpleCardSelectScreen).GetField("_confirmButton",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
-                return field?.GetValue(screen) as NConfirmButton;
+                return UiUtils.GetPrivateField<NConfirmButton>(typeof(NSimpleCardSelectScreen), screen, "_confirmButton");
             }
 
             // For other screen types, try generic search
@@ -447,10 +407,9 @@ public static class GridSelectCardHandler
         try
         {
             // Both NDeckCardSelectScreen and NDeckUpgradeSelectScreen have _closeButton
-            var field = screen.GetType().GetField("_closeButton",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            if (field != null)
-                return field.GetValue(screen) as NBackButton;
+            var result = UiUtils.GetPrivateField<NBackButton>(screen, "_closeButton");
+            if (result != null)
+                return result;
 
             // Fallback: search by node path
             return screen.GetNodeOrNull<NBackButton>("%Close");

@@ -1,4 +1,3 @@
-using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
@@ -182,9 +181,9 @@ public static class RewardClaimHandler
                             (itemId == null || MatchesId(pr.Potion?.Id.Entry, itemId)),
                 "relic" => reward is RelicReward rr &&
                            (itemId == null || MatchesId(rr.ClaimedRelic?.Id.Entry, itemId) ||
-                            MatchesId(GetRelicFromReflection(rr)?.Id.Entry, itemId)),
+                            MatchesId(UiUtils.GetPrivateField<RelicModel>(rr, "_relic")?.Id.Entry, itemId)),
                 "special_card" => reward is SpecialCardReward scr &&
-                                  (itemId == null || MatchesId(GetCardFromReflection(scr)?.Id.Entry, itemId)),
+                                  (itemId == null || MatchesId(UiUtils.GetPrivateField<CardModel>(scr, "_card")?.Id.Entry, itemId)),
                 _ => false
             };
 
@@ -202,40 +201,6 @@ public static class RewardClaimHandler
     {
         if (actualId == null || expectedId == null) return false;
         return actualId.Equals(expectedId, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    ///     Gets relic from RelicReward using reflection (private field access).
-    /// </summary>
-    private static RelicModel? GetRelicFromReflection(RelicReward relicReward)
-    {
-        try
-        {
-            var field = typeof(RelicReward).GetField("_relic",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(relicReward) as RelicModel;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets a card from SpecialCardReward using reflection (private field access).
-    /// </summary>
-    private static CardModel? GetCardFromReflection(SpecialCardReward specialCardReward)
-    {
-        try
-        {
-            var field = typeof(SpecialCardReward).GetField("_card",
-                BindingFlags.NonPublic | BindingFlags.Instance);
-            return field?.GetValue(specialCardReward) as CardModel;
-        }
-        catch
-        {
-            return null;
-        }
     }
 
     /// <summary>

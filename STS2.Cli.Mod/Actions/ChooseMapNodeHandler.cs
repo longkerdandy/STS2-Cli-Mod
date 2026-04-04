@@ -1,4 +1,3 @@
-using System.Reflection;
 using MegaCrit.Sts2.Core.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
@@ -21,12 +20,6 @@ namespace STS2.Cli.Mod.Actions;
 public static class ChooseMapNodeHandler
 {
     private static readonly ModLogger Logger = new("ChooseMapNodeHandler");
-
-    /// <summary>
-    ///     Reflection accessor for the private <c>_mapPointDictionary</c> field on <see cref="NMapScreen" />.
-    /// </summary>
-    private static readonly FieldInfo? MapPointDictionaryField =
-        typeof(NMapScreen).GetField("_mapPointDictionary", BindingFlags.NonPublic | BindingFlags.Instance);
 
     /// <summary>
     ///     Handles the choose_map_node request.
@@ -159,30 +152,12 @@ public static class ChooseMapNodeHandler
     /// </summary>
     private static MapPointState? GetMapPointState(NMapScreen mapScreen, MapCoord coord)
     {
-        try
-        {
-            if (MapPointDictionaryField == null)
-            {
-                Logger.Warning("_mapPointDictionary field not found on NMapScreen");
-                return null;
-            }
+        var dict = UiUtils.GetPrivateField<Dictionary<MapCoord, NMapPoint>>(mapScreen, "_mapPointDictionary");
+        if (dict == null) return null;
 
-            var dict = MapPointDictionaryField.GetValue(mapScreen);
-            if (dict is not Dictionary<MapCoord, NMapPoint> mapPointDict)
-            {
-                Logger.Warning("_mapPointDictionary is not Dictionary<MapCoord, NMapPoint>");
-                return null;
-            }
+        if (dict.TryGetValue(coord, out var nMapPoint))
+            return nMapPoint.State;
 
-            if (mapPointDict.TryGetValue(coord, out var nMapPoint))
-                return nMapPoint.State;
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get map point state: {ex.Message}");
-            return null;
-        }
+        return null;
     }
 }

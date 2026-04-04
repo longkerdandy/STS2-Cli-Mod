@@ -1,4 +1,3 @@
-using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Events.Custom.CrystalSphereEvent;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -29,14 +28,6 @@ namespace STS2.Cli.Mod.Actions;
 public static class CrystalSphereHandler
 {
     private static readonly ModLogger Logger = new("CrystalSphereHandler");
-
-    /// <summary>
-    ///     Cached reflection accessor for the private <c>_entity</c> field on
-    ///     <see cref="NCrystalSphereScreen" />.
-    /// </summary>
-    private static readonly FieldInfo? EntityField =
-        typeof(NCrystalSphereScreen).GetField("_entity",
-            BindingFlags.NonPublic | BindingFlags.Instance);
 
     // ── Public entry points ────────────────────────────────────────────
 
@@ -326,12 +317,6 @@ public static class CrystalSphereHandler
     /// </summary>
     private static CrystalSphereMinigame? GetEntity(NCrystalSphereScreen screen)
     {
-        if (EntityField == null)
-        {
-            Logger.Warning("Could not find _entity field on NCrystalSphereScreen via reflection");
-            return null;
-        }
-
-        return EntityField.GetValue(screen) as CrystalSphereMinigame;
+        return UiUtils.GetPrivateField<CrystalSphereMinigame>(screen, "_entity");
     }
 }
