@@ -19,9 +19,11 @@ public static class ChooseGameModeHandler
     private static readonly ModLogger Logger = new("ChooseGameModeHandler");
 
     /// <summary>
-    ///     Handles the choose_game_mode request.
+    ///     Clicks the corresponding button on the singleplayer submenu.
+    ///     Validates parameters and current screen state.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static object HandleRequest(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         var mode = request.Id?.ToLowerInvariant();
         Logger.Info($"Requested to choose game mode: {mode}");
@@ -36,15 +38,6 @@ public static class ChooseGameModeHandler
             return new { ok = false, error = "INVALID_GAME_MODE", message = $"Invalid game mode: {mode}. Valid modes: standard, daily, custom" };
         }
 
-        return Execute(mode);
-    }
-
-    /// <summary>
-    ///     Clicks the corresponding button on the singleplayer submenu.
-    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
-    /// </summary>
-    private static object Execute(string mode)
-    {
         // Guard: Must be on the SINGLEPLAYER_SUBMENU screen
         var currentScreen = StateHandler.DetectScreen();
         if (currentScreen != "SINGLEPLAYER_SUBMENU")
@@ -94,8 +87,8 @@ public static class ChooseGameModeHandler
             Logger.Info($"Clicking {buttonName}");
             button.EmitSignal(NClickableControl.SignalName.Released, button);
 
-            // Wait a moment for the UI transition
-            Thread.Sleep(100);
+            // Wait a moment for the UI transition (non-blocking)
+            await Task.Delay(100);
 
             Logger.Info($"Game mode '{mode}' selected successfully");
             return new { ok = true, data = new { action = "CHOOSE_GAME_MODE", mode } };

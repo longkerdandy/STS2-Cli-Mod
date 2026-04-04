@@ -17,23 +17,14 @@ public static class EmbarkHandler
     private static readonly ModLogger Logger = new("EmbarkHandler");
 
     /// <summary>
-    ///     Handles the embark request.
+    ///     Clicks the Embark button to start the game.
+    ///     Validates the current screen state and returns a response indicating success or failure.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static object HandleRequest()
+    public static object Execute()
     {
         Logger.Info("Requested to embark");
-        return Execute();
-    }
 
-    /// <summary>
-    ///     Clicks the Embark button to start the game.
-    /// </summary>
-    /// <returns>Response object indicating success or failure.</returns>
-    /// <remarks>
-    ///     Must be called on the Godot main thread (PipeServer handles dispatching).
-    /// </remarks>
-    private static object Execute()
-    {
         // Guard: Must be on the character select screen
         var screen = UiUtils.FindCharacterSelectScreen();
         if (screen == null)

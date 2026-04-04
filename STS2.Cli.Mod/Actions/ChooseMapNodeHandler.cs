@@ -22,10 +22,10 @@ public static class ChooseMapNodeHandler
     private static readonly ModLogger Logger = new("ChooseMapNodeHandler");
 
     /// <summary>
-    ///     Handles the choose_map_node request.
-    ///     Expects <c>Args[0]</c> = col, <c>Args[1]</c> = row.
+    ///     Executes the map node selection.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         // --- Parse arguments ---
         if (request.Args == null || request.Args.Length < 2)
@@ -41,16 +41,7 @@ public static class ChooseMapNodeHandler
         var col = request.Args[0];
         var row = request.Args[1];
         Logger.Info($"Requested to choose map node at ({col}, {row})");
-
-        return await ExecuteAsync(col, row);
-    }
-
-    /// <summary>
-    ///     Executes the map node selection.
-    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
-    /// </summary>
-    private static async Task<object> ExecuteAsync(int col, int row)
-    {
+        
         try
         {
             // --- Validate map screen is open ---

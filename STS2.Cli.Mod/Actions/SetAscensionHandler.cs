@@ -18,10 +18,11 @@ public static class SetAscensionHandler
     private static readonly ModLogger Logger = new("SetAscensionHandler");
 
     /// <summary>
-    ///     Handles the set_ascension request.
-    ///     Validates parameters and delegates to Execute.
+    ///     Sets the ascension level.
+    ///     Validates parameters and current screen state.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static object HandleRequest(Request request)
+    public static object Execute(Request request)
     {
         if (request.Args == null || request.Args.Length == 0)
         {
@@ -36,19 +37,7 @@ public static class SetAscensionHandler
 
         var level = request.Args[0];
         Logger.Info($"Requested to set ascension level: {level}");
-        return Execute(level);
-    }
 
-    /// <summary>
-    ///     Sets the ascension level.
-    /// </summary>
-    /// <param name="level">The ascension level to set (0-20).</param>
-    /// <returns>Response object indicating success or failure.</returns>
-    /// <remarks>
-    ///     Must be called on the Godot main thread (PipeServer handles dispatching).
-    /// </remarks>
-    private static object Execute(int level)
-    {
         // Guard: Must be on the character select screen
         var screen = UiUtils.FindCharacterSelectScreen();
         if (screen == null)

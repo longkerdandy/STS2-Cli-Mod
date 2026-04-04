@@ -31,10 +31,10 @@ public static class RewardCardHandler
     private static readonly ModLogger Logger = new("RewardCardHandler");
 
     /// <summary>
-    ///     Handles the <c>reward_choose_card</c> request.
-    ///     Validates parameters and delegates to ExecuteAsync.
+    ///     Picks a card from a card reward using card ID.
+    ///     Must be called on the Godot main thread.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (string.IsNullOrEmpty(request.RewardType))
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward type required (--type)" };
@@ -45,39 +45,12 @@ public static class RewardCardHandler
         if (request.RewardType != "card")
             return new { ok = false, error = "INVALID_REWARD_TYPE", message = "choose_card only supports --type card" };
 
-        var nthValue = request.Nth ?? 0;
-        Logger.Info($"Requested to choose card: type={request.RewardType}, card_id={request.CardId}, nth={nthValue}");
+        var nth = request.Nth ?? 0;
+        var rewardType = request.RewardType;
+        var cardId = request.CardId;
 
-        return await ExecuteAsync(request.RewardType, request.CardId, nthValue);
-    }
+        Logger.Info($"Requested to choose card: type={rewardType}, card_id={cardId}, nth={nth}");
 
-    /// <summary>
-    ///     Handles the <c>reward_skip_card</c> request.
-    ///     Validates parameters and delegates to ExecuteSkipAsync.
-    /// </summary>
-    public static async Task<object> HandleSkipRequestAsync(Request request)
-    {
-        if (string.IsNullOrEmpty(request.RewardType))
-            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward type required (--type)" };
-
-        if (request.RewardType != "card")
-            return new { ok = false, error = "INVALID_REWARD_TYPE", message = "skip_card only supports --type card" };
-
-        var nthValue = request.Nth ?? 0;
-        Logger.Info($"Requested to skip card reward: type={request.RewardType}, nth={nthValue}");
-
-        return await ExecuteSkipAsync(request.RewardType, nthValue);
-    }
-
-    /// <summary>
-    ///     Picks a card from a card reward using card ID.
-    ///     Must be called on the Godot main thread.
-    /// </summary>
-    /// <param name="rewardType">Reward type (only 'card' is supported).</param>
-    /// <param name="cardId">Card ID to select (e.g., STRIKE_IRONCLAD).</param>
-    /// <param name="nth">N-th card reward when multiple exists (0-based).</param>
-    private static async Task<object> ExecuteAsync(string rewardType, string cardId, int nth)
-    {
         try
         {
             // --- Validation ---
@@ -185,10 +158,19 @@ public static class RewardCardHandler
     ///     Skips a card reward.
     ///     Must be called on the Godot main thread.
     /// </summary>
-    /// <param name="rewardType">Reward type (only 'card' is supported).</param>
-    /// <param name="nth">N-th card reward when multiple exists (0-based).</param>
-    private static async Task<object> ExecuteSkipAsync(string rewardType, int nth)
+    public static async Task<object> ExecuteSkipAsync(Request request)
     {
+        if (string.IsNullOrEmpty(request.RewardType))
+            return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward type required (--type)" };
+
+        if (request.RewardType != "card")
+            return new { ok = false, error = "INVALID_REWARD_TYPE", message = "skip_card only supports --type card" };
+
+        var nth = request.Nth ?? 0;
+        var rewardType = request.RewardType;
+
+        Logger.Info($"Requested to skip card reward: type={rewardType}, nth={nth}");
+
         try
         {
             // --- Validation ---

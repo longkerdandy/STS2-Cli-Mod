@@ -40,20 +40,13 @@ public static class OpenChestHandler
             BindingFlags.NonPublic | BindingFlags.Instance);
 
     /// <summary>
-    ///     Handles the open_chest request.
-    /// </summary>
-    public static async Task<object> HandleRequestAsync()
-    {
-        Logger.Info("Requested to open treasure chest");
-        return await ExecuteAsync();
-    }
-
-    /// <summary>
     ///     Executes the open_chest command.
     ///     Must be called on the Godot main thread.
     /// </summary>
-    private static async Task<object> ExecuteAsync()
+    public static async Task<object> ExecuteAsync()
     {
+        Logger.Info("Requested to open treasure chest");
+        
         try
         {
             // --- Guard: Check treasure room ---

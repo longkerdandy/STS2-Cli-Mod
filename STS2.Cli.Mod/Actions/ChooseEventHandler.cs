@@ -24,27 +24,17 @@ public static class ChooseEventHandler
     private static readonly ModLogger Logger = new("ChooseEventHandler");
 
     /// <summary>
-    ///     Handles the choose_event request.
-    ///     Validates parameters and delegates to ExecuteAsync.
+    ///     Executes the choose_event command.
+    ///     Must be called on the Godot main thread.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (request.Args == null || request.Args.Length == 0)
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Option index required" };
 
         var optionIndex = request.Args[0];
         Logger.Info($"Requested to choose event option at index {optionIndex}");
-
-        return await ExecuteAsync(optionIndex);
-    }
-
-    /// <summary>
-    ///     Executes the choose_event command.
-    ///     Must be called on the Godot main thread.
-    /// </summary>
-    /// <param name="optionIndex">0-based index of the option to choose.</param>
-    private static async Task<object> ExecuteAsync(int optionIndex)
-    {
+        
         try
         {
             // --- Guard: Check event room ---

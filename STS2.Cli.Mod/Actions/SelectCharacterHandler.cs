@@ -19,10 +19,11 @@ public static class SelectCharacterHandler
     private static readonly ModLogger Logger = new("SelectCharacterHandler");
 
     /// <summary>
-    ///     Handles the select_character request.
-    ///     Validates parameters and delegates to Execute.
+    ///     Selects a character by calling its Select() method.
+    ///     Validates parameters and current screen state.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static object HandleRequest(Request request)
+    public static object Execute(Request request)
     {
         if (string.IsNullOrEmpty(request.Id))
         {
@@ -30,20 +31,9 @@ public static class SelectCharacterHandler
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Character ID is required" };
         }
 
-        Logger.Info($"Requested to select character: {request.Id}");
-        return Execute(request.Id);
-    }
+        var characterId = request.Id;
+        Logger.Info($"Requested to select character: {characterId}");
 
-    /// <summary>
-    ///     Selects a character by calling its Select() method.
-    /// </summary>
-    /// <param name="characterId">The character identifier (e.g., "ironclad", "silent").</param>
-    /// <returns>Response object indicating success or failure.</returns>
-    /// <remarks>
-    ///     Must be called on the Godot main thread (PipeServer handles dispatching).
-    /// </remarks>
-    private static object Execute(string characterId)
-    {
         // Guard: Must be on the character select screen
         var screen = UiUtils.FindCharacterSelectScreen();
         if (screen == null)

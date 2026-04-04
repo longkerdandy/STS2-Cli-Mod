@@ -28,43 +28,115 @@ public static class HandSelectCardHandler
     private static readonly ModLogger Logger = new("HandSelectCardHandler");
 
     /// <summary>
-    ///     Handles the hand_select_card request.
-    ///     Selects one or more cards from the hand selection by card ID.
+    ///     Selects cards from the hand during hand selection mode.
+    ///     Must be called on the Godot main thread (via RunOnMainThreadAsync from PipeServer).
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    /// <param name="request">The request containing card IDs and optional nth values.</param>
+    /// <returns>Response object indicating success or failure.</returns>
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (request.CardIds == null || request.CardIds.Length == 0)
         {
             // Single card mode: use Id field
             if (request.Id != null)
-                return await ExecuteAsync([request.Id], request.Nth.HasValue ? [request.Nth.Value] : null);
+            {
+                var cardIds = new[] { request.Id };
+                var nthValues = request.Nth.HasValue ? new[] { request.Nth.Value } : null;
+                Logger.Info($"Requested to select 1 card from hand selection");
+                return await ExecuteSelectAsync(cardIds, nthValues);
+            }
 
             Logger.Warning("hand_select_card requested with no card IDs");
             return new { ok = false, error = "MISSING_ARGUMENT", message = "At least one card ID is required" };
         }
 
         Logger.Info($"Requested to select {request.CardIds.Length} card(s) from hand selection");
-        return await ExecuteAsync(request.CardIds, request.NthValues);
+        return await ExecuteSelectAsync(request.CardIds, request.NthValues);
     }
 
     /// <summary>
-    ///     Handles the hand_confirm_selection request.
-    ///     Clicks the confirm button to finalize the hand selection.
-    /// </summary>
-    public static async Task<object> HandleConfirmRequestAsync()
-    {
-        Logger.Info("Requested to confirm hand selection");
-        return await ExecuteConfirmAsync();
-    }
-
-    /// <summary>
-    ///     Selects cards from the hand during hand selection mode.
+    ///     Confirms the current hand selection by clicking the confirm button.
     ///     Must be called on the Godot main thread (via RunOnMainThreadAsync from PipeServer).
     /// </summary>
-    /// <param name="cardIds">Array of card IDs to select.</param>
-    /// <param name="nthValues">Optional nth values for each card ID (0-based).</param>
     /// <returns>Response object indicating success or failure.</returns>
-    private static async Task<object> ExecuteAsync(string[] cardIds, int[]? nthValues = null)
+    public static async Task<object> ExecuteConfirmAsync()
+    {
+        Logger.Info("Requested to confirm hand selection");
+
+        try
+        {
+            // Guard: Must be in hand card selection mode
+            var hand = NPlayerHand.Instance;
+            if (hand is not { IsInCardSelection: true })
+                return new
+                {
+                    ok = false,
+                    error = "NOT_IN_HAND_SELECT",
+                    message = "Not in hand card selection mode."
+                };
+
+            // Find the confirm button
+            var confirmButton = hand.GetNodeOrNull<NConfirmButton>("%SelectModeConfirmButton");
+            if (confirmButton == null)
+                return new
+                {
+                    ok = false,
+                    error = "UI_NOT_FOUND",
+                    message = "Confirm button not found in hand selection."
+                };
+
+            // Check if confirm is enabled (enough cards selected)
+            // NClickableControl exposes a public IsEnabled property (backed by protected _isEnabled field)
+            if (!confirmButton.IsEnabled)
+            {
+                var prefs = HandSelectStateBuilder.GetPrefs(hand);
+                var selectedCards = HandSelectStateBuilder.GetSelectedCards(hand);
+                var count = selectedCards?.Count ?? 0;
+                return new
+                {
+                    ok = false,
+                    error = "CANNOT_CONFIRM",
+                    message =
+                        $"Cannot confirm: {count} card(s) selected, but {prefs?.MinSelect ?? 0}-{prefs?.MaxSelect ?? 0} required."
+                };
+            }
+
+            // Click the confirm button — this calls OnSelectModeConfirmButtonPressed
+            // which sets the result on _selectionCompletionSource
+            Logger.Info("Clicking confirm button to finalize hand selection");
+            confirmButton.ForceClick();
+
+            // Wait for selection mode to end
+            var completed = await ActionUtils.PollUntilAsync(
+                () => !hand.IsInCardSelection,
+                ActionUtils.UiTimeoutMs);
+
+            if (!completed)
+                Logger.Warning("Hand selection confirmed but mode did not exit in time");
+
+            Logger.Info("Hand selection confirmed successfully");
+
+            return new
+            {
+                ok = true,
+                data = new
+                {
+                    confirmed = true,
+                    message = "Hand selection confirmed."
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to confirm hand selection: {ex.Message}");
+            return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
+        }
+    }
+
+    /// <summary>
+    ///     Internal method to perform the actual card selection from hand.
+    /// </summary>
+    private static async Task<object> ExecuteSelectAsync(string[] cardIds, int[]? nthValues = null)
     {
         try
         {
@@ -160,83 +232,6 @@ public static class HandSelectCardHandler
         catch (Exception ex)
         {
             Logger.Error($"Failed to select hand card: {ex.Message}");
-            return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
-        }
-    }
-
-    /// <summary>
-    ///     Confirms the current hand selection by clicking the confirm button.
-    ///     Must be called on the Godot main thread (via RunOnMainThreadAsync from PipeServer).
-    /// </summary>
-    /// <returns>Response object indicating success or failure.</returns>
-    private static async Task<object> ExecuteConfirmAsync()
-    {
-        try
-        {
-            // Guard: Must be in hand card selection mode
-            var hand = NPlayerHand.Instance;
-            if (hand is not { IsInCardSelection: true })
-                return new
-                {
-                    ok = false,
-                    error = "NOT_IN_HAND_SELECT",
-                    message = "Not in hand card selection mode."
-                };
-
-            // Find the confirm button
-            var confirmButton = hand.GetNodeOrNull<NConfirmButton>("%SelectModeConfirmButton");
-            if (confirmButton == null)
-                return new
-                {
-                    ok = false,
-                    error = "UI_NOT_FOUND",
-                    message = "Confirm button not found in hand selection."
-                };
-
-            // Check if confirm is enabled (enough cards selected)
-            // NClickableControl exposes a public IsEnabled property (backed by protected _isEnabled field)
-            if (!confirmButton.IsEnabled)
-            {
-                var prefs = HandSelectStateBuilder.GetPrefs(hand);
-                var selectedCards = HandSelectStateBuilder.GetSelectedCards(hand);
-                var count = selectedCards?.Count ?? 0;
-                return new
-                {
-                    ok = false,
-                    error = "CANNOT_CONFIRM",
-                    message =
-                        $"Cannot confirm: {count} card(s) selected, but {prefs?.MinSelect ?? 0}-{prefs?.MaxSelect ?? 0} required."
-                };
-            }
-
-            // Click the confirm button — this calls OnSelectModeConfirmButtonPressed
-            // which sets the result on _selectionCompletionSource
-            Logger.Info("Clicking confirm button to finalize hand selection");
-            confirmButton.ForceClick();
-
-            // Wait for selection mode to end
-            var completed = await ActionUtils.PollUntilAsync(
-                () => !hand.IsInCardSelection,
-                ActionUtils.UiTimeoutMs);
-
-            if (!completed)
-                Logger.Warning("Hand selection confirmed but mode did not exit in time");
-
-            Logger.Info("Hand selection confirmed successfully");
-
-            return new
-            {
-                ok = true,
-                data = new
-                {
-                    confirmed = true,
-                    message = "Hand selection confirmed."
-                }
-            };
-        }
-        catch (Exception ex)
-        {
-            Logger.Error($"Failed to confirm hand selection: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
         }
     }

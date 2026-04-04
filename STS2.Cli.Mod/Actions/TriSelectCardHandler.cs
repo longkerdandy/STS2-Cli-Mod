@@ -28,10 +28,11 @@ public static class TriSelectCardHandler
     private static readonly ModLogger Logger = new("TriSelectCardHandler");
 
     /// <summary>
-    ///     Handles the tri_select_card request.
-    ///     Validates parameters and delegates to Execute.
+    ///     Selects a card from the "choose a card" selection screen by card ID.
+    ///     Validates parameters and current screen state.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static object HandleRequest(Request request)
+    public static object Execute(Request request)
     {
         if (request.CardIds == null || request.CardIds.Length == 0)
         {
@@ -39,31 +40,11 @@ public static class TriSelectCardHandler
             return new { ok = false, error = "MISSING_ARGUMENT", message = "At least one card ID is required" };
         }
 
-        Logger.Info($"Requested to select {request.CardIds.Length} card(s) from tri-select screen");
-        return Execute(request.CardIds, request.NthValues);
-    }
+        var cardIds = request.CardIds;
+        var nthValues = request.NthValues;
+        
+        Logger.Info($"Requested to select {cardIds.Length} card(s) from tri-select screen");
 
-    /// <summary>
-    ///     Handles the tri_select_skip request.
-    /// </summary>
-    public static object HandleSkipRequest(Request _)
-    {
-        Logger.Info("Requested to skip tri-select card selection");
-        return ExecuteSkip();
-    }
-
-    /// <summary>
-    ///     Selects a card from the "choose a card" selection screen by card ID.
-    ///     The screen always selects exactly 1 card.
-    /// </summary>
-    /// <param name="cardIds">Array of card IDs to select (only 1 supported).</param>
-    /// <param name="nthValues">Optional nth values for each card ID.</param>
-    /// <returns>Response object indicating success or failure.</returns>
-    /// <remarks>
-    ///     Must be called on the Godot main thread (PipeServer handles dispatching).
-    /// </remarks>
-    private static object Execute(string[] cardIds, int[]? nthValues = null)
-    {
         try
         {
             // Guard: Must be in the TRI_SELECT screen
@@ -157,13 +138,13 @@ public static class TriSelectCardHandler
 
     /// <summary>
     ///     Skips the current card selection if allowed.
+    ///     Validates current screen state.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    /// <returns>Response object indicating success or failure.</returns>
-    /// <remarks>
-    ///     Must be called on the Godot main thread (PipeServer handles dispatching).
-    /// </remarks>
-    private static object ExecuteSkip()
+    public static object ExecuteSkip(Request _)
     {
+        Logger.Info("Requested to skip tri-select card selection");
+
         try
         {
             // Guard: Must be in the TRI_SELECT screen

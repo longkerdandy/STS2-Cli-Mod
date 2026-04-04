@@ -22,9 +22,10 @@ public static class ShopBuyRelicHandler
     private static readonly ModLogger Logger = new("ShopBuyRelicHandler");
 
     /// <summary>
-    ///     Handles the shop_buy_relic request.
+    ///     Executes the shop_buy_relic command.
+    ///     Must be called on the Godot main thread.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (string.IsNullOrEmpty(request.Id))
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Relic ID required" };
@@ -32,16 +33,7 @@ public static class ShopBuyRelicHandler
         var relicId = request.Id;
         var nth = request.Nth ?? 0;
         Logger.Info($"Requested to buy relic: {relicId} (nth={nth})");
-
-        return await ExecuteAsync(relicId, nth);
-    }
-
-    /// <summary>
-    ///     Executes the shop_buy_relic command.
-    ///     Must be called on the Godot main thread.
-    /// </summary>
-    private static async Task<object> ExecuteAsync(string relicId, int nth)
-    {
+        
         try
         {
             // --- Guard: Check merchant room ---

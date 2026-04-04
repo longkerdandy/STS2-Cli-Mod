@@ -22,9 +22,10 @@ public static class ShopBuyCardHandler
     private static readonly ModLogger Logger = new("ShopBuyCardHandler");
 
     /// <summary>
-    ///     Handles the shop_buy_card request.
+    ///     Executes the shop_buy_card command.
+    ///     Must be called on the Godot main thread.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (string.IsNullOrEmpty(request.Id))
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Card ID required" };
@@ -32,16 +33,7 @@ public static class ShopBuyCardHandler
         var cardId = request.Id;
         var nth = request.Nth ?? 0;
         Logger.Info($"Requested to buy card: {cardId} (nth={nth})");
-
-        return await ExecuteAsync(cardId, nth);
-    }
-
-    /// <summary>
-    ///     Executes the shop_buy_card command.
-    ///     Must be called on the Godot main thread.
-    /// </summary>
-    private static async Task<object> ExecuteAsync(string cardId, int nth)
-    {
+        
         try
         {
             // --- Guard: Check merchant room ---

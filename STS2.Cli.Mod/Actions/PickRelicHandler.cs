@@ -22,27 +22,17 @@ public static class PickRelicHandler
     private static readonly ModLogger Logger = new("PickRelicHandler");
 
     /// <summary>
-    ///     Handles the pick_relic request.
-    ///     Accepts an index argument (args[0]) for the relic to pick.
+    ///     Executes the pick_relic command.
+    ///     Must be called on the Godot main thread.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (request.Args == null || request.Args.Length < 1)
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Relic index required (0-based)" };
 
         var relicIndex = request.Args[0];
         Logger.Info($"Requested to pick relic at index {relicIndex}");
-
-        return await ExecuteAsync(relicIndex);
-    }
-
-    /// <summary>
-    ///     Executes the pick_relic command.
-    ///     Must be called on the Godot main thread.
-    /// </summary>
-    /// <param name="relicIndex">0-based index of the relic to pick.</param>
-    private static async Task<object> ExecuteAsync(int relicIndex)
-    {
+        
         try
         {
             // --- Guard: Check treasure room ---

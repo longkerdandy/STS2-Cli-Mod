@@ -35,10 +35,11 @@ public static class GridSelectCardHandler
     private static readonly ModLogger Logger = new("GridSelectCardHandler");
 
     /// <summary>
-    ///     Handles the grid_select_card request.
-    ///     Validates parameters and delegates to ExecuteAsync.
+    ///     Selects cards from a grid-based card selection screen by card ID.
+    ///     Must be called on the Godot main thread (via RunOnMainThreadAsync from PipeServer).
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    /// <returns>Response object indicating success or failure.</returns>
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (request.CardIds == null || request.CardIds.Length == 0)
         {
@@ -47,27 +48,10 @@ public static class GridSelectCardHandler
         }
 
         Logger.Info($"Requested to select {request.CardIds.Length} card(s) from grid card selection screen");
-        return await ExecuteAsync(request.CardIds, request.NthValues);
-    }
 
-    /// <summary>
-    ///     Handles the grid_select_skip request.
-    /// </summary>
-    public static async Task<object> HandleSkipRequestAsync()
-    {
-        Logger.Info("Requested to skip grid card selection");
-        return await ExecuteSkipAsync();
-    }
+        var cardIds = request.CardIds;
+        var nthValues = request.NthValues;
 
-    /// <summary>
-    ///     Selects cards from a grid-based card selection screen by card ID.
-    ///     Must be called on the Godot main thread (via RunOnMainThreadAsync from PipeServer).
-    /// </summary>
-    /// <param name="cardIds">Array of card IDs to select.</param>
-    /// <param name="nthValues">Optional nth values for each card ID (0-based).</param>
-    /// <returns>Response object indicating success or failure.</returns>
-    private static async Task<object> ExecuteAsync(string[] cardIds, int[]? nthValues = null)
-    {
         try
         {
             // Guard: Must be on a grid card selection screen
@@ -242,8 +226,10 @@ public static class GridSelectCardHandler
     ///     Must be called on the Godot main thread (via RunOnMainThreadAsync from PipeServer).
     /// </summary>
     /// <returns>Response object indicating success or failure.</returns>
-    private static async Task<object> ExecuteSkipAsync()
+    public static async Task<object> ExecuteSkipAsync()
     {
+        Logger.Info("Requested to skip grid card selection");
+
         try
         {
             // Guard: Must be on a grid card selection screen

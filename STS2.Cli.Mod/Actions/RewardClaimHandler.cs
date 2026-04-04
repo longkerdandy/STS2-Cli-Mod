@@ -25,29 +25,21 @@ public static class RewardClaimHandler
     private static readonly ModLogger Logger = new("RewardClaimHandler");
 
     /// <summary>
-    ///     Handles the <c>reward_claim</c> request.
-    ///     Validates parameters and delegates to ExecuteAsync.
+    ///     Claims a reward by type and optional ID.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (string.IsNullOrEmpty(request.RewardType))
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Reward type required (--type)" };
 
         var nthValue = request.Nth ?? 0;
         Logger.Info($"Requested to claim reward: type={request.RewardType}, id={request.Id ?? "null"}, nth={nthValue}");
-
-        return await ExecuteAsync(request.RewardType, request.Id, nthValue);
-    }
-
-    /// <summary>
-    ///     Claims a reward by type and optional ID.
-    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
-    /// </summary>
-    /// <param name="rewardType">Reward type: gold, potion, relic, special_card.</param>
-    /// <param name="itemId">Item ID for potion/relic/special_card (optional for gold).</param>
-    /// <param name="nth">N-th occurrence when multiple rewards of the same type exist (0-based).</param>
-    private static async Task<object> ExecuteAsync(string rewardType, string? itemId, int nth)
-    {
+        
+        var rewardType = request.RewardType;
+        var itemId = request.Id;
+        var nth = nthValue;
+        
         try
         {
             // --- Validation ---

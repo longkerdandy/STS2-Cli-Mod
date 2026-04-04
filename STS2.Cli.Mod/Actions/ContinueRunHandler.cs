@@ -26,20 +26,14 @@ public static class ContinueRunHandler
     private const int MaxWaitMs = 15000;
 
     /// <summary>
-    ///     Handles the continue_run request.
-    /// </summary>
-    public static async Task<object> HandleRequestAsync()
-    {
-        Logger.Info("Requested to continue run");
-        return await ExecuteAsync();
-    }
-
-    /// <summary>
     ///     Clicks the Continue button and waits for the run to load.
+    ///     Validates the current screen state and saved run existence.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    private static async Task<object> ExecuteAsync()
+    public static async Task<object> ExecuteAsync()
     {
+        Logger.Info("Requested to continue run");
+
         // Guard: Must be on the MENU screen
         var currentScreen = StateHandler.DetectScreen();
         if (currentScreen != "MENU")

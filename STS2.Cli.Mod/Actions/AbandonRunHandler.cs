@@ -19,20 +19,14 @@ public static class AbandonRunHandler
     private static readonly ModLogger Logger = new("AbandonRunHandler");
 
     /// <summary>
-    ///     Handles the abandon_run request.
-    /// </summary>
-    public static object HandleRequest()
-    {
-        Logger.Info("Requested to abandon run");
-        return Execute();
-    }
-
-    /// <summary>
-    ///     Calls <see cref="NMainMenu.AbandonRun" /> directly to abandon the saved run.
+    ///     Abandons the current saved run.
+    ///     Validates the current screen state and calls <see cref="NMainMenu.AbandonRun" />.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    private static object Execute()
+    public static object Execute()
     {
+        Logger.Info("Requested to abandon run");
+
         // Guard: Must be on the MENU screen
         var currentScreen = StateHandler.DetectScreen();
         if (currentScreen != "MENU")

@@ -37,21 +37,13 @@ public static class ProceedHandler
     private static readonly ModLogger Logger = new("ProceedHandler");
 
     /// <summary>
-    ///     Handles the proceed request.
-    ///     Automatically detects the current context (reward screen, FakeMerchant event, rest site, or treasure room).
-    /// </summary>
-    public static async Task<object> HandleRequestAsync(Request _)
-    {
-        Logger.Info("Requested to proceed");
-        return await ExecuteAsync();
-    }
-
-    /// <summary>
     ///     Executes the proceed action based on detected context.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    private static async Task<object> ExecuteAsync()
+    public static async Task<object> ExecuteAsync()
     {
+        Logger.Info("Requested to proceed");
+        
         try
         {
             // --- Try Reward Screen first ---

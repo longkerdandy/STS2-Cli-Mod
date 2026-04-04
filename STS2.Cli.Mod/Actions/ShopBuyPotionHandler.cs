@@ -24,9 +24,10 @@ public static class ShopBuyPotionHandler
     private static readonly ModLogger Logger = new("ShopBuyPotionHandler");
 
     /// <summary>
-    ///     Handles the shop_buy_potion request.
+    ///     Executes the shop_buy_potion command.
+    ///     Must be called on the Godot main thread.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (string.IsNullOrEmpty(request.Id))
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Potion ID required" };
@@ -34,16 +35,7 @@ public static class ShopBuyPotionHandler
         var potionId = request.Id;
         var nth = request.Nth ?? 0;
         Logger.Info($"Requested to buy potion: {potionId} (nth={nth})");
-
-        return await ExecuteAsync(potionId, nth);
-    }
-
-    /// <summary>
-    ///     Executes the shop_buy_potion command.
-    ///     Must be called on the Godot main thread.
-    /// </summary>
-    private static async Task<object> ExecuteAsync(string potionId, int nth)
-    {
+        
         try
         {
             // --- Guard: Check merchant room ---

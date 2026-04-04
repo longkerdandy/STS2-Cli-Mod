@@ -28,30 +28,21 @@ public static class PlayCardHandler
     private static readonly ModLogger Logger = new("PlayCardHandler");
 
     /// <summary>
-    ///     Handles the play_card request.
-    ///     Validates parameters and delegates to ExecuteAsync.
+    ///     Plays a card from the player's hand by ID and returns the execution results.
+    ///     Validates parameters, enqueues the action, and collects results.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (string.IsNullOrEmpty(request.Id))
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Card ID required (e.g., STRIKE_IRONCLAD)" };
 
-        var nthValue = request.Nth ?? 0;
-        var targetStr = request.Target?.ToString(CultureInfo.InvariantCulture) ?? "null";
-        Logger.Info($"Requested to play card {request.Id}, nth={nthValue}, target={targetStr}");
+        var cardId = request.Id;
+        var nth = request.Nth ?? 0;
+        var targetCombatId = request.Target;
+        
+        Logger.Info($"Requested to play card {cardId}, nth={nth}, target={targetCombatId?.ToString(CultureInfo.InvariantCulture) ?? "null"}");
 
-        return await ExecuteAsync(request.Id, nthValue, request.Target);
-    }
-
-    /// <summary>
-    ///     Plays a card from the player's hand by ID and returns the execution results.
-    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
-    /// </summary>
-    /// <param name="cardId">Card ID to play (e.g., "STRIKE_IRONCLAD").</param>
-    /// <param name="nth">N-th occurrence when multiple copies exist (0-based).</param>
-    /// <param name="targetCombatId">Optional target combat ID for targeted cards.</param>
-    private static async Task<object> ExecuteAsync(string cardId, int nth = 0, int? targetCombatId = null)
-    {
         try
         {
             // --- Validation (synchronous, single frame) ---

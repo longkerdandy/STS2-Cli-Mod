@@ -29,30 +29,21 @@ public static class UsePotionHandler
     private static readonly ModLogger Logger = new("UsePotionHandler");
 
     /// <summary>
-    ///     Handles the use_potion request.
-    ///     Validates parameters and delegates to ExecuteAsync.
+    ///     Uses a potion from the player's potion belt by ID and returns the execution results.
+    ///     Validates parameters, enqueues the action, and collects results.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (string.IsNullOrEmpty(request.Id))
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Potion ID required (e.g., FIRE_POTION)" };
 
-        var nthValue = request.Nth ?? 0;
-        var targetStr = request.Target?.ToString(CultureInfo.InvariantCulture) ?? "null";
-        Logger.Info($"Requested to use potion {request.Id}, nth={nthValue}, target={targetStr}");
+        var potionId = request.Id;
+        var nth = request.Nth ?? 0;
+        var targetCombatId = request.Target;
+        
+        Logger.Info($"Requested to use potion {potionId}, nth={nth}, target={targetCombatId?.ToString(CultureInfo.InvariantCulture) ?? "null"}");
 
-        return await ExecuteAsync(request.Id, nthValue, request.Target);
-    }
-
-    /// <summary>
-    ///     Uses a potion from the player's potion belt by ID and returns the execution results.
-    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
-    /// </summary>
-    /// <param name="potionId">Potion ID to use (e.g., "FIRE_POTION").</param>
-    /// <param name="nth">N-th occurrence when multiple copies exist (0-based).</param>
-    /// <param name="targetCombatId">Optional target combat ID for targeted potions.</param>
-    private static async Task<object> ExecuteAsync(string potionId, int nth = 0, int? targetCombatId = null)
-    {
         try
         {
             // --- Validation (synchronous, single frame) ---

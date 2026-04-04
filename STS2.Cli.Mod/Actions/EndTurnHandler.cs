@@ -22,20 +22,14 @@ public static class EndTurnHandler
     private static readonly ModLogger Logger = new("EndTurnHandler");
 
     /// <summary>
-    ///     Handles the end_turn request.
-    /// </summary>
-    public static async Task<object> HandleRequestAsync(Request _)
-    {
-        Logger.Info("Requested to end turn");
-        return await ExecuteAsync();
-    }
-
-    /// <summary>
-    ///     Ends the player's turn, waits for the enemy turn to complete, and returns execution results.
+///     Ends the player's turn, waits for the enemy turn to complete, and returns execution results.
+    ///     Validates combat state and triggers the end turn command.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    private static async Task<object> ExecuteAsync()
+    public static async Task<object> ExecuteAsync(Request _)
     {
+        Logger.Info("Requested to end turn");
+
         try
         {
             // --- Validation (synchronous, single frame) ---

@@ -28,10 +28,9 @@ public static class RelicSelectHandler
     private static readonly ModLogger Logger = new("RelicSelectHandler");
 
     /// <summary>
-    ///     Handles the relic_select request.
-    ///     Accepts an index argument (args[0]) for the relic to select.
+    ///     Selects a relic by index from the "choose a relic" selection screen.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (request.Args == null || request.Args.Length < 1)
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Relic index required (0-based)" };
@@ -39,25 +38,6 @@ public static class RelicSelectHandler
         var relicIndex = request.Args[0];
         Logger.Info($"Requested to select relic at index {relicIndex}");
 
-        return await ExecuteAsync(relicIndex);
-    }
-
-    /// <summary>
-    ///     Handles the relic_skip request.
-    ///     Clicks the skip button to decline all relics.
-    /// </summary>
-    public static async Task<object> HandleSkipRequestAsync()
-    {
-        Logger.Info("Requested to skip relic selection");
-        return await ExecuteSkipAsync();
-    }
-
-    /// <summary>
-    ///     Selects a relic by index from the "choose a relic" selection screen.
-    /// </summary>
-    /// <param name="relicIndex">0-based index of the relic to select.</param>
-    private static async Task<object> ExecuteAsync(int relicIndex)
-    {
         try
         {
             // --- Guard: Check relic selection screen ---
@@ -130,8 +110,10 @@ public static class RelicSelectHandler
     /// <summary>
     ///     Skips the relic selection by clicking the skip button.
     /// </summary>
-    private static async Task<object> ExecuteSkipAsync()
+    public static async Task<object> ExecuteSkipAsync()
     {
+        Logger.Info("Requested to skip relic selection");
+
         try
         {
             // --- Guard: Check relic selection screen ---

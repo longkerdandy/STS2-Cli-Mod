@@ -21,20 +21,14 @@ public static class NewRunHandler
     private static readonly ModLogger Logger = new("NewRunHandler");
 
     /// <summary>
-    ///     Handles the new_run request.
-    /// </summary>
-    public static object HandleRequest()
-    {
-        Logger.Info("Requested to start new run");
-        return Execute();
-    }
-
-    /// <summary>
     ///     Clicks the Singleplayer button on the main menu.
+    ///     Validates the current screen state and saved run existence.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    private static object Execute()
+    public static async Task<object> ExecuteAsync()
     {
+        Logger.Info("Requested to start new run");
+
         // Guard: Must be on the MENU screen
         var currentScreen = StateHandler.DetectScreen();
         if (currentScreen != "MENU")
@@ -79,8 +73,8 @@ public static class NewRunHandler
             Logger.Info("Clicking Singleplayer button");
             singleplayerButton.EmitSignal(NClickableControl.SignalName.Released, singleplayerButton);
 
-            // Wait a moment for the UI transition
-            Thread.Sleep(100);
+            // Wait a moment for the UI transition (non-blocking)
+            await Task.Delay(100);
 
             Logger.Info("New run initiated successfully");
             return new { ok = true, data = new { action = "NEW_RUN" } };

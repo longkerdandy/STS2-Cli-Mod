@@ -30,25 +30,15 @@ public static class AdvanceDialogueHandler
     private static readonly ModLogger Logger = new("AdvanceDialogueHandler");
 
     /// <summary>
-    ///     Handles the advance_dialogue request.
-    ///     Validates parameters and delegates to ExecuteAsync.
+    ///     Executes the advance_dialogue command.
+    ///     Must be called on the Godot main thread.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         // args[0] = 1 for auto mode, 0 or not present for a single advance
         var auto = request.Args is { Length: > 0 } && request.Args[0] == 1;
         Logger.Info($"Requested to advance dialogue (auto={auto})");
-
-        return await ExecuteAsync(auto);
-    }
-
-    /// <summary>
-    ///     Executes the advance_dialogue command.
-    ///     Must be called on the Godot main thread.
-    /// </summary>
-    /// <param name="auto">If true, auto-advance until options appear or dialogue ends.</param>
-    private static async Task<object> ExecuteAsync(bool auto = false)
-    {
+        
         try
         {
             // --- Guard: Check event room ---

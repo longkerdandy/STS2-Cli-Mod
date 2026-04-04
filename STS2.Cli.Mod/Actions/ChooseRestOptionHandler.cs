@@ -31,27 +31,17 @@ public static class ChooseRestOptionHandler
     private static readonly ModLogger Logger = new("ChooseRestOptionHandler");
 
     /// <summary>
-    ///     Handles the choose_rest_option request.
-    ///     Validates parameters and delegates to ExecuteAsync.
+    ///     Executes the choose_rest_option command.
+    ///     Must be called on the Godot main thread.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (string.IsNullOrEmpty(request.Id))
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Option ID required (e.g., HEAL, SMITH)" };
 
         var optionId = request.Id.ToUpperInvariant();
         Logger.Info($"Requested to choose rest site option: {optionId}");
-
-        return await ExecuteAsync(optionId);
-    }
-
-    /// <summary>
-    ///     Executes the choose_rest_option command.
-    ///     Must be called on the Godot main thread.
-    /// </summary>
-    /// <param name="optionId">The option ID (e.g., "HEAL", "SMITH").</param>
-    private static async Task<object> ExecuteAsync(string optionId)
-    {
+        
         try
         {
             // --- Guard: Check rest site room ---

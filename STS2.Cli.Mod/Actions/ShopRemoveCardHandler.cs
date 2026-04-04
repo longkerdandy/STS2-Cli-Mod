@@ -25,20 +25,13 @@ public static class ShopRemoveCardHandler
     private static readonly ModLogger Logger = new("ShopRemoveCardHandler");
 
     /// <summary>
-    ///     Handles the shop_remove_card request.
-    /// </summary>
-    public static async Task<object> HandleRequestAsync()
-    {
-        Logger.Info("Requested to buy card removal service");
-        return await ExecuteAsync();
-    }
-
-    /// <summary>
     ///     Executes the shop_remove_card command.
     ///     Must be called on the Godot main thread.
     /// </summary>
-    private static async Task<object> ExecuteAsync()
+    public static async Task<object> ExecuteAsync()
     {
+        Logger.Info("Requested to buy card removal service");
+        
         try
         {
             // --- Guard: Check merchant room ---
