@@ -1,4 +1,3 @@
-using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
@@ -24,7 +23,7 @@ public static class ChooseGameModeHandler
     /// </summary>
     public static object HandleRequest(Request request)
     {
-        var mode = request.Id?.ToLower();
+        var mode = request.Id?.ToLowerInvariant();
         Logger.Info($"Requested to choose game mode: {mode}");
 
         if (string.IsNullOrEmpty(mode))

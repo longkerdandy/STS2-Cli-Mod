@@ -1,7 +1,6 @@
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
-using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Combat;
@@ -81,7 +80,7 @@ public static class PlayCardHandler
 
             // Resolve target
             var (target, targetError) = ActionUtils.ResolveTarget(
-                player, card.TargetType, targetCombatId, card.Title.ToString());
+                player, card.TargetType, targetCombatId, card.Title);
             if (targetError != null)
                 return targetError;
 

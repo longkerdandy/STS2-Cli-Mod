@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Entities.Merchant;
-using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
@@ -52,9 +51,7 @@ public static class ShopBuyPotionHandler
             if (merchantRoom == null || !merchantRoom.IsInsideTree())
                 return new { ok = false, error = "NOT_IN_SHOP", message = "Not currently in a shop" };
 
-            var inventory = merchantRoom.Room?.Inventory;
-            if (inventory == null)
-                return new { ok = false, error = "NOT_IN_SHOP", message = "Shop inventory not available" };
+            var inventory = merchantRoom.Room.Inventory;
 
             // --- Find the potion entry by ID + nth ---
             var entry = FindPotionEntry(inventory, potionId, nth);
@@ -103,10 +100,9 @@ public static class ShopBuyPotionHandler
     /// </summary>
     private static MerchantPotionEntry? FindPotionEntry(MerchantInventory inventory, string potionId, int nth)
     {
-        int count = 0;
-        for (int i = 0; i < inventory.PotionEntries.Count; i++)
+        var count = 0;
+        foreach (var entry in inventory.PotionEntries)
         {
-            var entry = inventory.PotionEntries[i];
             var model = entry.Model;
             if (model == null) continue;
 

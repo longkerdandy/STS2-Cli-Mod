@@ -53,7 +53,7 @@ public static class GridSelectCardHandler
     /// <summary>
     ///     Handles the grid_select_skip request.
     /// </summary>
-    public static async Task<object> HandleSkipRequestAsync(Request request)
+    public static async Task<object> HandleSkipRequestAsync()
     {
         Logger.Info("Requested to skip grid card selection");
         return await ExecuteSkipAsync();
@@ -408,11 +408,7 @@ public static class GridSelectCardHandler
         {
             // Both NDeckCardSelectScreen and NDeckUpgradeSelectScreen have _closeButton
             var result = UiUtils.GetPrivateField<NBackButton>(screen, "_closeButton");
-            if (result != null)
-                return result;
-
-            // Fallback: search by node path
-            return screen.GetNodeOrNull<NBackButton>("%Close");
+            return result ?? screen.GetNodeOrNull<NBackButton>("%Close");
         }
         catch (Exception ex)
         {

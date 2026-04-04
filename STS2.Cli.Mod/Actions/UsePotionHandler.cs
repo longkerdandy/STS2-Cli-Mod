@@ -4,7 +4,6 @@ using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
-using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Actions.Utils;
@@ -88,7 +87,7 @@ public static class UsePotionHandler
 
             // Resolve target based on potion's TargetType
             var (target, targetError) = ActionUtils.ResolveTarget(
-                player, potion.TargetType, targetCombatId, potion.Title?.ToString() ?? potion.Id.Entry);
+                player, potion.TargetType, targetCombatId, potion.Title.ToString() ?? potion.Id.Entry);
             if (targetError != null)
                 return targetError;
 

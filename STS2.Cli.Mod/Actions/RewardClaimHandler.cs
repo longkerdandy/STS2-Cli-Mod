@@ -174,7 +174,7 @@ public static class RewardClaimHandler
             var reward = button.Reward;
             if (reward == null) continue;
 
-            var matches = rewardType.ToLower() switch
+            var matches = rewardType.ToLowerInvariant() switch
             {
                 "gold" => reward is GoldReward,
                 "potion" => reward is PotionReward pr &&

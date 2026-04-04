@@ -1,8 +1,6 @@
-using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Actions.Utils;
-using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -29,7 +27,7 @@ public static class ShopRemoveCardHandler
     /// <summary>
     ///     Handles the shop_remove_card request.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> HandleRequestAsync()
     {
         Logger.Info("Requested to buy card removal service");
         return await ExecuteAsync();
@@ -48,9 +46,7 @@ public static class ShopRemoveCardHandler
             if (merchantRoom == null || !merchantRoom.IsInsideTree())
                 return new { ok = false, error = "NOT_IN_SHOP", message = "Not currently in a shop" };
 
-            var inventory = merchantRoom.Room?.Inventory;
-            if (inventory == null)
-                return new { ok = false, error = "NOT_IN_SHOP", message = "Shop inventory not available" };
+            var inventory = merchantRoom.Room.Inventory;
 
             // --- Guard: Check card removal entry exists ---
             var entry = inventory.CardRemovalEntry;
@@ -76,10 +72,7 @@ public static class ShopRemoveCardHandler
             await ActionUtils.PollUntilAsync(() =>
             {
                 var overlay = NOverlayStack.Instance?.Peek();
-                if (overlay is MegaCrit.Sts2.Core.Nodes.Screens.CardSelection.NCardGridSelectionScreen)
-                    return true;
-
-                return false;
+                return overlay is MegaCrit.Sts2.Core.Nodes.Screens.CardSelection.NCardGridSelectionScreen;
             }, ActionUtils.UiTimeoutMs);
 
             // --- Detect resulting screen ---
@@ -117,10 +110,9 @@ public static class ShopRemoveCardHandler
         {
             // cancelable: true allows the player to back out of card selection
             var success = await entry.OnTryPurchaseWrapper(inventory, ignoreCost: false, cancelable: true);
-            if (success)
-                Logger.Info("Card removal purchase completed successfully");
-            else
-                Logger.Info("Card removal purchase was cancelled or failed");
+            Logger.Info(success
+                ? "Card removal purchase completed successfully"
+                : "Card removal purchase was cancelled or failed");
         }
         catch (Exception ex)
         {

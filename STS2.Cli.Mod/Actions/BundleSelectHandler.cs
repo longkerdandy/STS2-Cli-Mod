@@ -46,7 +46,7 @@ public static class BundleSelectHandler
     ///     Handles the bundle_confirm request.
     ///     Clicks the confirm button to accept the previewed bundle.
     /// </summary>
-    public static async Task<object> HandleConfirmAsync(Request request)
+    public static async Task<object> HandleConfirmAsync()
     {
         Logger.Info("Requested to confirm bundle selection");
         return await ExecuteConfirmAsync();
@@ -56,7 +56,7 @@ public static class BundleSelectHandler
     ///     Handles the bundle_cancel request.
     ///     Clicks the cancel button to return to bundle selection.
     /// </summary>
-    public static async Task<object> HandleCancelAsync(Request request)
+    public static async Task<object> HandleCancelAsync()
     {
         Logger.Info("Requested to cancel bundle preview");
         return await ExecuteCancelAsync();

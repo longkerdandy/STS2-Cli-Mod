@@ -1,8 +1,6 @@
-using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
-using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -18,7 +16,7 @@ internal static class ReturnToMenuHandler
     /// <summary>
     ///     Executes the return to menu action.
     /// </summary>
-    public static object Execute(Request request)
+    public static object Execute()
     {
         Logger.Info("Executing return to menu");
 
@@ -40,8 +38,7 @@ internal static class ReturnToMenuHandler
                 return new { ok = false, error = "UI_NOT_FOUND", message = "Cannot access overlay stack" };
             }
 
-            var gameOverScreen = overlayStack.Peek() as NGameOverScreen;
-            if (gameOverScreen == null)
+            if (overlayStack.Peek() is not NGameOverScreen gameOverScreen)
             {
                 Logger.Error("Game over screen not found in overlay stack");
                 return new { ok = false, error = "UI_NOT_FOUND", message = "Game over screen not found" };
@@ -66,7 +63,7 @@ internal static class ReturnToMenuHandler
             mainMenuButton.EmitSignal(NClickableControl.SignalName.Released, mainMenuButton);
 
             // Wait a moment for the transition to start
-            System.Threading.Thread.Sleep(100);
+            Thread.Sleep(100);
 
             Logger.Info("Return to menu initiated successfully");
             return new { ok = true, data = new { action = "RETURN_TO_MENU", screen = "MENU" } };

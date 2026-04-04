@@ -1,6 +1,5 @@
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
 using STS2.Cli.Mod.Actions.Utils;
-using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -20,7 +19,7 @@ public static class EmbarkHandler
     /// <summary>
     ///     Handles the embark request.
     /// </summary>
-    public static object HandleRequest(Request request)
+    public static object HandleRequest()
     {
         Logger.Info("Requested to embark");
         return Execute();

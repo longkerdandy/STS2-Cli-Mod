@@ -74,13 +74,7 @@ public static class PickRelicHandler
 
             // --- Poll for proceed button to become enabled ---
             // After picking, the game animates the relic pickup, then enables the proceed button.
-            await ActionUtils.PollUntilAsync(() =>
-            {
-                if (treasureRoom.ProceedButton is { IsEnabled: true })
-                    return true;
-
-                return false;
-            }, ActionUtils.UiTimeoutMs);
+            await ActionUtils.PollUntilAsync(() => treasureRoom.ProceedButton is { IsEnabled: true }, ActionUtils.UiTimeoutMs);
 
             // --- Return result ---
             var screen = StateHandler.DetectScreen();

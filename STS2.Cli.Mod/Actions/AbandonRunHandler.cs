@@ -1,6 +1,5 @@
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
-using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -22,7 +21,7 @@ public static class AbandonRunHandler
     /// <summary>
     ///     Handles the abandon_run request.
     /// </summary>
-    public static object HandleRequest(Request request)
+    public static object HandleRequest()
     {
         Logger.Info("Requested to abandon run");
         return Execute();

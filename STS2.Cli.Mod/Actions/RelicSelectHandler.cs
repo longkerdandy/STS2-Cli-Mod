@@ -46,7 +46,7 @@ public static class RelicSelectHandler
     ///     Handles the relic_skip request.
     ///     Clicks the skip button to decline all relics.
     /// </summary>
-    public static async Task<object> HandleSkipRequestAsync(Request request)
+    public static async Task<object> HandleSkipRequestAsync()
     {
         Logger.Info("Requested to skip relic selection");
         return await ExecuteSkipAsync();
@@ -91,7 +91,7 @@ public static class RelicSelectHandler
 
             // --- Select the relic ---
             var holder = holders[relicIndex];
-            var relicModel = holder.Relic?.Model;
+            var relicModel = holder.Relic.Model;
             var relicId = relicModel?.Id.Entry ?? "UNKNOWN";
             Logger.Info($"Selecting relic at index {relicIndex}: {relicId}");
 

@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Entities.Merchant;
-using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
@@ -50,9 +49,7 @@ public static class ShopBuyRelicHandler
             if (merchantRoom == null || !merchantRoom.IsInsideTree())
                 return new { ok = false, error = "NOT_IN_SHOP", message = "Not currently in a shop" };
 
-            var inventory = merchantRoom.Room?.Inventory;
-            if (inventory == null)
-                return new { ok = false, error = "NOT_IN_SHOP", message = "Shop inventory not available" };
+            var inventory = merchantRoom.Room.Inventory;
 
             // --- Find the relic entry by ID + nth ---
             var entry = FindRelicEntry(inventory, relicId, nth);
@@ -99,10 +96,9 @@ public static class ShopBuyRelicHandler
     /// </summary>
     private static MerchantRelicEntry? FindRelicEntry(MerchantInventory inventory, string relicId, int nth)
     {
-        int count = 0;
-        for (int i = 0; i < inventory.RelicEntries.Count; i++)
+        var count = 0;
+        foreach (var entry in inventory.RelicEntries)
         {
-            var entry = inventory.RelicEntries[i];
             var model = entry.Model;
             if (model == null) continue;
 

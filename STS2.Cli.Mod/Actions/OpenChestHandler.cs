@@ -5,7 +5,6 @@ using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Actions.Utils;
-using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -43,7 +42,7 @@ public static class OpenChestHandler
     /// <summary>
     ///     Handles the open_chest request.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> HandleRequestAsync()
     {
         Logger.Info("Requested to open treasure chest");
         return await ExecuteAsync();
@@ -67,8 +66,7 @@ public static class OpenChestHandler
                 return new { ok = false, error = "CHEST_ALREADY_OPENED", message = "Chest has already been opened" };
 
             // --- Get chest button ---
-            var chestButton = ChestButtonField?.GetValue(treasureRoom) as NButton;
-            if (chestButton == null)
+            if (ChestButtonField?.GetValue(treasureRoom) is not NButton chestButton)
                 return new { ok = false, error = "UI_NOT_FOUND", message = "Chest button not found" };
 
             // --- Fire-and-forget: simulate OnChestButtonReleased ---
@@ -93,10 +91,7 @@ public static class OpenChestHandler
                     return true;
 
                 // Proceed button enabled (e.g., empty chest scenario)
-                if (treasureRoom.ProceedButton is { IsEnabled: true })
-                    return true;
-
-                return false;
+                return treasureRoom.ProceedButton is { IsEnabled: true };
             }, ActionUtils.UiTimeoutMs);
 
             // --- Return updated screen state ---

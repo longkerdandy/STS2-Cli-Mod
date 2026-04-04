@@ -2,7 +2,6 @@ using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using MegaCrit.Sts2.Core.Runs;
-using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -29,7 +28,7 @@ public static class ContinueRunHandler
     /// <summary>
     ///     Handles the continue_run request.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> HandleRequestAsync()
     {
         Logger.Info("Requested to continue run");
         return await ExecuteAsync();

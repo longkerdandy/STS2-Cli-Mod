@@ -71,7 +71,7 @@ public static class CrystalSphereHandler
     ///     Handles the <c>crystal_proceed</c> request.
     ///     Clicks the proceed button to leave the mini-game.
     /// </summary>
-    public static async Task<object> HandleProceedAsync(Request request)
+    public static async Task<object> HandleProceedAsync()
     {
         Logger.Info("Requested to proceed from Crystal Sphere mini-game");
         return await ExecuteProceedAsync();
@@ -222,7 +222,7 @@ public static class CrystalSphereHandler
 
             // Check if a child overlay appeared (reward from item reveal)
             var topOverlay = NOverlayStack.Instance?.Peek();
-            if (topOverlay != null && topOverlay != (IOverlayScreen)screen)
+            if (topOverlay != null && topOverlay != screen)
             {
                 // A reward screen appeared on top — wait a bit more for it to fully render
                 await Task.Delay(ActionUtils.PostClickDelayMs);

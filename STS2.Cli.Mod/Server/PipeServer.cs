@@ -156,13 +156,13 @@ public static class PipeServer
 
                 "set_ascension" => MainThreadExecutor.RunOnMainThread(() => SetAscensionHandler.HandleRequest(request)),
 
-                "embark" => MainThreadExecutor.RunOnMainThread(() => EmbarkHandler.HandleRequest(request)),
+                "embark" => MainThreadExecutor.RunOnMainThread(() => EmbarkHandler.HandleRequest()),
 
                 "new_run" => MainThreadExecutor.RunOnMainThread(() =>
-                    NewRunHandler.HandleRequest(request)),
+                    NewRunHandler.HandleRequest()),
 
                 "abandon_run" => MainThreadExecutor.RunOnMainThread(() =>
-                    AbandonRunHandler.HandleRequest(request)),
+                    AbandonRunHandler.HandleRequest()),
 
                 "choose_game_mode" => MainThreadExecutor.RunOnMainThread(() =>
                     ChooseGameModeHandler.HandleRequest(request)),
@@ -172,13 +172,13 @@ public static class PipeServer
                     HandSelectCardHandler.HandleRequestAsync(request)),
 
                 "hand_confirm_selection" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    HandSelectCardHandler.HandleConfirmRequestAsync(request)),
+                    HandSelectCardHandler.HandleConfirmRequestAsync()),
 
                 "grid_select_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     GridSelectCardHandler.HandleRequestAsync(request)),
 
                 "grid_select_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    GridSelectCardHandler.HandleSkipRequestAsync(request)),
+                    GridSelectCardHandler.HandleSkipRequestAsync()),
 
                 "tri_select_card" => MainThreadExecutor.RunOnMainThread(() =>
                     TriSelectCardHandler.HandleRequest(request)),
@@ -190,10 +190,10 @@ public static class PipeServer
                     BundleSelectHandler.HandleSelectAsync(request)),
 
                 "bundle_confirm" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    BundleSelectHandler.HandleConfirmAsync(request)),
+                    BundleSelectHandler.HandleConfirmAsync()),
 
                 "bundle_cancel" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    BundleSelectHandler.HandleCancelAsync(request)),
+                    BundleSelectHandler.HandleCancelAsync()),
 
                 "crystal_set_tool" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     CrystalSphereHandler.HandleSetToolAsync(request)),
@@ -202,7 +202,7 @@ public static class PipeServer
                     CrystalSphereHandler.HandleClickCellAsync(request)),
 
                 "crystal_proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    CrystalSphereHandler.HandleProceedAsync(request)),
+                    CrystalSphereHandler.HandleProceedAsync()),
 
                 "play_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     PlayCardHandler.HandleRequestAsync(request)),
@@ -234,13 +234,13 @@ public static class PipeServer
                     RelicSelectHandler.HandleRequestAsync(request)),
 
                 "relic_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    RelicSelectHandler.HandleSkipRequestAsync(request)),
+                    RelicSelectHandler.HandleSkipRequestAsync()),
 
                 "return_to_menu" => MainThreadExecutor.RunOnMainThread(() =>
-                    ReturnToMenuHandler.Execute(request)),
+                    ReturnToMenuHandler.Execute()),
 
                 "continue_run" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ContinueRunHandler.HandleRequestAsync(request)),
+                    ContinueRunHandler.HandleRequestAsync()),
 
                 // --- Room-based ---
                 "choose_event" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
@@ -253,7 +253,7 @@ public static class PipeServer
                     ChooseRestOptionHandler.HandleRequestAsync(request)),
 
                 "open_chest" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    OpenChestHandler.HandleRequestAsync(request)),
+                    OpenChestHandler.HandleRequestAsync()),
 
                 "pick_relic" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     PickRelicHandler.HandleRequestAsync(request)),
@@ -268,7 +268,7 @@ public static class PipeServer
                     ShopBuyPotionHandler.HandleRequestAsync(request)),
 
                 "shop_remove_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ShopRemoveCardHandler.HandleRequestAsync(request)),
+                    ShopRemoveCardHandler.HandleRequestAsync()),
 
                 // --- State query ---
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),

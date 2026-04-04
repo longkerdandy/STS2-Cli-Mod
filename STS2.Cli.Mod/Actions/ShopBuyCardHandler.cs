@@ -1,5 +1,4 @@
 using MegaCrit.Sts2.Core.Entities.Merchant;
-using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
@@ -50,9 +49,7 @@ public static class ShopBuyCardHandler
             if (merchantRoom == null || !merchantRoom.IsInsideTree())
                 return new { ok = false, error = "NOT_IN_SHOP", message = "Not currently in a shop" };
 
-            var inventory = merchantRoom.Room?.Inventory;
-            if (inventory == null)
-                return new { ok = false, error = "NOT_IN_SHOP", message = "Shop inventory not available" };
+            var inventory = merchantRoom.Room.Inventory;
 
             // --- Find the card entry by ID + nth ---
             var entry = FindCardEntry(inventory, cardId, nth);
@@ -99,7 +96,7 @@ public static class ShopBuyCardHandler
     /// </summary>
     private static MerchantCardEntry? FindCardEntry(MerchantInventory inventory, string cardId, int nth)
     {
-        int count = 0;
+        var count = 0;
         foreach (var entry in inventory.CardEntries)
         {
             var card = entry.CreationResult?.Card;

@@ -61,8 +61,8 @@ public static class ChooseRestOptionHandler
 
             // --- Guard: Find the option by ID ---
             var options = restSiteRoom.Options;
-            int optionIndex = -1;
-            for (int i = 0; i < options.Count; i++)
+            var optionIndex = -1;
+            for (var i = 0; i < options.Count; i++)
             {
                 if (string.Equals(options[i].OptionId, optionId, StringComparison.OrdinalIgnoreCase))
                 {
@@ -118,10 +118,7 @@ public static class ChooseRestOptionHandler
                     return true;
 
                 // Map opened (safety)
-                if (NMapScreen.Instance is { IsOpen: true })
-                    return true;
-
-                return false;
+                return NMapScreen.Instance is { IsOpen: true };
             }, ActionUtils.UiTimeoutMs);
 
             // --- Detect resulting screen and return appropriate state ---

@@ -1,5 +1,3 @@
-using MegaCrit.Sts2.Core.CardSelection;
-using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
@@ -53,7 +51,7 @@ public static class HandSelectCardHandler
     ///     Handles the hand_confirm_selection request.
     ///     Clicks the confirm button to finalize the hand selection.
     /// </summary>
-    public static async Task<object> HandleConfirmRequestAsync(Request request)
+    public static async Task<object> HandleConfirmRequestAsync()
     {
         Logger.Info("Requested to confirm hand selection");
         return await ExecuteConfirmAsync();
@@ -72,7 +70,7 @@ public static class HandSelectCardHandler
         {
             // Guard: Must be in hand card selection mode
             var hand = NPlayerHand.Instance;
-            if (hand == null || !hand.IsInCardSelection)
+            if (hand is not { IsInCardSelection: true })
                 return new
                 {
                     ok = false,
@@ -177,7 +175,7 @@ public static class HandSelectCardHandler
         {
             // Guard: Must be in hand card selection mode
             var hand = NPlayerHand.Instance;
-            if (hand == null || !hand.IsInCardSelection)
+            if (hand is not { IsInCardSelection: true })
                 return new
                 {
                     ok = false,

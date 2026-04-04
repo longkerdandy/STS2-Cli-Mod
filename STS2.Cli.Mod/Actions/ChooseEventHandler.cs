@@ -213,9 +213,7 @@ public static class ChooseEventHandler
             if (NMapScreen.Instance is { IsOpen: true }) return true;
 
             var eventModel = EventUtils.GetEventModel(eventRoom);
-            if (eventModel == null) return true;
-
-            return HasEventStateChanged(eventModel, snapshot);
+            return eventModel == null || HasEventStateChanged(eventModel, snapshot);
         }, ActionUtils.UiTimeoutMs);
     }
 
@@ -237,10 +235,7 @@ public static class ChooseEventHandler
         }
 
         // Check if event finished
-        if (eventModel.IsFinished != snapshot.IsFinished)
-            return true;
-
-        return false;
+        return eventModel.IsFinished != snapshot.IsFinished;
     }
 
     /// <summary>

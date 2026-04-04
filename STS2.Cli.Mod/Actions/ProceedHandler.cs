@@ -190,7 +190,7 @@ public static class ProceedHandler
 
         if (!eventModel.IsFinished)
         {
-            var eventId = eventModel.Id?.Entry ?? "unknown";
+            var eventId = eventModel.Id.Entry;
             Logger.Warning($"Event '{eventId}' is not finished, cannot proceed");
             return new
             {
@@ -282,16 +282,6 @@ public static class ProceedHandler
     private static async Task<object> ExecuteRestSiteProceedAsync(NRestSiteRoom restSiteRoom)
     {
         var proceedButton = restSiteRoom.ProceedButton;
-        if (proceedButton == null)
-        {
-            Logger.Warning("NProceedButton not found in NRestSiteRoom");
-            return new
-            {
-                ok = false,
-                error = "PROCEED_BUTTON_NOT_FOUND",
-                message = "Proceed button not found on rest site"
-            };
-        }
 
         if (!proceedButton.IsEnabled)
         {
@@ -330,16 +320,6 @@ public static class ProceedHandler
     private static async Task<object> ExecuteTreasureRoomProceedAsync(NTreasureRoom treasureRoom)
     {
         var proceedButton = treasureRoom.ProceedButton;
-        if (proceedButton == null)
-        {
-            Logger.Warning("NProceedButton not found in NTreasureRoom");
-            return new
-            {
-                ok = false,
-                error = "PROCEED_BUTTON_NOT_FOUND",
-                message = "Proceed button not found on treasure room"
-            };
-        }
 
         if (!proceedButton.IsEnabled)
         {
@@ -357,7 +337,7 @@ public static class ProceedHandler
         if (isSkip)
         {
             Logger.Info("Skip button detected — skipping relic and proceeding");
-            RunManager.Instance?.TreasureRoomRelicSynchronizer.SkipRelicLocally();
+            RunManager.Instance.TreasureRoomRelicSynchronizer.SkipRelicLocally();
             NMapScreen.Instance?.SetTravelEnabled(enabled: true);
         }
         else
@@ -394,16 +374,6 @@ public static class ProceedHandler
     private static async Task<object> ExecuteMerchantRoomProceedAsync(NMerchantRoom merchantRoom)
     {
         var proceedButton = merchantRoom.ProceedButton;
-        if (proceedButton == null)
-        {
-            Logger.Warning("NProceedButton not found in NMerchantRoom");
-            return new
-            {
-                ok = false,
-                error = "PROCEED_BUTTON_NOT_FOUND",
-                message = "Proceed button not found on merchant room"
-            };
-        }
 
         if (!proceedButton.IsEnabled)
         {
