@@ -24,7 +24,7 @@ public static class EndTurnHandler
     /// <summary>
     ///     Handles the end_turn request.
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> HandleRequestAsync(Request _)
     {
         Logger.Info("Requested to end turn");
         return await ExecuteAsync();

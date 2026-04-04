@@ -40,7 +40,7 @@ public static class ProceedHandler
     ///     Handles the proceed request.
     ///     Automatically detects the current context (reward screen, FakeMerchant event, rest site, or treasure room).
     /// </summary>
-    public static async Task<object> HandleRequestAsync(Request request)
+    public static async Task<object> HandleRequestAsync(Request _)
     {
         Logger.Info("Requested to proceed");
         return await ExecuteAsync();

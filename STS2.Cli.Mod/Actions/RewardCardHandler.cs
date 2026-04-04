@@ -300,20 +300,6 @@ public static class RewardCardHandler
     }
 
     /// <summary>
-    ///     Gets a list of available card IDs in a reward for error messages.
-    /// </summary>
-    private static List<string> GetAvailableCardIds(CardReward cardReward)
-    {
-        var ids = new List<string>();
-        var cards = cardReward.Cards;
-
-        foreach (var card in cards)
-            ids.Add(card.Id.Entry);
-
-        return ids;
-    }
-
-    /// <summary>
     ///     Finds the cardholder by card ID.
     /// </summary>
     private static NCardHolder? FindCardHolderById(List<NCardHolder> cardHolders, string cardId)
