@@ -143,168 +143,134 @@ public static class PipeServer
     {
         try
         {
-            var cmd = request.Cmd.ToLower();
+            var cmd = request.Cmd.ToLowerInvariant();
 
             return cmd switch
             {
                 // ping does not access game state — handle directly on the pipe thread
                 "ping" => new { ok = true, data = new { connected = true } },
 
-                // play_card is async — spans multiple frames waiting for action completion
-                "play_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    PlayCardHandler.HandleRequestAsync(request)),
-
-                // end_turn is async — waits for the enemy turn to complete before returning results
-                "end_turn" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    EndTurnHandler.HandleRequestAsync(request)),
-
-                // use_potion is async — spans multiple frames waiting for action completion
-                "use_potion" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    UsePotionHandler.HandleRequestAsync(request)),
-
-                // reward_claim is async — uses type + id + nth for stable identification
-                "reward_claim" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    RewardClaimHandler.HandleRequestAsync(request)),
-
-                // reward_choose_card is async — uses reward type + card_id + nth
-                "reward_choose_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    RewardCardHandler.HandleRequestAsync(request)),
-
-                // reward_skip_card is async — uses reward type + nth
-                "reward_skip_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    RewardCardHandler.HandleSkipRequestAsync(request)),
-
-                // choose_event is async — ForceClick option button + polling for state change
-                "choose_event" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ChooseEventHandler.HandleRequestAsync(request)),
-
-                // advance_dialogue is async — ForceClick dialogue hitbox + polling for Ancient events
-                "advance_dialogue" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    AdvanceDialogueHandler.HandleRequestAsync(request)),
-
-                // proceed is async — FakeMerchant path needs to wait for map to open
-                "proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ProceedHandler.HandleRequestAsync(request)),
-
-                // tri_select_card is synchronous — runs on main thread and returns immediately
-                "tri_select_card" => MainThreadExecutor.RunOnMainThread(() =>
-                    TriSelectCardHandler.HandleRequest(request)),
-
-                // tri_select_skip is synchronous — runs on main thread and returns immediately
-                "tri_select_skip" => MainThreadExecutor.RunOnMainThread(() =>
-                    TriSelectCardHandler.HandleSkipRequest(request)),
-
-                // grid_select_card is async — multi-step: select cards, confirm/preview, poll for removal
-                "grid_select_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    GridSelectCardHandler.HandleRequestAsync(request)),
-
-                // grid_select_skip is async — click close button, poll for removal
-                "grid_select_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    GridSelectCardHandler.HandleSkipRequestAsync(request)),
-
-                // select_character is synchronous — runs on main thread and returns immediately
+                // --- Pre-run commands ---
                 "select_character" => MainThreadExecutor.RunOnMainThread(() =>
                     SelectCharacterHandler.HandleRequest(request)),
 
-                // set_ascension is synchronous — runs on main thread and returns immediately
                 "set_ascension" => MainThreadExecutor.RunOnMainThread(() => SetAscensionHandler.HandleRequest(request)),
 
-                // embark is synchronous — runs on main thread and returns immediately
                 "embark" => MainThreadExecutor.RunOnMainThread(() => EmbarkHandler.HandleRequest(request)),
 
-                // choose_map_node is async — travels to a map node with animations and room loading
-                "choose_map_node" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ChooseMapNodeHandler.HandleRequestAsync(request)),
-
-                // choose_rest_option is async — rest site option selection with animations
-                "choose_rest_option" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ChooseRestOptionHandler.HandleRequestAsync(request)),
-
-                // open_chest is async — opens treasure chest with fire-and-forget, polls for relics
-                "open_chest" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    OpenChestHandler.HandleRequestAsync(request)),
-
-                // pick_relic is async — picks a relic in treasure room, polls for proceed button
-                "pick_relic" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    PickRelicHandler.HandleRequestAsync(request)),
-
-                // shop_buy_card is async — purchases a card from the shop
-                "shop_buy_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ShopBuyCardHandler.HandleRequestAsync(request)),
-
-                // shop_buy_relic is async — purchases a relic from the shop
-                "shop_buy_relic" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ShopBuyRelicHandler.HandleRequestAsync(request)),
-
-                // shop_buy_potion is async — purchases a potion from the shop
-                "shop_buy_potion" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ShopBuyPotionHandler.HandleRequestAsync(request)),
-
-                // shop_remove_card is async — fire-and-forget card removal, polls for deck select overlay
-                "shop_remove_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ShopRemoveCardHandler.HandleRequestAsync(request)),
-
-                // hand_select_card is async — select cards from hand during combat selection mode
-                "hand_select_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    HandSelectCardHandler.HandleRequestAsync(request)),
-
-                // hand_confirm_selection is async — confirm hand card selection
-                "hand_confirm_selection" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    HandSelectCardHandler.HandleConfirmRequestAsync(request)),
-
-                // relic_select is async — select a relic from the boss/event relic selection screen
-                "relic_select" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    RelicSelectHandler.HandleRequestAsync(request)),
-
-                // relic_skip is async — skip relic selection on the boss/event relic selection screen
-                "relic_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    RelicSelectHandler.HandleSkipRequestAsync(request)),
-
-                // bundle_select is async — preview a bundle by clicking its hitbox
-                "bundle_select" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    BundleSelectHandler.HandleSelectAsync(request)),
-
-                // bundle_confirm is async — confirm the previewed bundle, polls for screen removal
-                "bundle_confirm" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    BundleSelectHandler.HandleConfirmAsync(request)),
-
-                // bundle_cancel is async — cancel bundle preview and return to selection
-                "bundle_cancel" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    BundleSelectHandler.HandleCancelAsync(request)),
-
-                // crystal_set_tool is async — switch divination tool (big/small)
-                "crystal_set_tool" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    CrystalSphereHandler.HandleSetToolAsync(request)),
-
-                // crystal_click_cell is async — click a grid cell to clear fog
-                "crystal_click_cell" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    CrystalSphereHandler.HandleClickCellAsync(request)),
-
-                // crystal_proceed is async — leave the mini-game after divinations are exhausted
-                "crystal_proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    CrystalSphereHandler.HandleProceedAsync(request)),
-
-                // return_to_menu is synchronous — click main menu button on game over screen
-                "return_to_menu" => MainThreadExecutor.RunOnMainThread(() =>
-                    ReturnToMenuHandler.Execute(request)),
-
-                // continue_run is async — loads saved run with fade-out and scene transition
-                "continue_run" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
-                    ContinueRunHandler.HandleRequestAsync(request)),
-
-                // new_run is synchronous — clicks Singleplayer button on main menu
                 "new_run" => MainThreadExecutor.RunOnMainThread(() =>
                     NewRunHandler.HandleRequest(request)),
 
-                // abandon_run is synchronous — abandons saved run from main menu
                 "abandon_run" => MainThreadExecutor.RunOnMainThread(() =>
                     AbandonRunHandler.HandleRequest(request)),
 
-                // choose_game_mode is synchronous — selects game mode from singleplayer submenu
                 "choose_game_mode" => MainThreadExecutor.RunOnMainThread(() =>
                     ChooseGameModeHandler.HandleRequest(request)),
 
-                // state is synchronous — single-frame game state extraction on the main thread
+                // --- Combat and its sub-states ---
+                "hand_select_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    HandSelectCardHandler.HandleRequestAsync(request)),
+
+                "hand_confirm_selection" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    HandSelectCardHandler.HandleConfirmRequestAsync(request)),
+
+                "grid_select_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    GridSelectCardHandler.HandleRequestAsync(request)),
+
+                "grid_select_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    GridSelectCardHandler.HandleSkipRequestAsync(request)),
+
+                "tri_select_card" => MainThreadExecutor.RunOnMainThread(() =>
+                    TriSelectCardHandler.HandleRequest(request)),
+
+                "tri_select_skip" => MainThreadExecutor.RunOnMainThread(() =>
+                    TriSelectCardHandler.HandleSkipRequest(request)),
+
+                "bundle_select" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    BundleSelectHandler.HandleSelectAsync(request)),
+
+                "bundle_confirm" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    BundleSelectHandler.HandleConfirmAsync(request)),
+
+                "bundle_cancel" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    BundleSelectHandler.HandleCancelAsync(request)),
+
+                "crystal_set_tool" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    CrystalSphereHandler.HandleSetToolAsync(request)),
+
+                "crystal_click_cell" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    CrystalSphereHandler.HandleClickCellAsync(request)),
+
+                "crystal_proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    CrystalSphereHandler.HandleProceedAsync(request)),
+
+                "play_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    PlayCardHandler.HandleRequestAsync(request)),
+
+                "end_turn" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    EndTurnHandler.HandleRequestAsync(request)),
+
+                "use_potion" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    UsePotionHandler.HandleRequestAsync(request)),
+
+                // --- Map ---
+                "choose_map_node" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ChooseMapNodeHandler.HandleRequestAsync(request)),
+
+                // --- Overlay stack ---
+                "reward_claim" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    RewardClaimHandler.HandleRequestAsync(request)),
+
+                "reward_choose_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    RewardCardHandler.HandleRequestAsync(request)),
+
+                "reward_skip_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    RewardCardHandler.HandleSkipRequestAsync(request)),
+
+                "proceed" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ProceedHandler.HandleRequestAsync(request)),
+
+                "relic_select" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    RelicSelectHandler.HandleRequestAsync(request)),
+
+                "relic_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    RelicSelectHandler.HandleSkipRequestAsync(request)),
+
+                "return_to_menu" => MainThreadExecutor.RunOnMainThread(() =>
+                    ReturnToMenuHandler.Execute(request)),
+
+                "continue_run" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ContinueRunHandler.HandleRequestAsync(request)),
+
+                // --- Room-based ---
+                "choose_event" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ChooseEventHandler.HandleRequestAsync(request)),
+
+                "advance_dialogue" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    AdvanceDialogueHandler.HandleRequestAsync(request)),
+
+                "choose_rest_option" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ChooseRestOptionHandler.HandleRequestAsync(request)),
+
+                "open_chest" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    OpenChestHandler.HandleRequestAsync(request)),
+
+                "pick_relic" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    PickRelicHandler.HandleRequestAsync(request)),
+
+                "shop_buy_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ShopBuyCardHandler.HandleRequestAsync(request)),
+
+                "shop_buy_relic" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ShopBuyRelicHandler.HandleRequestAsync(request)),
+
+                "shop_buy_potion" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ShopBuyPotionHandler.HandleRequestAsync(request)),
+
+                "shop_remove_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ShopRemoveCardHandler.HandleRequestAsync(request)),
+
+                // --- State query ---
                 "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
 
                 _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
