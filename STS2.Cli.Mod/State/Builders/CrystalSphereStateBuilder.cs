@@ -34,25 +34,15 @@ public static class CrystalSphereStateBuilder
     /// </summary>
     public static CrystalSphereStateDto? Build()
     {
-        var screen = UiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
-        if (screen == null)
-        {
-            Logger.Warning("No NCrystalSphereScreen found in overlay stack");
-            return null;
-        }
-
-        return Build(screen);
-    }
-
-    /// <summary>
-    ///     Builds the Crystal Sphere state from the given <see cref="NCrystalSphereScreen" />.
-    /// </summary>
-    /// <param name="screen">The Crystal Sphere screen to extract data from.</param>
-    /// <returns>DTO with grid, tool, divination, and proceed state; null on failure.</returns>
-    private static CrystalSphereStateDto? Build(NCrystalSphereScreen screen)
-    {
         try
         {
+            var screen = UiUtils.FindScreenInOverlay<NCrystalSphereScreen>();
+            if (screen == null)
+            {
+                Logger.Warning("No NCrystalSphereScreen found in overlay stack");
+                return null;
+            }
+
             // Access the CrystalSphereMinigame entity via reflection (_entity is private)
             var entity = GetEntity(screen);
             if (entity == null)

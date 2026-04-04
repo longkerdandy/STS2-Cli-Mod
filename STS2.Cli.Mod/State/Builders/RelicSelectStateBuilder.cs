@@ -22,25 +22,15 @@ public static class RelicSelectStateBuilder
     /// </summary>
     public static RelicSelectStateDto? Build()
     {
-        var screen = UiUtils.FindScreenInOverlay<NChooseARelicSelection>();
-        if (screen == null)
-        {
-            Logger.Warning("No NChooseARelicSelection found in overlay stack");
-            return null;
-        }
-
-        return Build(screen);
-    }
-
-    /// <summary>
-    ///     Builds the relic selection state from the given <see cref="NChooseARelicSelection" /> screen.
-    /// </summary>
-    /// <param name="screen">The relic selection screen to extract data from.</param>
-    /// <returns>DTO with selectable relics and skip availability; null on failure.</returns>
-    private static RelicSelectStateDto? Build(NChooseARelicSelection screen)
-    {
         try
         {
+            var screen = UiUtils.FindScreenInOverlay<NChooseARelicSelection>();
+            if (screen == null)
+            {
+                Logger.Warning("No NChooseARelicSelection found in overlay stack");
+                return null;
+            }
+
             var holders = UiUtils.FindAll<NRelicBasicHolder>(screen);
             var relics = new List<SelectableRelicDto>();
 

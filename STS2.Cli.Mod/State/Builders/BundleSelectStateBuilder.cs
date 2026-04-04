@@ -25,25 +25,15 @@ public static class BundleSelectStateBuilder
     /// </summary>
     public static BundleSelectStateDto? Build()
     {
-        var screen = UiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
-        if (screen == null)
-        {
-            Logger.Warning("No NChooseABundleSelectionScreen found in overlay stack");
-            return null;
-        }
-
-        return Build(screen);
-    }
-
-    /// <summary>
-    ///     Builds the bundle selection state from the given <see cref="NChooseABundleSelectionScreen" />.
-    /// </summary>
-    /// <param name="screen">The bundle selection screen to extract data from.</param>
-    /// <returns>DTO with bundles, preview state, and button availability; null on failure.</returns>
-    public static BundleSelectStateDto? Build(NChooseABundleSelectionScreen screen)
-    {
         try
         {
+            var screen = UiUtils.FindScreenInOverlay<NChooseABundleSelectionScreen>();
+            if (screen == null)
+            {
+                Logger.Warning("No NChooseABundleSelectionScreen found in overlay stack");
+                return null;
+            }
+
             // Extract all NCardBundle nodes from the screen
             var bundleNodes = UiUtils.FindAll<NCardBundle>(screen);
             var bundles = new List<BundleDto>();
