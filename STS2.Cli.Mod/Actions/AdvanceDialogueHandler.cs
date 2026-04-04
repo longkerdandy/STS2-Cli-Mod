@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Reflection;
 using MegaCrit.Sts2.Core.Nodes.Events;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
@@ -283,7 +282,7 @@ public static class AdvanceDialogueHandler
         {
             var field = typeof(NAncientEventLayout).GetField("_dialogue",
                 BindingFlags.NonPublic | BindingFlags.Instance);
-            var dialogue = field?.GetValue(ancientLayout) as IList;
+            var dialogue = field?.GetValue(ancientLayout) as IList<object>;
             return dialogue?.Count ?? 0;
         }
         catch
