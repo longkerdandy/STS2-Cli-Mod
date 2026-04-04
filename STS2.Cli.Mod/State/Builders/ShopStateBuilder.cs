@@ -36,12 +36,11 @@ public static class ShopStateBuilder
             var relics = BuildRelics(inventory);
             var potions = BuildPotions(inventory);
             var cardRemoval = BuildCardRemoval(inventory);
-            var playerGold = inventory.Player?.Gold ?? 0;
+            var playerGold = inventory.Player.Gold;
 
             // Check proceed button state
-            var canProceed = false;
             var proceedButton = merchantRoom.ProceedButton;
-            canProceed = proceedButton.IsEnabled;
+            var canProceed = proceedButton.IsEnabled;
 
             Logger.Info($"Built shop state: cards={cards.Count}, relics={relics.Count}, potions={potions.Count}, " +
                         $"cardRemoval={cardRemoval != null}, gold={playerGold}, canProceed={canProceed}");

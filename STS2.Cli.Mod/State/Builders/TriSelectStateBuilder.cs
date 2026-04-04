@@ -88,16 +88,10 @@ public static class TriSelectStateBuilder
         if (cards.Count == 3)
         {
             var types = cards.Select(c => c.CardType).Distinct().ToList();
-            if (types.Count == 1)
-                return $"choose_from_pool_{types[0]?.ToLower()}";
-
-            return "choose_from_pool";
+            return types.Count == 1 ? $"choose_from_pool_{types[0]?.ToLower()}" : "choose_from_pool";
         }
 
-        if (cards.Count > 3)
-            return "choose_from_hand";
-
-        return "unknown";
+        return cards.Count > 3 ? "choose_from_hand" : "unknown";
     }
 
     /// <summary>

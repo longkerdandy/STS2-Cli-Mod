@@ -36,19 +36,17 @@ public static class TreasureStateBuilder
 
             var isChestOpened = GetHasChestBeenOpened(treasureRoom);
             var relics = new List<TreasureRelicDto>();
-            var canSkip = false;
-            var canProceed = false;
 
             // Check proceed button state
             var proceedButton = treasureRoom.ProceedButton;
-            canProceed = proceedButton is { IsEnabled: true, IsSkip: false };
-            canSkip = proceedButton is { IsEnabled: true, IsSkip: true };
+            var canProceed = proceedButton is { IsEnabled: true, IsSkip: false };
+            var canSkip = proceedButton is { IsEnabled: true, IsSkip: true };
 
             // Extract available relics from TreasureRoomRelicSynchronizer
             if (isChestOpened)
             {
                 var synchronizer = RunManager.Instance.TreasureRoomRelicSynchronizer;
-                var currentRelics = synchronizer?.CurrentRelics;
+                var currentRelics = synchronizer.CurrentRelics;
 
                 if (currentRelics != null)
                 {
