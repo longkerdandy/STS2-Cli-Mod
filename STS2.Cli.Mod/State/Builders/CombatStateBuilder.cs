@@ -73,7 +73,9 @@ public static class CombatStateBuilder
         for (var i = 0; i < cards.Count; i++)
             try
             {
-                hand.Add(CardStateBuilder.Build(cards[i], i));
+                var cardState = CardStateBuilder.Build(cards[i], i);
+                if (cardState != null)
+                    hand.Add(cardState);
             }
             catch (Exception ex)
             {
@@ -94,7 +96,9 @@ public static class CombatStateBuilder
         foreach (var creature in combatState.Enemies)
             try
             {
-                enemies.Add(EnemyStateBuilder.Build(creature, combatState));
+                var enemyState = EnemyStateBuilder.Build(creature, combatState);
+                if (enemyState != null)
+                    enemies.Add(enemyState);
             }
             catch (Exception ex)
             {
