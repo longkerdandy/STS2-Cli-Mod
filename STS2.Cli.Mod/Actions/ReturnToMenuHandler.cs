@@ -16,7 +16,7 @@ internal static class ReturnToMenuHandler
     /// <summary>
     ///     Executes the return to menu action.
     /// </summary>
-    public static object Execute()
+    public static async Task<object> ExecuteAsync()
     {
         Logger.Info("Executing return to menu");
 
@@ -62,8 +62,8 @@ internal static class ReturnToMenuHandler
             Logger.Info("Clicking main menu button");
             mainMenuButton.EmitSignal(NClickableControl.SignalName.Released, mainMenuButton);
 
-            // Wait a moment for the transition to start
-            Thread.Sleep(100);
+            // Wait a moment for the transition to start (non-blocking)
+            await Task.Delay(100);
 
             Logger.Info("Return to menu initiated successfully");
             return new { ok = true, data = new { action = "RETURN_TO_MENU", screen = "MENU" } };

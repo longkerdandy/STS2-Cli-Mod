@@ -236,8 +236,8 @@ public static class PipeServer
                 "relic_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     RelicSelectHandler.HandleSkipRequestAsync()),
 
-                "return_to_menu" => MainThreadExecutor.RunOnMainThread(() =>
-                    ReturnToMenuHandler.Execute()),
+                "return_to_menu" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ReturnToMenuHandler.ExecuteAsync()),
 
                 "continue_run" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     ContinueRunHandler.HandleRequestAsync()),

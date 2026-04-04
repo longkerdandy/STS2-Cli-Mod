@@ -1,3 +1,4 @@
+using System.Globalization;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -37,8 +38,8 @@ public static class UsePotionHandler
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Potion ID required (e.g., FIRE_POTION)" };
 
         var nthValue = request.Nth ?? 0;
-        Logger.Info(
-            $"Requested to use potion {request.Id}, nth={nthValue}, target={request.Target?.ToString() ?? "none"}");
+        var targetStr = request.Target?.ToString(CultureInfo.InvariantCulture) ?? "null";
+        Logger.Info($"Requested to use potion {request.Id}, nth={nthValue}, target={targetStr}");
 
         return await ExecuteAsync(request.Id, nthValue, request.Target);
     }

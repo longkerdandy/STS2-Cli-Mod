@@ -1,3 +1,4 @@
+using System.Globalization;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Cards;
@@ -36,8 +37,8 @@ public static class PlayCardHandler
             return new { ok = false, error = "MISSING_ARGUMENT", message = "Card ID required (e.g., STRIKE_IRONCLAD)" };
 
         var nthValue = request.Nth ?? 0;
-        Logger.Info(
-            $"Requested to play card {request.Id}, nth={nthValue}, target={request.Target?.ToString() ?? "none"}");
+        var targetStr = request.Target?.ToString(CultureInfo.InvariantCulture) ?? "null";
+        Logger.Info($"Requested to play card {request.Id}, nth={nthValue}, target={targetStr}");
 
         return await ExecuteAsync(request.Id, nthValue, request.Target);
     }
