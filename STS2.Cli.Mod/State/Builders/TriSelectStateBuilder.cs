@@ -1,8 +1,9 @@
+using System.Reflection;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
-using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
+using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State.Builders;
 
@@ -17,12 +18,12 @@ public static class TriSelectStateBuilder
 
     /// <summary>
     ///     Builds the tri-select state from the currently open <see cref="NChooseACardSelectionScreen" />.
-    ///     Finds the screen via <see cref="CardSelectionUtils.FindCardSelectionScreen" />.
+    ///     Finds the screen via <see cref="UiUtils.FindScreenInOverlay{T}" />.
     ///     Returns null if no screen is found.
     /// </summary>
     public static TriSelectStateDto? Build()
     {
-        var screen = CardSelectionUtils.FindCardSelectionScreen();
+        var screen = UiUtils.FindScreenInOverlay<NChooseACardSelectionScreen>();
         if (screen == null)
         {
             Logger.Warning("No NChooseACardSelectionScreen found in overlay stack");
@@ -42,7 +43,7 @@ public static class TriSelectStateBuilder
         try
         {
             var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
-            var canSkip = CardSelectionUtils.ReadCanSkip(screen);
+            var canSkip = ReadCanSkip(screen);
             var cards = new List<SelectableCardDto>();
 
             for (var i = 0; i < cardHolders.Count; i++)
@@ -55,10 +56,10 @@ public static class TriSelectStateBuilder
                 {
                     Index = i,
                     CardId = card.Id.Entry,
-                    CardName = TextUtils.StripGameTags(card.Title),
+                    CardName = StripGameTags(card.Title),
                     CardType = card.Type.ToString(),
                     Cost = card.EnergyCost.Canonical,
-                    Description = TextUtils.StripGameTags(card.Description.GetFormattedText())
+                    Description = StripGameTags(card.Description.GetFormattedText())
                 });
             }
 
@@ -97,5 +98,23 @@ public static class TriSelectStateBuilder
             return "choose_from_hand";
 
         return "unknown";
+    }
+
+    /// <summary>
+    ///     Reads the private <c>_canSkip</c> field from an <see cref="NChooseACardSelectionScreen" />
+    ///     via reflection to determine if the selection can be skipped.
+    /// </summary>
+    private static bool ReadCanSkip(NChooseACardSelectionScreen screen)
+    {
+        try
+        {
+            var field = typeof(NChooseACardSelectionScreen).GetField("_canSkip",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return field?.GetValue(screen) as bool? ?? false;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

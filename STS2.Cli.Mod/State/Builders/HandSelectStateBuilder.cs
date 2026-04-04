@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
+using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State.Builders;
 
@@ -47,7 +48,7 @@ public static class HandSelectStateBuilder
             {
                 Mode = hand.CurrentMode.ToString(),
                 Prompt = prefs.HasValue
-                    ? TextUtils.StripGameTags(prefs.Value.Prompt.GetFormattedText())
+                    ? StripGameTags(prefs.Value.Prompt.GetFormattedText())
                     : null,
                 MinSelect = prefs?.MinSelect ?? 0,
                 MaxSelect = prefs?.MaxSelect ?? 0,
@@ -140,10 +141,10 @@ public static class HandSelectStateBuilder
                 {
                     Index = i,
                     CardId = cardModel.Id.Entry,
-                    CardName = TextUtils.StripGameTags(cardModel.Title),
+                    CardName = StripGameTags(cardModel.Title),
                     CardType = cardModel.Type.ToString(),
                     Cost = cardModel.EnergyCost.Canonical,
-                    Description = TextUtils.StripGameTags(cardModel.Description.GetFormattedText())
+                    Description = StripGameTags(cardModel.Description.GetFormattedText())
                 });
             }
         }
@@ -172,10 +173,10 @@ public static class HandSelectStateBuilder
                 {
                     Index = i,
                     CardId = cardModel.Id.Entry,
-                    CardName = TextUtils.StripGameTags(cardModel.Title),
+                    CardName = StripGameTags(cardModel.Title),
                     CardType = cardModel.Type.ToString(),
                     Cost = cardModel.EnergyCost.Canonical,
-                    Description = TextUtils.StripGameTags(cardModel.Description.GetFormattedText())
+                    Description = StripGameTags(cardModel.Description.GetFormattedText())
                 });
             }
         }

@@ -30,12 +30,7 @@ public static class ShopStateBuilder
                 return null;
             }
 
-            var inventory = merchantRoom.Room?.Inventory;
-            if (inventory == null)
-            {
-                Logger.Warning("MerchantInventory is null");
-                return null;
-            }
+            var inventory = merchantRoom.Room.Inventory;
 
             var cards = BuildCards(inventory);
             var relics = BuildRelics(inventory);
@@ -46,8 +41,7 @@ public static class ShopStateBuilder
             // Check proceed button state
             var canProceed = false;
             var proceedButton = merchantRoom.ProceedButton;
-            if (proceedButton != null)
-                canProceed = proceedButton.IsEnabled;
+            canProceed = proceedButton.IsEnabled;
 
             Logger.Info($"Built shop state: cards={cards.Count}, relics={relics.Count}, potions={potions.Count}, " +
                         $"cardRemoval={cardRemoval != null}, gold={playerGold}, canProceed={canProceed}");
@@ -77,7 +71,7 @@ public static class ShopStateBuilder
         MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory inventory)
     {
         var cards = new List<ShopCardDto>();
-        int index = 0;
+        var index = 0;
 
         foreach (var entry in inventory.CardEntries)
         {
@@ -118,7 +112,7 @@ public static class ShopStateBuilder
     {
         var relics = new List<ShopRelicDto>();
 
-        for (int i = 0; i < inventory.RelicEntries.Count; i++)
+        for (var i = 0; i < inventory.RelicEntries.Count; i++)
         {
             try
             {
@@ -156,7 +150,7 @@ public static class ShopStateBuilder
     {
         var potions = new List<ShopPotionDto>();
 
-        for (int i = 0; i < inventory.PotionEntries.Count; i++)
+        for (var i = 0; i < inventory.PotionEntries.Count; i++)
         {
             try
             {

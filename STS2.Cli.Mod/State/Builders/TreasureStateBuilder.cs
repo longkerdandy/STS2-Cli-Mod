@@ -19,10 +19,6 @@ public static class TreasureStateBuilder
         typeof(NTreasureRoom).GetField("_hasChestBeenOpened",
             BindingFlags.NonPublic | BindingFlags.Instance);
 
-    private static readonly FieldInfo? ProceedButtonField =
-        typeof(NTreasureRoom).GetField("_proceedButton",
-            BindingFlags.NonPublic | BindingFlags.Instance);
-
     /// <summary>
     ///     Builds the treasure room state from the current <see cref="NTreasureRoom" />.
     ///     Returns null if the treasure room is not found or not in the scene tree.
@@ -45,21 +41,18 @@ public static class TreasureStateBuilder
 
             // Check proceed button state
             var proceedButton = treasureRoom.ProceedButton;
-            if (proceedButton != null)
-            {
-                canProceed = proceedButton.IsEnabled && !proceedButton.IsSkip;
-                canSkip = proceedButton.IsEnabled && proceedButton.IsSkip;
-            }
+            canProceed = proceedButton is { IsEnabled: true, IsSkip: false };
+            canSkip = proceedButton is { IsEnabled: true, IsSkip: true };
 
             // Extract available relics from TreasureRoomRelicSynchronizer
             if (isChestOpened)
             {
-                var synchronizer = RunManager.Instance?.TreasureRoomRelicSynchronizer;
+                var synchronizer = RunManager.Instance.TreasureRoomRelicSynchronizer;
                 var currentRelics = synchronizer?.CurrentRelics;
 
                 if (currentRelics != null)
                 {
-                    for (int i = 0; i < currentRelics.Count; i++)
+                    for (var i = 0; i < currentRelics.Count; i++)
                     {
                         try
                         {

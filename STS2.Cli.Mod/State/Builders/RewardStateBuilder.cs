@@ -40,46 +40,54 @@ public static class RewardStateBuilder
     /// </summary>
     public static RewardStateDto? Build()
     {
-        var screen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
-        if (screen == null)
+        try
         {
-            Logger.Warning("NRewardsScreen not found in overlay stack");
-            return null;
-        }
+            var screen = UiUtils.FindScreenInOverlay<NRewardsScreen>();
+            if (screen == null)
+            {
+                Logger.Warning("NRewardsScreen not found in overlay stack");
+                return null;
+            }
 
-        var result = new RewardStateDto();
+            var result = new RewardStateDto();
 
-        var rewardsContainer = screen.GetNodeOrNull<Control>("%RewardsContainer");
-        if (rewardsContainer == null)
-        {
-            Logger.Warning("RewardsContainer is null");
+            var rewardsContainer = screen.GetNodeOrNull<Control>("%RewardsContainer");
+            if (rewardsContainer == null)
+            {
+                Logger.Warning("RewardsContainer is null");
+                return result;
+            }
+
+            // Iterate reward button children (same pattern as NRewardsScreen.AfterOverlayClosed)
+            var index = 0;
+            foreach (var child in rewardsContainer.GetChildren())
+            {
+                if (child is not NRewardButton rewardButton) continue;
+                var reward = rewardButton.Reward;
+                if (reward == null) continue;
+
+                try
+                {
+                    result.Rewards.Add(BuildRewardItem(reward, index));
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning($"Failed to build reward item at index {index}: {ex.Message}");
+                }
+
+                index++;
+            }
+
+            // NLinkedRewardSet (mutually-exclusive grouped rewards linked by chains) is fully
+            // implemented in the game code but never instantiated in the current version.
+            // No code path calls `new LinkedRewardSet(...)`, so we skip it for now.
             return result;
         }
-
-        // Iterate reward button children (same pattern as NRewardsScreen.AfterOverlayClosed)
-        var index = 0;
-        foreach (var child in rewardsContainer.GetChildren())
+        catch (Exception ex)
         {
-            if (child is not NRewardButton rewardButton) continue;
-            var reward = rewardButton.Reward;
-            if (reward == null) continue;
-
-            try
-            {
-                result.Rewards.Add(BuildRewardItem(reward, index));
-            }
-            catch (Exception ex)
-            {
-                Logger.Warning($"Failed to build reward item at index {index}: {ex.Message}");
-            }
-
-            index++;
+            Logger.Error($"Failed to build reward state: {ex.Message}");
+            return null;
         }
-
-        // NLinkedRewardSet (mutually-exclusive grouped rewards linked by chains) is fully
-        // implemented in the game code but never instantiated in the current version.
-        // No code path calls `new LinkedRewardSet(...)`, so we skip it for now.
-        return result;
     }
 
     /// <summary>

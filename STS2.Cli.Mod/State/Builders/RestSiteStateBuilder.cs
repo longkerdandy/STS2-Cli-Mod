@@ -30,7 +30,7 @@ public static class RestSiteStateBuilder
             var options = new List<RestSiteOptionDto>();
             var gameOptions = restSiteRoom.Options;
 
-            for (int i = 0; i < gameOptions.Count; i++)
+            for (var i = 0; i < gameOptions.Count; i++)
             {
                 var option = gameOptions[i];
                 try

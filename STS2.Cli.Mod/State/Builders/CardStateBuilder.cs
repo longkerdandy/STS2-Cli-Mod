@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Models;
 using STS2.Cli.Mod.Models.State;
+using STS2.Cli.Mod.Utils;
 using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State.Builders;
@@ -11,55 +12,65 @@ namespace STS2.Cli.Mod.State.Builders;
 /// </summary>
 public static class CardStateBuilder
 {
+    private static readonly ModLogger Logger = new("CardStateBuilder");
+
     /// <summary>
     ///     Builds a card state DTO from a <see cref="CardModel" /> at the given hand index.
     /// </summary>
-    public static CardStateDto Build(CardModel card, int index)
+    public static CardStateDto? Build(CardModel card, int index)
     {
-        card.CanPlay(out var unplayableReason, out _);
-
-        var state = new CardStateDto
+        try
         {
-            Index = index,
-            Id = card.Id.Entry,
-            Name = StripGameTags(card.Title),
-            Description = StripGameTags(GetCardDescription(card)),
-            Type = card.Type.ToString(),
-            Rarity = card.Rarity.ToString(),
-            TargetType = card.TargetType.ToString(),
-            IsUpgraded = card.IsUpgraded,
-            Cost = card.EnergyCost.CostsX ? -1 : card.EnergyCost.GetAmountToSpend(),
-            CanPlay = unplayableReason == UnplayableReason.None,
-            UnplayableReason = unplayableReason != UnplayableReason.None
-                ? unplayableReason.ToString()
-                : null
-        };
+            card.CanPlay(out var unplayableReason, out _);
 
-        // Star cost: null = no star cost, -1 = X-star
-        if (card.CanonicalStarCost >= 0)
-            state.StarCost = card.HasStarCostX ? -1 : card.GetStarCostWithModifiers();
+            var state = new CardStateDto
+            {
+                Index = index,
+                Id = card.Id.Entry,
+                Name = StripGameTags(card.Title),
+                Description = StripGameTags(GetCardDescription(card)),
+                Type = card.Type.ToString(),
+                Rarity = card.Rarity.ToString(),
+                TargetType = card.TargetType.ToString(),
+                IsUpgraded = card.IsUpgraded,
+                Cost = card.EnergyCost.CostsX ? -1 : card.EnergyCost.GetAmountToSpend(),
+                CanPlay = unplayableReason == UnplayableReason.None,
+                UnplayableReason = unplayableReason != UnplayableReason.None
+                    ? unplayableReason.ToString()
+                    : null
+            };
 
-        foreach (var keyword in card.Keywords)
-            if (keyword != CardKeyword.None)
-                state.Keywords.Add(keyword.ToString());
+            // Star cost: null = no star cost, -1 = X-star
+            if (card.CanonicalStarCost >= 0)
+                state.StarCost = card.HasStarCostX ? -1 : card.GetStarCostWithModifiers();
 
-        foreach (var tag in card.Tags)
-            if (tag != CardTag.None)
-                state.Tags.Add(tag.ToString());
+            foreach (var keyword in card.Keywords)
+                if (keyword != CardKeyword.None)
+                    state.Keywords.Add(keyword.ToString());
 
-        if (card.DynamicVars.TryGetValue("Damage", out var damageVar))
-            state.Damage = (int)damageVar.PreviewValue;
+            foreach (var tag in card.Tags)
+                if (tag != CardTag.None)
+                    state.Tags.Add(tag.ToString());
 
-        if (card.DynamicVars.TryGetValue("Block", out var blockVar))
-            state.Block = (int)blockVar.PreviewValue;
+            if (card.DynamicVars.TryGetValue("Damage", out var damageVar))
+                state.Damage = (int)damageVar.PreviewValue;
 
-        if (card.Enchantment is { } enchantment)
-            state.Enchantment = enchantment.Id.Entry;
+            if (card.DynamicVars.TryGetValue("Block", out var blockVar))
+                state.Block = (int)blockVar.PreviewValue;
 
-        if (card.Affliction is { } affliction)
-            state.Affliction = affliction.Id.Entry;
+            if (card.Enchantment is { } enchantment)
+                state.Enchantment = enchantment.Id.Entry;
 
-        return state;
+            if (card.Affliction is { } affliction)
+                state.Affliction = affliction.Id.Entry;
+
+            return state;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to build card state: {ex.Message}");
+            return null;
+        }
     }
 
     /// <summary>
@@ -71,14 +82,16 @@ public static class CardStateBuilder
         {
             return card.GetDescriptionForPile(PileType.Hand);
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.Warning($"Failed to get description for pile: {ex.Message}");
             try
             {
                 return card.Description.GetFormattedText();
             }
-            catch
+            catch (Exception ex2)
             {
+                Logger.Warning($"Failed to get formatted description: {ex2.Message}");
                 return string.Empty;
             }
         }

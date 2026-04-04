@@ -3,6 +3,7 @@ using Godot;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
+using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State.Builders;
 
@@ -27,55 +28,63 @@ public static class CharacterSelectStateBuilder
     /// </summary>
     public static CharacterSelectStateDto? Build()
     {
-        var screen = UiUtils.FindCharacterSelectScreen();
-        if (screen == null)
+        try
         {
-            Logger.Warning("NCharacterSelectScreen not found");
-            return null;
-        }
-
-        var buttonContainer = screen.GetNodeOrNull<Control>("CharSelectButtons/ButtonContainer");
-        if (buttonContainer == null)
-        {
-            Logger.Warning("Character button container not found");
-            return null;
-        }
-
-        var buttons = UiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
-        var characters = new List<CharacterOptionDto>();
-        string? selectedCharacter = null;
-        var selectedButton = SelectedButtonField?.GetValue(screen) as NCharacterSelectButton;
-
-        foreach (var btn in buttons)
-        {
-            var character = btn.Character;
-
-            var isSelected = btn == selectedButton;
-            if (isSelected)
-                selectedCharacter = character.Id.Entry;
-
-            characters.Add(new CharacterOptionDto
+            var screen = UiUtils.FindCharacterSelectScreen();
+            if (screen == null)
             {
-                CharacterId = character.Id.Entry,
-                CharacterName = TextUtils.StripGameTags(character.Title.GetFormattedText()),
-                IsLocked = btn.IsLocked,
-                IsSelected = isSelected
-            });
+                Logger.Warning("NCharacterSelectScreen not found");
+                return null;
+            }
+
+            var buttonContainer = screen.GetNodeOrNull<Control>("CharSelectButtons/ButtonContainer");
+            if (buttonContainer == null)
+            {
+                Logger.Warning("Character button container not found");
+                return null;
+            }
+
+            var buttons = UiUtils.FindAll<NCharacterSelectButton>(buttonContainer);
+            var characters = new List<CharacterOptionDto>();
+            string? selectedCharacter = null;
+            var selectedButton = SelectedButtonField?.GetValue(screen) as NCharacterSelectButton;
+
+            foreach (var btn in buttons)
+            {
+                var character = btn.Character;
+
+                var isSelected = btn == selectedButton;
+                if (isSelected)
+                    selectedCharacter = character.Id.Entry;
+
+                characters.Add(new CharacterOptionDto
+                {
+                    CharacterId = character.Id.Entry,
+                    CharacterName = StripGameTags(character.Title.GetFormattedText()),
+                    IsLocked = btn.IsLocked,
+                    IsSelected = isSelected
+                });
+            }
+
+            var ascensionPanel = screen.GetNodeOrNull<NAscensionPanel>("%AscensionPanel");
+            var currentAsc = ascensionPanel?.Ascension ?? 0;
+            var maxAsc = ascensionPanel != null
+                ? (int)(MaxAscensionField?.GetValue(ascensionPanel) ?? 20)
+                : 20;
+
+            return new CharacterSelectStateDto
+            {
+                AvailableCharacters = characters,
+                SelectedCharacter = selectedCharacter,
+                CurrentAscension = currentAsc,
+                MaxAscension = maxAsc,
+                CanEmbark = selectedCharacter != null
+            };
         }
-
-        var ascensionPanel = screen.GetNodeOrNull<NAscensionPanel>("%AscensionPanel");
-        var currentAsc = ascensionPanel?.Ascension ?? 0;
-        var maxAsc = ascensionPanel != null
-            ? (int)(MaxAscensionField?.GetValue(ascensionPanel) ?? 20)
-            : 20;
-
-        return new CharacterSelectStateDto
+        catch (Exception ex)
         {
-            AvailableCharacters = characters,
-            SelectedCharacter = selectedCharacter,
-            CurrentAscension = currentAsc,
-            MaxAscension = maxAsc,
-            CanEmbark = selectedCharacter != null
-        };
+            Logger.Error($"Failed to build character select state: {ex.Message}");
+            return null;
+        }
     }
 }

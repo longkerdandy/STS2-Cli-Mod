@@ -100,6 +100,7 @@ public static class StateHandler
 
                 // --- Overlay stack ---
                 case "REWARD":
+                case "CARD_REWARD":
                     state.Rewards = RewardStateBuilder.Build();
                     break;
                 case "RELIC_SELECT":
@@ -153,10 +154,10 @@ public static class StateHandler
         {
             if (NPlayerHand.Instance is { IsInCardSelection: true }) return "HAND_SELECT";
 
-            var combatOverlay = NOverlayStack.Instance;
-            if (combatOverlay != null)
+            var combatOverlayStack = NOverlayStack.Instance;
+            if (combatOverlayStack != null)
             {
-                var children = combatOverlay.GetChildren();
+                var children = combatOverlayStack.GetChildren();
                 for (var i = children.Count - 1; i >= 0; i--)
                     switch (children[i])
                     {

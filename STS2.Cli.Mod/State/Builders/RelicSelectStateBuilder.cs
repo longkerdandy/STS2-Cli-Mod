@@ -37,8 +37,7 @@ public static class RelicSelectStateBuilder
             for (var i = 0; i < holders.Count; i++)
             {
                 var holder = holders[i];
-                var relic = holder.Relic?.Model;
-                if (relic == null) continue;
+                var relic = holder.Relic.Model;
 
                 relics.Add(new SelectableRelicDto
                 {

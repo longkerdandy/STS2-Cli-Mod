@@ -29,44 +29,51 @@ public static class GameOverStateBuilder
     /// </summary>
     public static GameOverStateDto? Build()
     {
-        var overlayStack = NOverlayStack.Instance;
-        if (overlayStack == null)
+        try
         {
-            Logger.Warning("NOverlayStack.Instance is null");
+            var overlayStack = NOverlayStack.Instance;
+            if (overlayStack == null)
+            {
+                Logger.Warning("NOverlayStack.Instance is null");
+                return null;
+            }
+
+            if (overlayStack.Peek() is not NGameOverScreen screen)
+            {
+                Logger.Warning("NGameOverScreen not found in overlay stack");
+                return null;
+            }
+
+            var runState = RunStateField?.GetValue(screen);
+            var score = ScoreField?.GetValue(screen) as int? ?? 0;
+
+            var isVictory = false;
+            var floor = 0;
+            string? characterId = null;
+
+            if (runState != null)
+            {
+                isVictory = GetProperty<bool>(runState, "Win");
+                floor = GetProperty<int>(runState, "CurrentFloor");
+                characterId = GetCharacterId(runState);
+            }
+
+            return new GameOverStateDto
+            {
+                IsVictory = isVictory,
+                Floor = floor,
+                CharacterId = characterId,
+                Score = score,
+                EpochsDiscovered = 0,
+                CanReturnToMenu = screen.GetNodeOrNull<Node>("%MainMenuButton") != null,
+                CanContinue = screen.GetNodeOrNull<Node>("%ContinueButton") != null
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.Error($"Failed to build game over state: {ex.Message}");
             return null;
         }
-
-        var screen = overlayStack.Peek() as NGameOverScreen;
-        if (screen == null)
-        {
-            Logger.Warning("NGameOverScreen not found in overlay stack");
-            return null;
-        }
-
-        var runState = RunStateField?.GetValue(screen);
-        var score = ScoreField?.GetValue(screen) as int? ?? 0;
-
-        var isVictory = false;
-        var floor = 0;
-        string? characterId = null;
-
-        if (runState != null)
-        {
-            isVictory = GetProperty<bool>(runState, "Win");
-            floor = GetProperty<int>(runState, "CurrentFloor");
-            characterId = GetCharacterId(runState);
-        }
-
-        return new GameOverStateDto
-        {
-            IsVictory = isVictory,
-            Floor = floor,
-            CharacterId = characterId,
-            Score = score,
-            EpochsDiscovered = 0,
-            CanReturnToMenu = screen.GetNodeOrNull<Node>("%MainMenuButton") != null,
-            CanContinue = screen.GetNodeOrNull<Node>("%ContinueButton") != null
-        };
     }
 
     /// <summary>
@@ -83,8 +90,7 @@ public static class GameOverStateBuilder
     /// </summary>
     private static string? GetCharacterId(object runState)
     {
-        var characters = runState.GetType().GetProperty("Characters")?.GetValue(runState) as IList;
-        if (characters is not { Count: > 0 }) return null;
+        if (runState.GetType().GetProperty("Characters")?.GetValue(runState) is not IList { Count: > 0 } characters) return null;
 
         var id = characters[0]?.GetType().GetProperty("Id")?.GetValue(characters[0]);
         return id?.GetType().GetProperty("Entry")?.GetValue(id) as string;

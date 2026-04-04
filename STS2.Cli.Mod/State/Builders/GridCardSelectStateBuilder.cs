@@ -4,6 +4,7 @@ using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
+using static STS2.Cli.Mod.Utils.TextUtils;
 
 namespace STS2.Cli.Mod.State.Builders;
 
@@ -54,7 +55,7 @@ public static class GridCardSelectStateBuilder
             if (prefs.HasValue)
                 try
                 {
-                    prompt = TextUtils.StripGameTags(prefs.Value.Prompt.GetFormattedText());
+                    prompt = StripGameTags(prefs.Value.Prompt.GetFormattedText());
                 }
                 catch
                 {
@@ -73,10 +74,10 @@ public static class GridCardSelectStateBuilder
                     {
                         Index = i,
                         CardId = card.Id.Entry,
-                        CardName = TextUtils.StripGameTags(card.Title),
+                        CardName = StripGameTags(card.Title),
                         CardType = card.Type.ToString(),
                         Cost = card.EnergyCost.Canonical,
-                        Description = TextUtils.StripGameTags(card.Description.GetFormattedText())
+                        Description = StripGameTags(card.Description.GetFormattedText())
                     });
                 }
                 catch (Exception ex)
