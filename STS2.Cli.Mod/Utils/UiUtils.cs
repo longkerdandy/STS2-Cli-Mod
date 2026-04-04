@@ -269,50 +269,6 @@ public static class UiUtils
     }
 
     /// <summary>
-    ///     Gets a private property value from an object via reflection.
-    /// </summary>
-    /// <typeparam name="T">The expected type of the property value.</typeparam>
-    /// <param name="obj">The object to get the property from.</param>
-    /// <param name="propertyName">The name of the private property.</param>
-    /// <returns>The property value cast to <typeparamref name="T" />, or default if not found.</returns>
-    public static T? GetPrivateProperty<T>(object obj, string propertyName) where T : struct
-    {
-        try
-        {
-            var prop = obj.GetType().GetProperty(propertyName, BindingFlags.NonPublic | BindingFlags.Instance);
-            return prop != null ? (T?)(prop.GetValue(obj) ?? default(T)) : null;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get private property '{propertyName}' from {obj.GetType().Name}: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
-    ///     Gets a cached property value using a static cache field.
-    ///     The cache is lazily populated on first access.
-    /// </summary>
-    /// <typeparam name="T">The expected type of the property value.</typeparam>
-    /// <param name="cache">The static cache field to store the PropertyInfo.</param>
-    /// <param name="obj">The object to get the property from.</param>
-    /// <param name="propertyName">The name of the property.</param>
-    /// <returns>The property value cast to <typeparamref name="T" />, or <c>null</c> if not found.</returns>
-    public static T? GetCachedProperty<T>(ref PropertyInfo? cache, object obj, string propertyName) where T : class
-    {
-        try
-        {
-            cache ??= obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
-            return cache?.GetValue(obj) as T;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"Failed to get cached property '{propertyName}' from {obj.GetType().Name}: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>
     ///     Gets a cached boolean property value using a static cache field.
     /// </summary>
     /// <param name="cache">The static cache field to store the PropertyInfo.</param>
@@ -332,28 +288,6 @@ public static class UiUtils
                 $"Failed to get cached bool property '{propertyName}' from {obj.GetType().Name}: {ex.Message}");
             return null;
         }
-    }
-
-    // ── Button state helpers ─────────────────────────────────────────
-
-    /// <summary>
-    ///     Checks if a proceed button is available (enabled and not a skip button).
-    /// </summary>
-    /// <param name="button">The button to check.</param>
-    /// <returns><c>true</c> if the button is enabled and IsSkip is false.</returns>
-    public static bool IsProceedButton(NProceedButton? button)
-    {
-        return button is { IsEnabled: true, IsSkip: false };
-    }
-
-    /// <summary>
-    ///     Checks if a skip button is available (enabled and marked as skip).
-    /// </summary>
-    /// <param name="button">The button to check.</param>
-    /// <returns><c>true</c> if the button is enabled and IsSkip is true.</returns>
-    public static bool IsSkipButton(NProceedButton? button)
-    {
-        return button is { IsEnabled: true, IsSkip: true };
     }
 
     // ── Node existence helpers ───────────────────────────────────────
