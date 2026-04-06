@@ -218,6 +218,7 @@ public static class ActionUtils
                 return (player.Creature, null);
 
             case TargetType.AnyPlayer:
+            case TargetType.AnyAlly:
                 if (targetCombatId == null)
                     return (player.Creature, null); // Default to player
 
@@ -232,7 +233,7 @@ public static class ActionUtils
                 return (ally, null);
 
             default:
-                // AllEnemies, AllAllies, None, RandomEnemy, etc. — no target needed
+                // AllEnemies, AllAllies, None, RandomEnemy, TargetedNoCreature, Osty — no target needed
                 if (targetCombatId != null)
                     return (null, new
                     {
