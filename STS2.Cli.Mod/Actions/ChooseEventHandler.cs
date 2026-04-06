@@ -116,7 +116,19 @@ public static class ChooseEventHandler
             var targetButton = optionButtons[optionIndex];
 
             // --- Capture state before click for comparison ---
-            var preClickSnapshot = new EventStateSnapshot(eventModel);
+            var snapshotOptionCount = eventModel.CurrentOptions.Count;
+            string? snapshotFirstTitle = null;
+            try
+            {
+                if (snapshotOptionCount > 0)
+                    snapshotFirstTitle = eventModel.CurrentOptions[0].Title.GetFormattedText();
+            }
+            catch
+            {
+                // ignore
+            }
+
+            var snapshotIsFinished = eventModel.IsFinished;
 
             // --- ForceClick the button ---
             Logger.Info($"ForceClick option at index {optionIndex}: '{selectedOption.Title}'");
@@ -146,7 +158,8 @@ public static class ChooseEventHandler
             }
 
             // Wait for the event state to change (new page)
-            var stateChanged = await WaitForEventStateChange(eventRoom, preClickSnapshot);
+            var stateChanged = await WaitForEventStateChange(
+                eventRoom, snapshotOptionCount, snapshotFirstTitle, snapshotIsFinished);
             if (!stateChanged)
             {
                 Logger.Warning("Timed out waiting for event state change");
@@ -194,7 +207,8 @@ public static class ChooseEventHandler
     /// <summary>
     ///     Waits for the event state to change (new options or finished).
     /// </summary>
-    private static async Task<bool> WaitForEventStateChange(NEventRoom eventRoom, EventStateSnapshot snapshot)
+    private static async Task<bool> WaitForEventStateChange(
+        NEventRoom eventRoom, int prevOptionCount, string? prevFirstTitle, bool prevIsFinished)
     {
         return await ActionUtils.PollUntilAsync(() =>
         {
@@ -203,55 +217,16 @@ public static class ChooseEventHandler
             if (NMapScreen.Instance is { IsOpen: true }) return true;
 
             var eventModel = EventUtils.GetEventModel(eventRoom);
-            return eventModel == null || HasEventStateChanged(eventModel, snapshot);
+            if (eventModel == null) return true;
+
+            if (eventModel.CurrentOptions.Count != prevOptionCount) return true;
+            if (eventModel.CurrentOptions.Count > 0 && prevFirstTitle != null)
+            {
+                var currentFirstTitle = eventModel.CurrentOptions[0].Title.GetFormattedText();
+                if (currentFirstTitle != prevFirstTitle) return true;
+            }
+
+            return eventModel.IsFinished != prevIsFinished;
         }, ActionUtils.UiTimeoutMs);
-    }
-
-    /// <summary>
-    ///     Checks if event state has changed compared to the snapshot.
-    /// </summary>
-    private static bool HasEventStateChanged(EventModel eventModel, EventStateSnapshot snapshot)
-    {
-        // Check if option count changed
-        if (eventModel.CurrentOptions.Count != snapshot.OptionCount)
-            return true;
-
-        // Check if the first option title changed
-        if (eventModel.CurrentOptions.Count > 0 && snapshot.FirstOptionTitle != null)
-        {
-            var currentFirstTitle = eventModel.CurrentOptions[0].Title.GetFormattedText();
-            if (currentFirstTitle != snapshot.FirstOptionTitle)
-                return true;
-        }
-
-        // Check if event finished
-        return eventModel.IsFinished != snapshot.IsFinished;
-    }
-
-    /// <summary>
-    ///     Snapshot of event state for comparison.
-    /// </summary>
-    private class EventStateSnapshot
-    {
-        public EventStateSnapshot(EventModel eventModel)
-        {
-            OptionCount = eventModel.CurrentOptions.Count;
-            try
-            {
-                FirstOptionTitle = OptionCount > 0
-                    ? eventModel.CurrentOptions[0].Title.GetFormattedText()
-                    : null;
-            }
-            catch
-            {
-                FirstOptionTitle = null;
-            }
-
-            IsFinished = eventModel.IsFinished;
-        }
-
-        public int OptionCount { get; }
-        public string? FirstOptionTitle { get; }
-        public bool IsFinished { get; }
     }
 }
