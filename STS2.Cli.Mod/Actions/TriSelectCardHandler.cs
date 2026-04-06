@@ -4,7 +4,6 @@ using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Actions.Utils;
-using STS2.Cli.Mod.Models.Actions;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
@@ -65,17 +64,16 @@ public static class TriSelectCardHandler
                     message = "Not in tri-select card selection screen. Use 'sts2 state' to check current screen."
                 };
 
-            // Get selection constraints from the screen's _canSkip field
-            var constraints = GetScreenConstraints(selectionScreen);
-
-            // Validate selection count
-            if (cardIds.Length < constraints.MinSelect || cardIds.Length > constraints.MaxSelect)
+            // Validate selection count (tri-select always picks exactly 1 card)
+            var canSkip = ReadCanSkip(selectionScreen);
+            if (cardIds.Length > 1 || (!canSkip && cardIds.Length < 1))
                 return new
                 {
                     ok = false,
                     error = "INVALID_SELECTION_COUNT",
-                    message =
-                        $"This screen requires selecting {constraints.MinSelect}-{constraints.MaxSelect} card(s), but {cardIds.Length} was provided."
+                    message = canSkip
+                        ? $"This screen allows selecting 0-1 card(s), but {cardIds.Length} were provided."
+                        : $"This screen requires selecting exactly 1 card, but {cardIds.Length} were provided."
                 };
 
             // Validate no duplicates
@@ -94,7 +92,7 @@ public static class TriSelectCardHandler
             }
 
             // Find and select each card by ID
-            var selectedCards = new List<SelectedCardDto>();
+            var selectedCardIds = new List<string>();
 
             for (var i = 0; i < cardIds.Length; i++)
             {
@@ -114,26 +112,22 @@ public static class TriSelectCardHandler
                 Logger.Info($"Selecting card: {cardId} (nth={nth})");
                 holder.EmitSignal(NCardHolder.SignalName.Pressed, holder);
 
-                selectedCards.Add(new SelectedCardDto
-                {
-                    Index = i,
-                    CardId = cardId
-                });
+                selectedCardIds.Add(cardId);
 
                 // Small delay between clicks for multi-select
                 if (i < cardIds.Length - 1) OS.DelayMsec(ActionUtils.ClickDelayMs);
             }
 
-            Logger.Info($"Successfully selected {selectedCards.Count} card(s)");
+            Logger.Info($"Successfully selected {selectedCardIds.Count} card(s)");
 
             return new
             {
                 ok = true,
                 data = new
                 {
-                    selected_count = selectedCards.Count,
-                    selected_cards = selectedCards.Select(s => s.CardId).ToList(),
-                    message = $"Successfully selected {selectedCards.Count} card(s)"
+                    selected_count = selectedCardIds.Count,
+                    selected_cards = selectedCardIds,
+                    message = $"Successfully selected {selectedCardIds.Count} card(s)"
                 }
             };
         }
@@ -166,9 +160,9 @@ public static class TriSelectCardHandler
                 };
 
             // Infer constraints to check if skip is allowed
-            var constraints = GetScreenConstraints(selectionScreen);
+            var canSkip = ReadCanSkip(selectionScreen);
 
-            if (!constraints.CanSkip)
+            if (!canSkip)
                 return new
                 {
                     ok = false,
@@ -200,17 +194,6 @@ public static class TriSelectCardHandler
             Logger.Error($"Failed to skip tri-select: {ex.Message}");
             return new { ok = false, error = "INTERNAL_ERROR", message = ex.Message };
         }
-    }
-
-    /// <summary>
-    ///     Reads selection constraints directly from the <see cref="NChooseACardSelectionScreen" />.
-    ///     The screen's <c>_canSkip</c> field determines whether selection can be skipped.
-    ///     The screen always selects exactly 1 card (MinSelect=0 or 1, MaxSelect=1).
-    /// </summary>
-    private static SelectionConstraintsDto GetScreenConstraints(NChooseACardSelectionScreen screen)
-    {
-        var canSkip = ReadCanSkip(screen);
-        return new SelectionConstraintsDto { MinSelect = canSkip ? 0 : 1, MaxSelect = 1, CanSkip = canSkip };
     }
 
     /// <summary>
