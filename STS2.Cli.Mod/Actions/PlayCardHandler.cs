@@ -97,12 +97,8 @@ public static class PlayCardHandler
             //   Type A — Hand Select: cards like Acrobatics, BurningPact, Survivor
             //   Type B — Grid Overlay: cards like Headbutt, Hologram, SecretWeapon
             //   Type C — Tri Select:   cards like Discovery, Quasar, Splash
-            var elapsedMs = 0;
-            while (elapsedMs < ActionUtils.UiTimeoutMs)
+            var selectionResult = await ActionUtils.PollForSelectionScreenAsync(action, () =>
             {
-                await Task.Delay(ActionUtils.DefaultPollIntervalMs);
-                elapsedMs += ActionUtils.DefaultPollIntervalMs;
-
                 // Type A — Hand Select: player selects cards from hand
                 if (NPlayerHand.Instance is { IsInCardSelection: true })
                 {
@@ -126,11 +122,11 @@ public static class PlayCardHandler
                     return BuildGridSelectResponse(card, cardIndex, targetCombatId, gridScreen);
                 }
 
-                // Action finished normally before any selection screen appeared
-                if (action.State is not (GameActionState.WaitingForExecution or GameActionState.Executing
-                    or GameActionState.GatheringPlayerChoice))
-                    break;
-            }
+                return null;
+            });
+
+            if (selectionResult != null)
+                return selectionResult;
 
             // Normal path: await the enqueue task for final state
             var finalState = await enqueueTask;

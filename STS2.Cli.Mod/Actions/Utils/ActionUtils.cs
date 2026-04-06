@@ -297,4 +297,44 @@ public static class ActionUtils
 
         return false;
     }
+
+    /// <summary>
+    ///     Polls for a card/potion selection screen to appear while a <see cref="GameAction" />
+    ///     is executing. Many cards and potions open a selection UI during execution; the action
+    ///     pauses in <see cref="GameActionState.GatheringPlayerChoice" /> state until the player
+    ///     makes a choice. This method detects those intermediate UI states so the caller can
+    ///     return a <c>selection_required</c> response to the CLI.
+    /// </summary>
+    /// <remarks>
+    ///     The polling loop exits early when the action transitions out of its running states
+    ///     (<c>WaitingForExecution</c>, <c>Executing</c>, <c>GatheringPlayerChoice</c>),
+    ///     indicating normal completion or cancellation without a selection screen.
+    /// </remarks>
+    /// <param name="action">The game action being executed.</param>
+    /// <param name="detectScreen">
+    ///     A delegate called each poll cycle. Should return a response object if a selection
+    ///     screen is detected, or <c>null</c> to keep polling.
+    /// </param>
+    /// <param name="timeoutMs">Maximum milliseconds to poll (default <see cref="UiTimeoutMs" />).</param>
+    /// <returns>The response object from <paramref name="detectScreen" />, or <c>null</c> if not detected.</returns>
+    public static async Task<object?> PollForSelectionScreenAsync(
+        GameAction action, Func<object?> detectScreen, int timeoutMs = UiTimeoutMs)
+    {
+        var elapsedMs = 0;
+        while (elapsedMs < timeoutMs)
+        {
+            await Task.Delay(DefaultPollIntervalMs);
+            elapsedMs += DefaultPollIntervalMs;
+
+            var result = detectScreen();
+            if (result != null)
+                return result;
+
+            if (action.State is not (GameActionState.WaitingForExecution or GameActionState.Executing
+                or GameActionState.GatheringPlayerChoice))
+                break;
+        }
+
+        return null;
+    }
 }
