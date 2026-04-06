@@ -7,7 +7,6 @@ using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Actions.Utils;
-using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -28,9 +27,13 @@ namespace STS2.Cli.Mod.Actions;
 ///     <c>NEventOptionButton</c> with <c>IsProceed=true</c> instead of <c>NProceedButton</c>).
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 proceed</c></para>
-///     <para><b>Scene:</b> Reward screen, finished event room, FakeMerchant event, rest site (after option chosen),
-///     treasure room (after relic picked/skipped), or merchant room (shop).</para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 proceed</c>
+///     </para>
+///     <para>
+///         <b>Scene:</b> Reward screen, finished event room, FakeMerchant event, rest site (after option chosen),
+///         treasure room (after relic picked/skipped), or merchant room (shop).
+///     </para>
 /// </remarks>
 public static class ProceedHandler
 {
@@ -43,7 +46,7 @@ public static class ProceedHandler
     public static async Task<object> ExecuteAsync()
     {
         Logger.Info("Requested to proceed");
-        
+
         try
         {
             // --- Try Reward Screen first ---
@@ -330,7 +333,7 @@ public static class ProceedHandler
         {
             Logger.Info("Skip button detected — skipping relic and proceeding");
             RunManager.Instance.TreasureRoomRelicSynchronizer.SkipRelicLocally();
-            NMapScreen.Instance?.SetTravelEnabled(enabled: true);
+            NMapScreen.Instance?.SetTravelEnabled(true);
         }
         else
         {

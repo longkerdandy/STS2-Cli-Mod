@@ -19,15 +19,24 @@ namespace STS2.Cli.Mod.Actions;
 ///     Uses reward type + card ID + nth for stable identification.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI commands:</b></para>
+///     <para>
+///         <b>CLI commands:</b>
+///     </para>
 ///     <list type="bullet">
-///         <item><c>sts2 reward_choose_card --type card --card_id &lt;card_id&gt; [--nth &lt;n&gt;]</c></item>
-///         <item><c>sts2 reward_skip_card --type card [--nth &lt;n&gt;]</c></item>
+///         <item>
+///             <c>sts2 reward_choose_card --type card --card_id &lt;card_id&gt; [--nth &lt;n&gt;]</c>
+///         </item>
+///         <item>
+///             <c>sts2 reward_skip_card --type card [--nth &lt;n&gt;]</c>
+///         </item>
 ///     </list>
 ///     <para><b>Scene:</b> Reward screen (<see cref="NRewardsScreen" />) after combat, when a card reward is available.</para>
 /// </remarks>
 public static class RewardCardHandler
 {
+    /// <summary>Delay for card reward buttons to become enabled after the screen opens (ms).</summary>
+    private const int CardEnableDelayMs = 500;
+
     private static readonly ModLogger Logger = new("RewardCardHandler");
 
     /// <summary>
@@ -104,7 +113,7 @@ public static class RewardCardHandler
                 };
 
             // Wait for cards to become clickable
-            await Task.Delay(ActionUtils.CardEnableDelayMs);
+            await Task.Delay(CardEnableDelayMs);
 
             // --- Find and select the target card ---
 
@@ -210,7 +219,7 @@ public static class RewardCardHandler
                 };
 
             // Wait for UI to settle
-            await Task.Delay(ActionUtils.CardEnableDelayMs);
+            await Task.Delay(CardEnableDelayMs);
 
             // --- Find and click the Skip button ---
 

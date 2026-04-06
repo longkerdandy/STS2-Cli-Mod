@@ -28,9 +28,6 @@ public static class ActionUtils
     /// <summary>Delay for a preview or animation to appear after interaction (ms).</summary>
     public const int PreviewAppearDelayMs = 300;
 
-    /// <summary>Delay for card reward buttons to become enabled after the screen opens (ms).</summary>
-    public const int CardEnableDelayMs = 500;
-
     /// <summary>Short timeout for quick UI transitions like dialogue advance (ms).</summary>
     public const int ShortTimeoutMs = 3000;
 
@@ -39,9 +36,6 @@ public static class ActionUtils
 
     /// <summary>Timeout for game action execution like card play or potion use (ms).</summary>
     public const int ActionTimeoutMs = 10000;
-
-    /// <summary>Timeout for a full enemy turn to complete (ms).</summary>
-    public const int TurnTimeoutMs = 30000;
 
     // ── Fields ────────────────────────────────────────────────────────
 

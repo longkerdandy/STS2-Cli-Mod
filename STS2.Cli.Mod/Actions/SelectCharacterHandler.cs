@@ -11,7 +11,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     Selects a character on the character select screen by character ID.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 select_character &lt;character_id&gt;</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 select_character &lt;character_id&gt;</c>
+///     </para>
 ///     <para><b>Scene:</b> Character select screen.</para>
 /// </remarks>
 public static class SelectCharacterHandler

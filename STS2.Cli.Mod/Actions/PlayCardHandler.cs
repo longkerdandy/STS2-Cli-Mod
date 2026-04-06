@@ -20,7 +20,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     (damage dealt, block gained, powers applied) from <c>CombatHistory</c>.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 play_card &lt;card_id&gt; [--nth &lt;n&gt;] [--target &lt;combat_id&gt;]</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 play_card &lt;card_id&gt; [--nth &lt;n&gt;] [--target &lt;combat_id&gt;]</c>
+///     </para>
 ///     <para><b>Scene:</b> Combat, during the player's turn.</para>
 /// </remarks>
 public static class PlayCardHandler
@@ -40,8 +42,9 @@ public static class PlayCardHandler
         var cardId = request.Id;
         var nth = request.Nth ?? 0;
         var targetCombatId = request.Target;
-        
-        Logger.Info($"Requested to play card {cardId}, nth={nth}, target={targetCombatId?.ToString(CultureInfo.InvariantCulture) ?? "null"}");
+
+        Logger.Info(
+            $"Requested to play card {cardId}, nth={nth}, target={targetCombatId?.ToString(CultureInfo.InvariantCulture) ?? "null"}");
 
         try
         {

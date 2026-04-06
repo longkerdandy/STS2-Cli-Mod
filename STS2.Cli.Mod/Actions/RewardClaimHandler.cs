@@ -17,7 +17,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     to trigger the full game UI flow: claim animation, signal emission, and button removal.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI commands:</b> <c>sts2 reward_claim --type &lt;type&gt; [--id &lt;id&gt;] [--nth &lt;n&gt;]</c></para>
+///     <para>
+///         <b>CLI commands:</b> <c>sts2 reward_claim --type &lt;type&gt; [--id &lt;id&gt;] [--nth &lt;n&gt;]</c>
+///     </para>
 ///     <para><b>Scene:</b> Reward screen (<see cref="NRewardsScreen" />) after combat or events.</para>
 /// </remarks>
 public static class RewardClaimHandler
@@ -35,11 +37,11 @@ public static class RewardClaimHandler
 
         var nthValue = request.Nth ?? 0;
         Logger.Info($"Requested to claim reward: type={request.RewardType}, id={request.Id ?? "null"}, nth={nthValue}");
-        
+
         var rewardType = request.RewardType;
         var itemId = request.Id;
         var nth = nthValue;
-        
+
         try
         {
             // --- Validation ---
@@ -175,7 +177,8 @@ public static class RewardClaimHandler
                            (itemId == null || MatchesId(rr.ClaimedRelic?.Id.Entry, itemId) ||
                             MatchesId(UiUtils.GetPrivateField<RelicModel>(rr, "_relic")?.Id.Entry, itemId)),
                 "special_card" => reward is SpecialCardReward scr &&
-                                  (itemId == null || MatchesId(UiUtils.GetPrivateField<CardModel>(scr, "_card")?.Id.Entry, itemId)),
+                                  (itemId == null ||
+                                   MatchesId(UiUtils.GetPrivateField<CardModel>(scr, "_card")?.Id.Entry, itemId)),
                 _ => false
             };
 

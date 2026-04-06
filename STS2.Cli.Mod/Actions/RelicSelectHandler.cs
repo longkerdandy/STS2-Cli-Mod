@@ -16,10 +16,16 @@ namespace STS2.Cli.Mod.Actions;
 ///     <see cref="NRelicBasicHolder" />, which emits <c>Released</c> -> <c>SelectHolder()</c>.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI commands:</b></para>
+///     <para>
+///         <b>CLI commands:</b>
+///     </para>
 ///     <list type="bullet">
-///         <item><c>sts2 relic_select &lt;index&gt;</c></item>
-///         <item><c>sts2 relic_skip</c></item>
+///         <item>
+///             <c>sts2 relic_select &lt;index&gt;</c>
+///         </item>
+///         <item>
+///             <c>sts2 relic_skip</c>
+///         </item>
 ///     </list>
 ///     <para><b>Scene:</b> Boss relic choice screen or event relic choice screen.</para>
 /// </remarks>
@@ -72,7 +78,7 @@ public static class RelicSelectHandler
             // --- Select the relic ---
             var holder = holders[relicIndex];
             var relicModel = holder.Relic.Model;
-            var relicId = relicModel?.Id.Entry ?? "UNKNOWN";
+            var relicId = relicModel.Id.Entry;
             Logger.Info($"Selecting relic at index {relicIndex}: {relicId}");
 
             holder.ForceClick();

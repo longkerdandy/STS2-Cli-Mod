@@ -19,6 +19,9 @@ namespace STS2.Cli.Mod.Actions;
 /// </remarks>
 public static class EndTurnHandler
 {
+    /// <summary>Timeout for a full enemy turn to complete (ms).</summary>
+    private const int TurnTimeoutMs = 30000;
+
     private static readonly ModLogger Logger = new("EndTurnHandler");
 
     /// <summary>
@@ -72,7 +75,7 @@ public static class EndTurnHandler
                 Logger.Info("EndTurn action executed via PlayerCmd, waiting for enemy turn...");
 
                 // Wait for the next player turn or combat end (with timeout)
-                var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(ActionUtils.TurnTimeoutMs));
+                var completedTask = await Task.WhenAny(tcs.Task, Task.Delay(TurnTimeoutMs));
                 if (completedTask != tcs.Task)
                 {
                     Logger.Warning("EndTurn timed out waiting for enemy turn to complete");

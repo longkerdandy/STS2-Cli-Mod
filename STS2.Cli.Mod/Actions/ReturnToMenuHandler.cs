@@ -25,7 +25,11 @@ internal static class ReturnToMenuHandler
         if (currentScreen != "GAME_OVER")
         {
             Logger.Warning($"Cannot return to menu: not on game over screen (current: {currentScreen})");
-            return new { ok = false, error = "NOT_ON_GAME_OVER_SCREEN", message = "Return to menu is only available on the game over screen" };
+            return new
+            {
+                ok = false, error = "NOT_ON_GAME_OVER_SCREEN",
+                message = "Return to menu is only available on the game over screen"
+            };
         }
 
         try
@@ -49,7 +53,10 @@ internal static class ReturnToMenuHandler
             if (mainMenuButton == null)
             {
                 Logger.Error("Main menu button not found (%MainMenuButton)");
-                return new { ok = false, error = "BUTTON_NOT_FOUND", message = "Main menu button not found on game over screen" };
+                return new
+                {
+                    ok = false, error = "BUTTON_NOT_FOUND", message = "Main menu button not found on game over screen"
+                };
             }
 
             if (!mainMenuButton.IsEnabled)

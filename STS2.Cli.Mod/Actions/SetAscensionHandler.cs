@@ -10,7 +10,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     Sets the ascension level on the character select screen.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 set_ascension &lt;level&gt;</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 set_ascension &lt;level&gt;</c>
+///     </para>
 ///     <para><b>Scene:</b> Character select screen.</para>
 /// </remarks>
 public static class SetAscensionHandler
