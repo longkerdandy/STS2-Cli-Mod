@@ -25,7 +25,12 @@ public static class SelectCharacterHandler
     ///     Validates parameters and current screen state.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static object Execute(Request request)
+    public static Task<object> ExecuteAsync(Request request)
+    {
+        return Task.FromResult<object>(ExecuteCore(request));
+    }
+
+    private static object ExecuteCore(Request request)
     {
         if (string.IsNullOrEmpty(request.Id))
         {

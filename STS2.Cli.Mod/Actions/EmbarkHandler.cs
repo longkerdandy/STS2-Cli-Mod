@@ -23,7 +23,12 @@ public static class EmbarkHandler
     ///     Validates the current screen state and returns a response indicating success or failure.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static object Execute()
+    public static Task<object> ExecuteAsync()
+    {
+        return Task.FromResult<object>(ExecuteCore());
+    }
+
+    private static object ExecuteCore()
     {
         Logger.Info("Requested to embark");
 

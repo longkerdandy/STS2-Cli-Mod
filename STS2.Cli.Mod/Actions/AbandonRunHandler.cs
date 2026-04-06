@@ -26,7 +26,12 @@ public static class AbandonRunHandler
     ///     Validates the current screen state and calls <see cref="NMainMenu.AbandonRun" />.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static object Execute()
+    public static Task<object> ExecuteAsync()
+    {
+        return Task.FromResult<object>(ExecuteCore());
+    }
+
+    private static object ExecuteCore()
     {
         Logger.Info("Requested to abandon run");
 

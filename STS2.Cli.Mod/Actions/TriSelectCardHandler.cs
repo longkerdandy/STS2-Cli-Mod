@@ -39,7 +39,12 @@ public static class TriSelectCardHandler
     ///     Validates parameters and current screen state.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static object Execute(Request request)
+    public static Task<object> ExecuteAsync(Request request)
+    {
+        return Task.FromResult<object>(ExecuteCore(request));
+    }
+
+    private static object ExecuteCore(Request request)
     {
         if (request.CardIds == null || request.CardIds.Length == 0)
         {
@@ -143,7 +148,12 @@ public static class TriSelectCardHandler
     ///     Validates current screen state.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static object ExecuteSkip(Request _)
+    public static Task<object> ExecuteSkipAsync(Request request)
+    {
+        return Task.FromResult<object>(ExecuteSkipCore(request));
+    }
+
+    private static object ExecuteSkipCore(Request _)
     {
         Logger.Info("Requested to skip tri-select card selection");
 

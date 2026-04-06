@@ -133,9 +133,8 @@ public static class PipeServer
 
     /// <summary>
     ///     Processes a parsed request and routes it to the appropriate handler.
-    ///     Synchronous commands (state, end_turn) use <see cref="MainThreadExecutor.RunOnMainThread{T}" />.
-    ///     Asynchronous commands (play_card) use <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" />
-    ///     to allow awaiting multi-frame game actions.
+    ///     All game-thread commands use <see cref="MainThreadExecutor.RunOnMainThreadAsync{T}" />
+    ///     to marshal execution to the Godot main thread.
     /// </summary>
     /// <param name="request">The parsed request object.</param>
     /// <returns>Response object to be serialized as JSON.</returns>
@@ -151,18 +150,20 @@ public static class PipeServer
                 "ping" => new { ok = true, data = new { connected = true } },
 
                 // --- Pre-run commands ---
-                "select_character" => MainThreadExecutor.RunOnMainThread(() =>
-                    SelectCharacterHandler.Execute(request)),
+                "select_character" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    SelectCharacterHandler.ExecuteAsync(request)),
 
-                "set_ascension" => MainThreadExecutor.RunOnMainThread(() => SetAscensionHandler.Execute(request)),
+                "set_ascension" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    SetAscensionHandler.ExecuteAsync(request)),
 
-                "embark" => MainThreadExecutor.RunOnMainThread(() => EmbarkHandler.Execute()),
+                "embark" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    EmbarkHandler.ExecuteAsync()),
 
-                "tri_select_card" => MainThreadExecutor.RunOnMainThread(() =>
-                    TriSelectCardHandler.Execute(request)),
+                "tri_select_card" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    TriSelectCardHandler.ExecuteAsync(request)),
 
-                "tri_select_skip" => MainThreadExecutor.RunOnMainThread(() =>
-                    TriSelectCardHandler.ExecuteSkip(request)),
+                "tri_select_skip" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    TriSelectCardHandler.ExecuteSkipAsync(request)),
 
                 "choose_game_mode" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     ChooseGameModeHandler.ExecuteAsync(request)),
@@ -239,8 +240,8 @@ public static class PipeServer
                 "new_run" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     NewRunHandler.ExecuteAsync()),
 
-                "abandon_run" => MainThreadExecutor.RunOnMainThread(() =>
-                    AbandonRunHandler.Execute()),
+                "abandon_run" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    AbandonRunHandler.ExecuteAsync()),
 
                 // --- Room-based ---
                 "choose_event" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
@@ -271,7 +272,8 @@ public static class PipeServer
                     ShopRemoveCardHandler.ExecuteAsync()),
 
                 // --- State query ---
-                "state" => MainThreadExecutor.RunOnMainThread(() => StateHandler.HandleRequest(request)),
+                "state" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    StateHandler.HandleRequestAsync(request)),
 
                 _ => new { ok = false, error = "UNKNOWN_COMMAND", message = $"Unknown command: {request.Cmd}" }
             };

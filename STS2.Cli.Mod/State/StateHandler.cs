@@ -29,7 +29,12 @@ public static class StateHandler
     /// </summary>
     /// <param name="request">The parsed request object.</param>
     /// <returns>Response containing the game state DTO, or an error if extraction failed.</returns>
-    public static object HandleRequest(Request request)
+    public static Task<object> HandleRequestAsync(Request request)
+    {
+        return Task.FromResult<object>(HandleRequestCore(request));
+    }
+
+    private static object HandleRequestCore(Request request)
     {
         Logger.Info("Requested game state");
 
