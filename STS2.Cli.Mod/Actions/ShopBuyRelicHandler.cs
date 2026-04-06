@@ -14,7 +14,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     <see cref="MerchantEntry.OnTryPurchaseWrapper" /> to purchase it.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 shop_buy_relic &lt;relic_id&gt; [--nth &lt;n&gt;]</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 shop_buy_relic &lt;relic_id&gt; [--nth &lt;n&gt;]</c>
+///     </para>
 ///     <para><b>Scene:</b> Merchant room (shop).</para>
 /// </remarks>
 public static class ShopBuyRelicHandler
@@ -33,7 +35,7 @@ public static class ShopBuyRelicHandler
         var relicId = request.Id;
         var nth = request.Nth ?? 0;
         Logger.Info($"Requested to buy relic: {relicId} (nth={nth})");
-        
+
         try
         {
             // --- Guard: Check merchant room ---
@@ -46,7 +48,10 @@ public static class ShopBuyRelicHandler
             // --- Find the relic entry by ID + nth ---
             var entry = FindRelicEntry(inventory, relicId, nth);
             if (entry == null)
-                return new { ok = false, error = "ITEM_NOT_FOUND", message = $"Relic '{relicId}' (nth={nth}) not found in shop" };
+                return new
+                {
+                    ok = false, error = "ITEM_NOT_FOUND", message = $"Relic '{relicId}' (nth={nth}) not found in shop"
+                };
 
             // --- Guard: Check item is in stock ---
             if (!entry.IsStocked)
@@ -54,7 +59,11 @@ public static class ShopBuyRelicHandler
 
             // --- Guard: Check enough gold ---
             if (!entry.EnoughGold)
-                return new { ok = false, error = "NOT_ENOUGH_GOLD", message = $"Not enough gold to buy relic '{relicId}' (cost={entry.Cost})" };
+                return new
+                {
+                    ok = false, error = "NOT_ENOUGH_GOLD",
+                    message = $"Not enough gold to buy relic '{relicId}' (cost={entry.Cost})"
+                };
 
             // --- Purchase ---
             var success = await entry.OnTryPurchaseWrapper(inventory);

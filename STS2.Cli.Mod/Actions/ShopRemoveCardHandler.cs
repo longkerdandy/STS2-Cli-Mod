@@ -1,4 +1,6 @@
+using MegaCrit.Sts2.Core.Entities.Merchant;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
+using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.State;
@@ -10,14 +12,17 @@ namespace STS2.Cli.Mod.Actions;
 ///     Handles the <c>shop_remove_card</c> CLI command.
 ///     Buys the card removal service from the shop.
 ///     Uses the fire-and-forget pattern (like SMITH in rest sites) because
-///     <see cref="MegaCrit.Sts2.Core.Entities.Merchant.MerchantCardRemovalEntry.OnTryPurchaseWrapper(MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory?, bool, bool)" />
+///     <see
+///         cref="MegaCrit.Sts2.Core.Entities.Merchant.MerchantCardRemovalEntry.OnTryPurchaseWrapper(MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory?, bool, bool)" />
 ///     calls <c>DoLocalMerchantCardRemoval</c> which opens a card selection screen
 ///     and blocks until the player picks a card.
 ///     After the fire-and-forget launch, polls for the GRID_CARD_SELECT overlay
 ///     to appear, then returns so the CLI can issue <c>grid_select_card</c>.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 shop_remove_card</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 shop_remove_card</c>
+///     </para>
 ///     <para><b>Scene:</b> Merchant room (shop), when the card removal service is available.</para>
 /// </remarks>
 public static class ShopRemoveCardHandler
@@ -31,7 +36,7 @@ public static class ShopRemoveCardHandler
     public static async Task<object> ExecuteAsync()
     {
         Logger.Info("Requested to buy card removal service");
-        
+
         try
         {
             // --- Guard: Check merchant room ---
@@ -44,15 +49,25 @@ public static class ShopRemoveCardHandler
             // --- Guard: Check card removal entry exists ---
             var entry = inventory.CardRemovalEntry;
             if (entry == null)
-                return new { ok = false, error = "NOT_IN_SHOP", message = "Card removal service not available in this shop" };
+                return new
+                {
+                    ok = false, error = "NOT_IN_SHOP", message = "Card removal service not available in this shop"
+                };
 
             // --- Guard: Check not already used ---
             if (entry.Used)
-                return new { ok = false, error = "CARD_REMOVAL_USED", message = "Card removal service has already been used" };
+                return new
+                {
+                    ok = false, error = "CARD_REMOVAL_USED", message = "Card removal service has already been used"
+                };
 
             // --- Guard: Check enough gold ---
             if (!entry.EnoughGold)
-                return new { ok = false, error = "NOT_ENOUGH_GOLD", message = $"Not enough gold for card removal (cost={entry.Cost})" };
+                return new
+                {
+                    ok = false, error = "NOT_ENOUGH_GOLD",
+                    message = $"Not enough gold for card removal (cost={entry.Cost})"
+                };
 
             // --- Fire-and-forget: launch the card removal purchase ---
             // OnTryPurchaseWrapper calls DoLocalMerchantCardRemoval which opens a
@@ -65,7 +80,7 @@ public static class ShopRemoveCardHandler
             await ActionUtils.PollUntilAsync(() =>
             {
                 var overlay = NOverlayStack.Instance?.Peek();
-                return overlay is MegaCrit.Sts2.Core.Nodes.Screens.CardSelection.NCardGridSelectionScreen;
+                return overlay is NCardGridSelectionScreen;
             }, ActionUtils.UiTimeoutMs);
 
             // --- Detect resulting screen ---
@@ -96,13 +111,13 @@ public static class ShopRemoveCardHandler
     ///     Must run on the Godot main thread (caller uses discard <c>_</c>, not <c>Task.Run</c>).
     /// </summary>
     private static async Task ExecuteRemovalFireAndForgetAsync(
-        MegaCrit.Sts2.Core.Entities.Merchant.MerchantCardRemovalEntry entry,
-        MegaCrit.Sts2.Core.Entities.Merchant.MerchantInventory inventory)
+        MerchantCardRemovalEntry entry,
+        MerchantInventory inventory)
     {
         try
         {
             // cancelable: true allows the player to back out of card selection
-            var success = await entry.OnTryPurchaseWrapper(inventory, ignoreCost: false, cancelable: true);
+            var success = await entry.OnTryPurchaseWrapper(inventory, false, true);
             Logger.Info(success
                 ? "Card removal purchase completed successfully"
                 : "Card removal purchase was cancelled or failed");

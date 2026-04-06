@@ -1,5 +1,7 @@
+using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes.Cards.Holders;
+using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.Models.Actions;
@@ -16,10 +18,16 @@ namespace STS2.Cli.Mod.Actions;
 ///     relics (Toolbox, MassiveScroll, etc.), and monsters (KnowledgeDemon).
 /// </summary>
 /// <remarks>
-///     <para><b>CLI commands:</b></para>
+///     <para>
+///         <b>CLI commands:</b>
+///     </para>
 ///     <list type="bullet">
-///         <item><c>sts2 tri_select_card &lt;card_id&gt; [&lt;card_id&gt;...] [--nth &lt;n&gt;...]</c></item>
-///         <item><c>sts2 tri_select_skip</c></item>
+///         <item>
+///             <c>sts2 tri_select_card &lt;card_id&gt; [&lt;card_id&gt;...] [--nth &lt;n&gt;...]</c>
+///         </item>
+///         <item>
+///             <c>sts2 tri_select_skip</c>
+///         </item>
 ///     </list>
 ///     <para><b>Scene:</b> Combat or event, when a potion/card/relic/monster triggers a "choose a card" selection.</para>
 /// </remarks>
@@ -42,13 +50,13 @@ public static class TriSelectCardHandler
 
         var cardIds = request.CardIds;
         var nthValues = request.NthValues;
-        
+
         Logger.Info($"Requested to select {cardIds.Length} card(s) from tri-select screen");
 
         try
         {
             // Guard: Must be in the TRI_SELECT screen
-            var selectionScreen = CardSelectionUtils.FindCardSelectionScreen();
+            var selectionScreen = UiUtils.FindScreenInOverlay<NChooseACardSelectionScreen>();
             if (selectionScreen == null)
                 return new
                 {
@@ -93,7 +101,7 @@ public static class TriSelectCardHandler
                 var cardId = cardIds[i];
                 var nth = nthValues != null && i < nthValues.Length ? nthValues[i] : 0;
 
-                var holder = CardSelectionUtils.FindCardHolderById(selectionScreen, cardId, nth);
+                var holder = FindCardHolderById(selectionScreen, cardId, nth);
                 if (holder == null)
                     return new
                     {
@@ -148,7 +156,7 @@ public static class TriSelectCardHandler
         try
         {
             // Guard: Must be in the TRI_SELECT screen
-            var selectionScreen = CardSelectionUtils.FindCardSelectionScreen();
+            var selectionScreen = UiUtils.FindScreenInOverlay<NChooseACardSelectionScreen>();
             if (selectionScreen == null)
                 return new
                 {
@@ -169,7 +177,7 @@ public static class TriSelectCardHandler
                 };
 
             // Find and click the skip button
-            var skipButton = CardSelectionUtils.FindSkipButton(selectionScreen);
+            var skipButton = FindSkipButton(selectionScreen);
             if (skipButton == null)
                 return new
                 {
@@ -201,7 +209,71 @@ public static class TriSelectCardHandler
     /// </summary>
     private static SelectionConstraintsDto GetScreenConstraints(NChooseACardSelectionScreen screen)
     {
-        var canSkip = CardSelectionUtils.ReadCanSkip(screen);
+        var canSkip = ReadCanSkip(screen);
         return new SelectionConstraintsDto { MinSelect = canSkip ? 0 : 1, MaxSelect = 1, CanSkip = canSkip };
+    }
+
+    /// <summary>
+    ///     Finds a <see cref="NCardHolder" /> in a card selection screen by card ID and nth occurrence.
+    /// </summary>
+    /// <param name="screen">The card selection screen to search.</param>
+    /// <param name="cardId">Card ID to find (case-insensitive).</param>
+    /// <param name="nth">Zero-based occurrence index when multiple copies exist.</param>
+    /// <returns>The matching card holder, or <c>null</c> if not found or nth is out of range.</returns>
+    private static NCardHolder? FindCardHolderById(NChooseACardSelectionScreen screen, string cardId, int nth)
+    {
+        var cardHolders = UiUtils.FindAll<NCardHolder>(screen);
+        var matchingHolders = new List<NCardHolder>();
+
+        foreach (var holder in cardHolders)
+            if (holder.CardModel?.Id.Entry.Equals(cardId, StringComparison.OrdinalIgnoreCase) == true)
+                matchingHolders.Add(holder);
+
+        if (nth < 0 || nth >= matchingHolders.Count)
+            return null;
+
+        return matchingHolders[nth];
+    }
+
+    /// <summary>
+    ///     Finds the skip button on a <see cref="NChooseACardSelectionScreen" />.
+    ///     Looks for a unique-name node <c>%SkipButton</c> first, then falls back to
+    ///     a child whose name contains "Skip".
+    /// </summary>
+    /// <param name="screen">The card selection screen to search.</param>
+    /// <returns>The skip button if found, or <c>null</c>.</returns>
+    private static NButton? FindSkipButton(NChooseACardSelectionScreen screen)
+    {
+        // Try to find by unique node name
+        var skipButton = screen.GetNodeOrNull<NButton>("%SkipButton");
+        if (skipButton != null) return skipButton;
+
+        // Fallback: search for any button with "skip" in its name
+        foreach (var child in screen.GetChildren())
+            if (child is NButton button &&
+                button.Name.ToString().Contains("Skip", StringComparison.OrdinalIgnoreCase))
+                return button;
+
+        return null;
+    }
+
+    /// <summary>
+    ///     Reads the private <c>_canSkip</c> field from an <see cref="NChooseACardSelectionScreen" />
+    ///     via reflection to determine if the selection can be skipped.
+    /// </summary>
+    /// <param name="screen">The card selection screen to check.</param>
+    /// <returns><c>true</c> if the selection can be skipped; <c>false</c> otherwise.</returns>
+    private static bool ReadCanSkip(NChooseACardSelectionScreen screen)
+    {
+        try
+        {
+            var field = typeof(NChooseACardSelectionScreen).GetField("_canSkip",
+                BindingFlags.NonPublic | BindingFlags.Instance);
+            return field?.GetValue(screen) as bool? ?? false;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }

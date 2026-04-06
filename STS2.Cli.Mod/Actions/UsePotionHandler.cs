@@ -143,7 +143,7 @@ public static class UsePotionHandler
         PotionModel potion, int slot, Creature? target, int? targetCombatId)
     {
         var historyBefore = CombatManager.Instance.History.Entries.Count();
-        var action = CreateAndLogAction(potion, slot, target);
+        var action = CreateAction(potion, slot, target);
 
         var finalState = await ActionUtils.EnqueueAndAwaitAsync(action, ActionUtils.ActionTimeoutMs);
 
@@ -162,7 +162,7 @@ public static class UsePotionHandler
     {
         var historyBefore = CombatManager.Instance.History.Entries.Count();
         var uiType = GetSelectionUiType(potion.Id.Entry);
-        var action = CreateAndLogAction(potion, slot, target, true);
+        var action = CreateAction(potion, slot, target, true);
 
         Logger.Info($"Potion '{potion.Title}' expects UI type '{uiType}'");
 
@@ -202,7 +202,7 @@ public static class UsePotionHandler
         {
             case "tri_select":
             {
-                var screen = CardSelectionUtils.FindCardSelectionScreen();
+                var screen = UiUtils.FindScreenInOverlay<NChooseACardSelectionScreen>();
                 if (screen != null)
                     return BuildTriSelectResponse(potion, slot, screen);
                 break;
@@ -367,7 +367,7 @@ public static class UsePotionHandler
     /// <summary>
     ///     Creates a <see cref="UsePotionAction" /> and logs the enqueue.
     /// </summary>
-    private static UsePotionAction CreateAndLogAction(
+    private static UsePotionAction CreateAction(
         PotionModel potion, int slot, Creature? target, bool selectionType = false)
     {
         var action = new UsePotionAction(potion, target, CombatManager.Instance.IsInProgress);

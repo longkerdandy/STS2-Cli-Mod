@@ -16,7 +16,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     if the player's potion belt is full.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 shop_buy_potion &lt;potion_id&gt; [--nth &lt;n&gt;]</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 shop_buy_potion &lt;potion_id&gt; [--nth &lt;n&gt;]</c>
+///     </para>
 ///     <para><b>Scene:</b> Merchant room (shop).</para>
 /// </remarks>
 public static class ShopBuyPotionHandler
@@ -35,7 +37,7 @@ public static class ShopBuyPotionHandler
         var potionId = request.Id;
         var nth = request.Nth ?? 0;
         Logger.Info($"Requested to buy potion: {potionId} (nth={nth})");
-        
+
         try
         {
             // --- Guard: Check merchant room ---
@@ -48,7 +50,10 @@ public static class ShopBuyPotionHandler
             // --- Find the potion entry by ID + nth ---
             var entry = FindPotionEntry(inventory, potionId, nth);
             if (entry == null)
-                return new { ok = false, error = "ITEM_NOT_FOUND", message = $"Potion '{potionId}' (nth={nth}) not found in shop" };
+                return new
+                {
+                    ok = false, error = "ITEM_NOT_FOUND", message = $"Potion '{potionId}' (nth={nth}) not found in shop"
+                };
 
             // --- Guard: Check item is in stock ---
             if (!entry.IsStocked)
@@ -56,14 +61,22 @@ public static class ShopBuyPotionHandler
 
             // --- Guard: Check enough gold ---
             if (!entry.EnoughGold)
-                return new { ok = false, error = "NOT_ENOUGH_GOLD", message = $"Not enough gold to buy potion '{potionId}' (cost={entry.Cost})" };
+                return new
+                {
+                    ok = false, error = "NOT_ENOUGH_GOLD",
+                    message = $"Not enough gold to buy potion '{potionId}' (cost={entry.Cost})"
+                };
 
             // --- Purchase ---
             // OnTryPurchaseWrapper handles the full flow: PotionCmd.TryToProcure, gold deduction, etc.
             // It returns false if the potion belt is full (FailureSpace) or purchase is forbidden.
             var success = await entry.OnTryPurchaseWrapper(inventory);
             if (!success)
-                return new { ok = false, error = "POTION_BELT_FULL", message = $"Failed to purchase potion '{potionId}' (potion belt may be full)" };
+                return new
+                {
+                    ok = false, error = "POTION_BELT_FULL",
+                    message = $"Failed to purchase potion '{potionId}' (potion belt may be full)"
+                };
 
             Logger.Info($"Successfully purchased potion: {potionId}");
 

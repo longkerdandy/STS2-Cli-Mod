@@ -107,7 +107,7 @@ public static class PlayCardHandler
                 }
 
                 // Type C — Tri Select: choose 1 of up to 3 generated cards
-                var triScreen = CardSelectionUtils.FindCardSelectionScreen();
+                var triScreen = UiUtils.FindScreenInOverlay<NChooseACardSelectionScreen>();
                 if (triScreen != null)
                 {
                     Logger.Info($"Tri select screen detected for card '{card.Title}'");
