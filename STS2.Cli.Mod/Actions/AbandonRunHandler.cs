@@ -1,5 +1,6 @@
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
+using MegaCrit.Sts2.Core.Saves;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -11,7 +12,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     After abandoning, the menu refreshes to show the Singleplayer button instead of Continue.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 abandon_run</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 abandon_run</c>
+///     </para>
 ///     <para><b>Scene:</b> Main menu, when a saved run exists.</para>
 /// </remarks>
 public static class AbandonRunHandler
@@ -32,11 +35,14 @@ public static class AbandonRunHandler
         if (currentScreen != "MENU")
         {
             Logger.Warning($"Cannot abandon run: not on menu screen (current: {currentScreen})");
-            return new { ok = false, error = "NOT_ON_MENU", message = $"Not on main menu screen (current: {currentScreen})" };
+            return new
+            {
+                ok = false, error = "NOT_ON_MENU", message = $"Not on main menu screen (current: {currentScreen})"
+            };
         }
 
         // Guard: Must have a saved run
-        var saveManager = MegaCrit.Sts2.Core.Saves.SaveManager.Instance;
+        var saveManager = SaveManager.Instance;
         if (!saveManager.HasRunSave)
         {
             Logger.Warning("Cannot abandon run: no saved run exists");

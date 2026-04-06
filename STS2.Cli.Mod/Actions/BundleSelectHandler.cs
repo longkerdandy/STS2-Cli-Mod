@@ -15,7 +15,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     which appears when the player obtains the Scroll Boxes relic.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI commands:</b></para>
+///     <para>
+///         <b>CLI commands:</b>
+///     </para>
 ///     <list type="bullet">
 ///         <item><c>sts2 bundle_select &lt;index&gt;</c> — preview a bundle by clicking its hitbox</item>
 ///         <item><c>sts2 bundle_confirm</c> — confirm the previewed bundle selection</item>

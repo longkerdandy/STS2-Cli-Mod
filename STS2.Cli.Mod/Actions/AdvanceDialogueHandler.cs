@@ -4,8 +4,8 @@ using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
-using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Actions.Utils;
+using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State.Builders;
 using STS2.Cli.Mod.Utils;
 
@@ -17,7 +17,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     Can advance a single line or auto-advance until options appear.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 advance_dialogue [--auto]</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 advance_dialogue [--auto]</c>
+///     </para>
 ///     <para><b>Scene:</b> Ancient event room with active dialogue (e.g., Neow, Act bosses with dialogue).</para>
 /// </remarks>
 public static class AdvanceDialogueHandler
@@ -38,7 +40,7 @@ public static class AdvanceDialogueHandler
         // args[0] = 1 for auto mode, 0 or not present for a single advance
         var auto = request.Args is { Length: > 0 } && request.Args[0] == 1;
         Logger.Info($"Requested to advance dialogue (auto={auto})");
-        
+
         try
         {
             // --- Guard: Check event room ---

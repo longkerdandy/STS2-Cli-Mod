@@ -117,7 +117,7 @@ public static class ShopRemoveCardHandler
         try
         {
             // cancelable: true allows the player to back out of card selection
-            var success = await entry.OnTryPurchaseWrapper(inventory, false, true);
+            var success = await entry.OnTryPurchaseWrapper(inventory);
             Logger.Info(success
                 ? "Card removal purchase completed successfully"
                 : "Card removal purchase was cancelled or failed");

@@ -1,5 +1,4 @@
 using Godot;
-using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
@@ -16,7 +15,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     Returns the updated event state after the option resolves.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 choose_event &lt;index&gt;</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 choose_event &lt;index&gt;</c>
+///     </para>
 ///     <para><b>Scene:</b> Event room with available options (standard events, Ancient events after dialogue).</para>
 /// </remarks>
 public static class ChooseEventHandler
@@ -34,7 +35,7 @@ public static class ChooseEventHandler
 
         var optionIndex = request.Args[0];
         Logger.Info($"Requested to choose event option at index {optionIndex}");
-        
+
         try
         {
             // --- Guard: Check event room ---
