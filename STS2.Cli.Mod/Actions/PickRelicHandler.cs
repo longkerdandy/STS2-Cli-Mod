@@ -14,7 +14,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     with the resolved relic index, then polls for the proceed button to become enabled.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 pick_relic &lt;index&gt;</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 pick_relic &lt;index&gt;</c>
+///     </para>
 ///     <para><b>Scene:</b> Treasure room, after the chest has been opened and relics are displayed.</para>
 /// </remarks>
 public static class PickRelicHandler
@@ -32,7 +34,7 @@ public static class PickRelicHandler
 
         var relicIndex = request.Args[0];
         Logger.Info($"Requested to pick relic at index {relicIndex}");
-        
+
         try
         {
             // --- Guard: Check treasure room ---
@@ -44,7 +46,11 @@ public static class PickRelicHandler
             var synchronizer = RunManager.Instance.TreasureRoomRelicSynchronizer;
             var currentRelics = synchronizer.CurrentRelics;
             if (currentRelics == null || currentRelics.Count == 0)
-                return new { ok = false, error = "NO_RELICS_AVAILABLE", message = "No relics available to pick (chest not opened or already picked)" };
+                return new
+                {
+                    ok = false, error = "NO_RELICS_AVAILABLE",
+                    message = "No relics available to pick (chest not opened or already picked)"
+                };
 
             // --- Guard: Check relic index ---
             if (relicIndex < 0 || relicIndex >= currentRelics.Count)
@@ -64,7 +70,8 @@ public static class PickRelicHandler
 
             // --- Poll for proceed button to become enabled ---
             // After picking, the game animates the relic pickup, then enables the proceed button.
-            await ActionUtils.PollUntilAsync(() => treasureRoom.ProceedButton is { IsEnabled: true }, ActionUtils.UiTimeoutMs);
+            await ActionUtils.PollUntilAsync(() => treasureRoom.ProceedButton is { IsEnabled: true },
+                ActionUtils.UiTimeoutMs);
 
             // --- Return result ---
             var screen = StateHandler.DetectScreen();

@@ -11,7 +11,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     which navigates to the corresponding screen (character select, daily run, or custom run).
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 choose_game_mode &lt;mode&gt;</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 choose_game_mode &lt;mode&gt;</c>
+///     </para>
 ///     <para><b>Scene:</b> Singleplayer submenu (after clicking Singleplayer on main menu).</para>
 /// </remarks>
 public static class ChooseGameModeHandler
@@ -29,21 +31,28 @@ public static class ChooseGameModeHandler
         Logger.Info($"Requested to choose game mode: {mode}");
 
         if (string.IsNullOrEmpty(mode))
-        {
-            return new { ok = false, error = "MISSING_ARGUMENT", message = "Game mode is required (standard, daily, custom)" };
-        }
+            return new
+            {
+                ok = false, error = "MISSING_ARGUMENT", message = "Game mode is required (standard, daily, custom)"
+            };
 
         if (mode != "standard" && mode != "daily" && mode != "custom")
-        {
-            return new { ok = false, error = "INVALID_GAME_MODE", message = $"Invalid game mode: {mode}. Valid modes: standard, daily, custom" };
-        }
+            return new
+            {
+                ok = false, error = "INVALID_GAME_MODE",
+                message = $"Invalid game mode: {mode}. Valid modes: standard, daily, custom"
+            };
 
         // Guard: Must be on the SINGLEPLAYER_SUBMENU screen
         var currentScreen = StateHandler.DetectScreen();
         if (currentScreen != "SINGLEPLAYER_SUBMENU")
         {
             Logger.Warning($"Cannot choose game mode: not on singleplayer submenu (current: {currentScreen})");
-            return new { ok = false, error = "NOT_ON_SINGLEPLAYER_SUBMENU", message = $"Not on singleplayer submenu screen (current: {currentScreen})" };
+            return new
+            {
+                ok = false, error = "NOT_ON_SINGLEPLAYER_SUBMENU",
+                message = $"Not on singleplayer submenu screen (current: {currentScreen})"
+            };
         }
 
         try
@@ -66,9 +75,7 @@ public static class ChooseGameModeHandler
             };
 
             if (buttonName == null)
-            {
                 return new { ok = false, error = "INVALID_GAME_MODE", message = $"Invalid game mode: {mode}" };
-            }
 
             var button = submenu.GetNodeOrNull<NButton>(buttonName);
             if (button == null)
@@ -80,7 +87,10 @@ public static class ChooseGameModeHandler
             if (!button.IsEnabled)
             {
                 Logger.Warning($"Button is disabled: {buttonName} (game mode not unlocked)");
-                return new { ok = false, error = "MODE_NOT_UNLOCKED", message = $"Game mode '{mode}' is not unlocked yet" };
+                return new
+                {
+                    ok = false, error = "MODE_NOT_UNLOCKED", message = $"Game mode '{mode}' is not unlocked yet"
+                };
             }
 
             // Click the button via EmitSignal

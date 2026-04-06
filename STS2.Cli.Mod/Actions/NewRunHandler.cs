@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
+using MegaCrit.Sts2.Core.Saves;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -13,7 +14,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     If NumberOfRuns == 0 (first game ever), goes directly to character select.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 new_run</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 new_run</c>
+///     </para>
 ///     <para><b>Scene:</b> Main menu, when no saved run exists.</para>
 /// </remarks>
 public static class NewRunHandler
@@ -34,15 +37,22 @@ public static class NewRunHandler
         if (currentScreen != "MENU")
         {
             Logger.Warning($"Cannot start new run: not on menu screen (current: {currentScreen})");
-            return new { ok = false, error = "NOT_ON_MENU", message = $"Not on main menu screen (current: {currentScreen})" };
+            return new
+            {
+                ok = false, error = "NOT_ON_MENU", message = $"Not on main menu screen (current: {currentScreen})"
+            };
         }
 
         // Guard: Must NOT have a saved run (abandon first)
-        var saveManager = MegaCrit.Sts2.Core.Saves.SaveManager.Instance;
+        var saveManager = SaveManager.Instance;
         if (saveManager.HasRunSave)
         {
             Logger.Warning("Cannot start new run: a saved run exists. Use abandon_run first.");
-            return new { ok = false, error = "RUN_SAVE_EXISTS", message = "A saved run exists. Use abandon_run to abandon it first, then use new_run." };
+            return new
+            {
+                ok = false, error = "RUN_SAVE_EXISTS",
+                message = "A saved run exists. Use abandon_run to abandon it first, then use new_run."
+            };
         }
 
         try
@@ -56,7 +66,8 @@ public static class NewRunHandler
             }
 
             // Find the Singleplayer button
-            var singleplayerButton = mainMenu.GetNodeOrNull<NMainMenuTextButton>("MainMenuTextButtons/SingleplayerButton");
+            var singleplayerButton =
+                mainMenu.GetNodeOrNull<NMainMenuTextButton>("MainMenuTextButtons/SingleplayerButton");
             if (singleplayerButton == null)
             {
                 Logger.Error("Singleplayer button not found");

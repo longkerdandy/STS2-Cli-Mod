@@ -23,12 +23,21 @@ namespace STS2.Cli.Mod.Actions;
 ///     selection auto-completes; otherwise a confirm button enables after selecting enough cards.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI commands:</b></para>
+///     <para>
+///         <b>CLI commands:</b>
+///     </para>
 ///     <list type="bullet">
-///         <item><c>sts2 grid_select_card &lt;card_id&gt; [&lt;card_id&gt;...] [--nth &lt;n&gt;...]</c></item>
-///         <item><c>sts2 grid_select_skip</c></item>
+///         <item>
+///             <c>sts2 grid_select_card &lt;card_id&gt; [&lt;card_id&gt;...] [--nth &lt;n&gt;...]</c>
+///         </item>
+///         <item>
+///             <c>sts2 grid_select_skip</c>
+///         </item>
 ///     </list>
-///     <para><b>Scene:</b> Grid card selection overlay (rest site SMITH/COOK, shop card removal, potion card selection, etc.).</para>
+///     <para>
+///         <b>Scene:</b> Grid card selection overlay (rest site SMITH/COOK, shop card removal, potion card selection,
+///         etc.).
+///     </para>
 /// </remarks>
 public static class GridSelectCardHandler
 {
@@ -327,20 +336,21 @@ public static class GridSelectCardHandler
         {
             // NDeckCardSelectScreen: _previewConfirmButton is inside %PreviewContainer
             if (screen is NDeckCardSelectScreen)
-            {
-                return UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckCardSelectScreen), screen, "_previewConfirmButton");
-            }
+                return UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckCardSelectScreen), screen,
+                    "_previewConfirmButton");
 
             // NDeckUpgradeSelectScreen: has single and multi preview
             if (screen is NDeckUpgradeSelectScreen)
             {
                 // Try a single preview confirm first
-                var singleBtn = UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckUpgradeSelectScreen), screen, "_singlePreviewConfirmButton");
+                var singleBtn = UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckUpgradeSelectScreen), screen,
+                    "_singlePreviewConfirmButton");
                 if (singleBtn != null && GodotObject.IsInstanceValid(singleBtn))
                     return singleBtn;
 
                 // Fall back to multi preview confirm
-                return UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckUpgradeSelectScreen), screen, "_multiPreviewConfirmButton");
+                return UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckUpgradeSelectScreen), screen,
+                    "_multiPreviewConfirmButton");
             }
 
             // Generic fallback: search for confirmation buttons in the tree
@@ -363,14 +373,11 @@ public static class GridSelectCardHandler
         try
         {
             if (screen is NDeckCardSelectScreen)
-            {
                 return UiUtils.GetPrivateField<NConfirmButton>(typeof(NDeckCardSelectScreen), screen, "_confirmButton");
-            }
 
             if (screen is NSimpleCardSelectScreen)
-            {
-                return UiUtils.GetPrivateField<NConfirmButton>(typeof(NSimpleCardSelectScreen), screen, "_confirmButton");
-            }
+                return UiUtils.GetPrivateField<NConfirmButton>(typeof(NSimpleCardSelectScreen), screen,
+                    "_confirmButton");
 
             // For other screen types, try generic search
             return screen.GetNodeOrNull<NConfirmButton>("%Confirm");

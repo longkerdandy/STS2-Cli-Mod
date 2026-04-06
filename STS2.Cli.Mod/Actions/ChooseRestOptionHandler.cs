@@ -1,3 +1,4 @@
+using MegaCrit.Sts2.Core.Entities.RestSite;
 using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.Map;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
@@ -23,7 +24,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     (e.g., <c>grid_select_card</c>).
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 choose_rest_option &lt;option_id&gt;</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 choose_rest_option &lt;option_id&gt;</c>
+///     </para>
 ///     <para><b>Scene:</b> Rest site room with available options (HEAL, SMITH, COOK, DIG, LIFT, RECALL, etc.).</para>
 /// </remarks>
 public static class ChooseRestOptionHandler
@@ -41,7 +44,7 @@ public static class ChooseRestOptionHandler
 
         var optionId = request.Id.ToUpperInvariant();
         Logger.Info($"Requested to choose rest site option: {optionId}");
-        
+
         try
         {
             // --- Guard: Check rest site room ---
@@ -53,20 +56,19 @@ public static class ChooseRestOptionHandler
             var options = restSiteRoom.Options;
             var optionIndex = -1;
             for (var i = 0; i < options.Count; i++)
-            {
                 if (string.Equals(options[i].OptionId, optionId, StringComparison.OrdinalIgnoreCase))
                 {
                     optionIndex = i;
                     break;
                 }
-            }
 
             if (optionIndex < 0)
                 return new
                 {
                     ok = false,
                     error = "OPTION_NOT_FOUND",
-                    message = $"Rest site option '{optionId}' not found. Available: {string.Join(", ", options.Select(o => o.OptionId))}"
+                    message =
+                        $"Rest site option '{optionId}' not found. Available: {string.Join(", ", options.Select(o => o.OptionId))}"
                 };
 
             var selectedOption = options[optionIndex];
@@ -140,7 +142,7 @@ public static class ChooseRestOptionHandler
     /// </summary>
     private static async Task ExecuteOptionFireAndForgetAsync(
         NRestSiteRoom restSiteRoom, int optionIndex,
-        MegaCrit.Sts2.Core.Entities.RestSite.RestSiteOption option, string optionId)
+        RestSiteOption option, string optionId)
     {
         try
         {
@@ -161,7 +163,14 @@ public static class ChooseRestOptionHandler
         catch (Exception ex)
         {
             Logger.Error($"Fire-and-forget option task failed: {ex.Message}");
-            try { restSiteRoom.EnableOptions(); } catch { /* best effort */ }
+            try
+            {
+                restSiteRoom.EnableOptions();
+            }
+            catch
+            {
+                /* best effort */
+            }
         }
     }
 }

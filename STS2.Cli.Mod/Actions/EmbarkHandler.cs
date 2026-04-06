@@ -9,7 +9,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     Clicks the Embark button to start the game from character select.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 embark</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 embark</c>
+///     </para>
 ///     <para><b>Scene:</b> Character select screen, after selecting a character and ascension level.</para>
 /// </remarks>
 public static class EmbarkHandler

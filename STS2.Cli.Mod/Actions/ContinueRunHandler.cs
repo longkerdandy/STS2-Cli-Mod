@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using MegaCrit.Sts2.Core.Runs;
+using MegaCrit.Sts2.Core.Saves;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -12,7 +13,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     Clicks the Continue button on the main menu to load a saved run.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 continue_run</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 continue_run</c>
+///     </para>
 ///     <para><b>Scene:</b> Main menu, when a saved run exists.</para>
 ///     <para>
 ///         This is an async handler because loading a saved run involves fade-out,
@@ -21,9 +24,9 @@ namespace STS2.Cli.Mod.Actions;
 /// </remarks>
 public static class ContinueRunHandler
 {
-    private static readonly ModLogger Logger = new("ContinueRunHandler");
     private const int PollIntervalMs = 100;
     private const int MaxWaitMs = 15000;
+    private static readonly ModLogger Logger = new("ContinueRunHandler");
 
     /// <summary>
     ///     Clicks the Continue button and waits for the run to load.
@@ -39,11 +42,14 @@ public static class ContinueRunHandler
         if (currentScreen != "MENU")
         {
             Logger.Warning($"Cannot continue run: not on menu screen (current: {currentScreen})");
-            return new { ok = false, error = "NOT_ON_MENU", message = $"Not on main menu screen (current: {currentScreen})" };
+            return new
+            {
+                ok = false, error = "NOT_ON_MENU", message = $"Not on main menu screen (current: {currentScreen})"
+            };
         }
 
         // Guard: Must have a saved run
-        var saveManager = MegaCrit.Sts2.Core.Saves.SaveManager.Instance;
+        var saveManager = SaveManager.Instance;
         if (!saveManager.HasRunSave)
         {
             Logger.Warning("Cannot continue run: no saved run exists");
@@ -94,7 +100,10 @@ public static class ContinueRunHandler
 
             // Timeout — run may still be loading
             Logger.Warning($"Timed out waiting for run to load after {MaxWaitMs}ms");
-            return new { ok = false, error = "TIMEOUT", message = $"Timed out waiting for run to load after {MaxWaitMs}ms" };
+            return new
+            {
+                ok = false, error = "TIMEOUT", message = $"Timed out waiting for run to load after {MaxWaitMs}ms"
+            };
         }
         catch (Exception ex)
         {

@@ -16,10 +16,16 @@ namespace STS2.Cli.Mod.Actions;
 ///     without overlay screens.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI commands:</b></para>
+///     <para>
+///         <b>CLI commands:</b>
+///     </para>
 ///     <list type="bullet">
-///         <item><c>sts2 hand_select_card &lt;card_id&gt; [&lt;card_id&gt;...] [--nth &lt;n&gt;...]</c></item>
-///         <item><c>sts2 hand_confirm_selection</c></item>
+///         <item>
+///             <c>sts2 hand_select_card &lt;card_id&gt; [&lt;card_id&gt;...] [--nth &lt;n&gt;...]</c>
+///         </item>
+///         <item>
+///             <c>sts2 hand_confirm_selection</c>
+///         </item>
 ///     </list>
 ///     <para><b>Scene:</b> Combat, when a card or effect requires the player to select cards from hand.</para>
 /// </remarks>
@@ -42,7 +48,7 @@ public static class HandSelectCardHandler
             {
                 var cardIds = new[] { request.Id };
                 var nthValues = request.Nth.HasValue ? new[] { request.Nth.Value } : null;
-                Logger.Info($"Requested to select 1 card from hand selection");
+                Logger.Info("Requested to select 1 card from hand selection");
                 return await ExecuteSelectAsync(cardIds, nthValues);
             }
 

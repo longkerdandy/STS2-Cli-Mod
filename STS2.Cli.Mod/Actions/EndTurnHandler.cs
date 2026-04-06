@@ -14,7 +14,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     execution results (damage, block, powers) from <c>CombatHistory</c>.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 end_turn</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 end_turn</c>
+///     </para>
 ///     <para><b>Scene:</b> Combat, during the player's turn.</para>
 /// </remarks>
 public static class EndTurnHandler
@@ -25,7 +27,7 @@ public static class EndTurnHandler
     private static readonly ModLogger Logger = new("EndTurnHandler");
 
     /// <summary>
-///     Ends the player's turn, waits for the enemy turn to complete, and returns execution results.
+    ///     Ends the player's turn, waits for the enemy turn to complete, and returns execution results.
     ///     Validates combat state and triggers the end turn command.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>

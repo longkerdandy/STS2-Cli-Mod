@@ -18,7 +18,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     to clear fog from a grid and reveal hidden items.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI commands:</b></para>
+///     <para>
+///         <b>CLI commands:</b>
+///     </para>
 ///     <list type="bullet">
 ///         <item><c>sts2 crystal_set_tool &lt;tool&gt;</c> — switch divination tool ("big" or "small")</item>
 ///         <item><c>sts2 crystal_click_cell &lt;x&gt; &lt;y&gt;</c> — click a hidden cell to clear fog</item>
@@ -189,13 +191,11 @@ public static class CrystalSphereHandler
             var cellNodes = UiUtils.FindAll<NCrystalSphereCell>(cellContainer);
             NCrystalSphereCell? targetCell = null;
             foreach (var cellNode in cellNodes)
-            {
                 if (cellNode.Entity.X == x && cellNode.Entity.Y == y)
                 {
                     targetCell = cellNode;
                     break;
                 }
-            }
 
             if (targetCell == null)
                 return new
@@ -223,10 +223,8 @@ public static class CrystalSphereHandler
             // Check if a child overlay appeared (reward from item reveal)
             var topOverlay = NOverlayStack.Instance?.Peek();
             if (topOverlay != null && topOverlay != screen)
-            {
                 // A reward screen appeared on top — wait a bit more for it to fully render
                 await Task.Delay(ActionUtils.PostClickDelayMs);
-            }
 
             // --- Return result ---
             var resultScreen = StateHandler.DetectScreen();

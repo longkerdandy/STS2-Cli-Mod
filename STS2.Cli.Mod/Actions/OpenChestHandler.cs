@@ -20,7 +20,9 @@ namespace STS2.Cli.Mod.Actions;
 ///     before returning the updated state.
 /// </summary>
 /// <remarks>
-///     <para><b>CLI command:</b> <c>sts2 open_chest</c></para>
+///     <para>
+///         <b>CLI command:</b> <c>sts2 open_chest</c>
+///     </para>
 ///     <para><b>Scene:</b> Treasure room, before the chest has been opened.</para>
 /// </remarks>
 public static class OpenChestHandler
@@ -46,7 +48,7 @@ public static class OpenChestHandler
     public static async Task<object> ExecuteAsync()
     {
         Logger.Info("Requested to open treasure chest");
-        
+
         try
         {
             // --- Guard: Check treasure room ---
