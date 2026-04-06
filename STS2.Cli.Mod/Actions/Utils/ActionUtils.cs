@@ -97,7 +97,7 @@ public static class ActionUtils
     /// </summary>
     /// <param name="combatId">The combat ID of the target enemy.</param>
     /// <returns>The resolved <see cref="Creature" />, or null if invalid.</returns>
-    public static Creature? ResolveEnemyTarget(uint combatId)
+    private static Creature? ResolveEnemyTarget(uint combatId)
     {
         try
         {
@@ -140,7 +140,7 @@ public static class ActionUtils
     /// <param name="player">The local player.</param>
     /// <param name="combatId">The combat ID of the target ally.</param>
     /// <returns>The resolved <see cref="Creature" />, or null if invalid.</returns>
-    public static Creature? ResolveAllyTarget(Player player, uint combatId)
+    private static Creature? ResolveAllyTarget(Player player, uint combatId)
     {
         try
         {

@@ -1,8 +1,8 @@
 using System.Reflection;
 using Godot;
 using MegaCrit.Sts2.Core.Nodes;
-using MegaCrit.Sts2.Core.Nodes.CommonUi;
-using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using MegaCrit.Sts2.Core.Nodes.Rewards;
+using MegaCrit.Sts2.Core.Nodes.Screens;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
@@ -154,29 +154,28 @@ public static class UiUtils
     }
 
     /// <summary>
-    ///     Finds a <see cref="NCardGridSelectionScreen" /> in the overlay stack
-    ///     by reverse-iterating children (topmost overlay wins).
+    ///     Collects all <see cref="NRewardButton" /> instances from the rewards container
+    ///     of a <see cref="NRewardsScreen" />.
     /// </summary>
-    /// <returns>The grid selection screen, or <c>null</c> if none is found.</returns>
-    public static NCardGridSelectionScreen? FindGridSelectionScreen()
+    public static List<NRewardButton> FindRewardButtons(NRewardsScreen screen)
     {
+        var buttons = new List<NRewardButton>();
+
         try
         {
-            var overlayStack = NOverlayStack.Instance;
-            if (overlayStack == null) return null;
+            var rewardsContainer = screen.GetNode<Control>("%RewardsContainer");
+            if (rewardsContainer == null) return buttons;
 
-            var children = overlayStack.GetChildren();
-            for (var i = children.Count - 1; i >= 0; i--)
-                if (children[i] is NCardGridSelectionScreen gridScreen)
-                    return gridScreen;
-
-            return null;
+            foreach (var child in rewardsContainer.GetChildren())
+                if (child is NRewardButton button)
+                    buttons.Add(button);
         }
         catch (Exception ex)
         {
-            Logger.Warning($"Failed to find grid selection screen: {ex.Message}");
-            return null;
+            Logger.Warning($"Failed to access RewardsContainer: {ex.Message}");
         }
+
+        return buttons;
     }
 
     // ── Private helpers ──────────────────────────────────────────────
@@ -266,40 +265,5 @@ public static class UiUtils
             Logger.Warning($"Failed to get private field '{fieldName}' from {obj.GetType().Name}: {ex.Message}");
             return null;
         }
-    }
-
-    /// <summary>
-    ///     Gets a cached boolean property value using a static cache field.
-    /// </summary>
-    /// <param name="cache">The static cache field to store the PropertyInfo.</param>
-    /// <param name="obj">The object to get the property from.</param>
-    /// <param name="propertyName">The name of the property.</param>
-    /// <returns>The boolean property value, or <c>null</c> if not found.</returns>
-    public static bool? GetCachedBoolProperty(ref PropertyInfo? cache, object obj, string propertyName)
-    {
-        try
-        {
-            cache ??= obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
-            return cache?.GetValue(obj) as bool?;
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning(
-                $"Failed to get cached bool property '{propertyName}' from {obj.GetType().Name}: {ex.Message}");
-            return null;
-        }
-    }
-
-    // ── Node existence helpers ───────────────────────────────────────
-
-    /// <summary>
-    ///     Checks if a parent node has a child with the given unique name.
-    /// </summary>
-    /// <param name="parent">The parent node to search.</param>
-    /// <param name="uniqueName">The unique name of the child node (e.g., "%ButtonName").</param>
-    /// <returns><c>true</c> if the child node exists.</returns>
-    public static bool HasChildNode(Node? parent, string uniqueName)
-    {
-        return parent?.GetNodeOrNull<Node>(uniqueName) != null;
     }
 }

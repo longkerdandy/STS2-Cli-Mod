@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.CardSelection;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Models.State;
 using STS2.Cli.Mod.Utils;
 using static STS2.Cli.Mod.Utils.TextUtils;
@@ -22,7 +23,7 @@ public static class GridCardSelectStateBuilder
     /// </summary>
     public static GridCardSelectStateDto? Build()
     {
-        var screen = UiUtils.FindGridSelectionScreen();
+        var screen = FindGridSelectionScreen();
         return screen != null ? Build(screen) : null;
     }
 
@@ -141,5 +142,30 @@ public static class GridCardSelectStateBuilder
             NSimpleCardSelectScreen => "generic",
             _ => "unknown"
         };
+    }
+
+    /// <summary>
+    ///     Finds a <see cref="NCardGridSelectionScreen" /> in the overlay stack
+    ///     by reverse-iterating children (topmost overlay wins).
+    /// </summary>
+    private static NCardGridSelectionScreen? FindGridSelectionScreen()
+    {
+        try
+        {
+            var overlayStack = NOverlayStack.Instance;
+            if (overlayStack == null) return null;
+
+            var children = overlayStack.GetChildren();
+            for (var i = children.Count - 1; i >= 0; i--)
+                if (children[i] is NCardGridSelectionScreen gridScreen)
+                    return gridScreen;
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to find grid selection screen: {ex.Message}");
+            return null;
+        }
     }
 }

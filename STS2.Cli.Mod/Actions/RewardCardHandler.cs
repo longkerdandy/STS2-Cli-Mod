@@ -95,7 +95,7 @@ public static class RewardCardHandler
             rewardButton.ForceClick();
 
             // Wait for NCardRewardSelectionScreen to appear
-            var cardScreen = await RewardCommonUiUtils.WaitForCardRewardScreen();
+            var cardScreen = await WaitForCardRewardScreen();
             if (cardScreen == null)
                 return new
                 {
@@ -108,7 +108,7 @@ public static class RewardCardHandler
 
             // --- Find and select the target card ---
 
-            var cardHolders = RewardCommonUiUtils.FindCardHolders(cardScreen);
+            var cardHolders = FindCardHolders(cardScreen);
             var targetHolder = FindCardHolderById(cardHolders, cardId);
 
             if (targetHolder == null)
@@ -201,7 +201,7 @@ public static class RewardCardHandler
             rewardButton.ForceClick();
 
             // Wait for NCardRewardSelectionScreen to appear
-            var cardScreen = await RewardCommonUiUtils.WaitForCardRewardScreen();
+            var cardScreen = await WaitForCardRewardScreen();
             if (cardScreen == null)
                 return new
                 {
@@ -214,7 +214,7 @@ public static class RewardCardHandler
 
             // --- Find and click the Skip button ---
 
-            var altButtons = RewardCommonUiUtils.FindAlternativeButtons(cardScreen);
+            var altButtons = FindAlternativeButtons(cardScreen);
             if (altButtons.Count == 0)
                 return new
                 {
@@ -258,7 +258,7 @@ public static class RewardCardHandler
     private static List<(NRewardButton Button, CardReward CardReward)> FindCardRewards(NRewardsScreen screen)
     {
         var result = new List<(NRewardButton Button, CardReward CardReward)>();
-        var rewardButtons = RewardCommonUiUtils.FindRewardButtons(screen);
+        var rewardButtons = UiUtils.FindRewardButtons(screen);
 
         foreach (var button in rewardButtons)
             if (button.Reward is CardReward cardReward)
@@ -310,5 +310,82 @@ public static class RewardCardHandler
         return await ActionUtils.PollUntilAsync(
             () => NOverlayStack.Instance?.Peek() is not NCardRewardSelectionScreen,
             ActionUtils.UiTimeoutMs);
+    }
+
+    /// <summary>
+    ///     Waits for the <see cref="NCardRewardSelectionScreen" /> to appear on the overlay stack.
+    ///     Called after ForceClick on a card reward button.
+    /// </summary>
+    private static async Task<NCardRewardSelectionScreen?> WaitForCardRewardScreen(
+        int timeoutMs = ActionUtils.ShortTimeoutMs, int pollIntervalMs = ActionUtils.DefaultPollIntervalMs)
+    {
+        NCardRewardSelectionScreen? result = null;
+
+        await ActionUtils.PollUntilAsync(() =>
+        {
+            var cardScreen = UiUtils.FindScreenInOverlay<NCardRewardSelectionScreen>();
+            if (cardScreen != null)
+            {
+                result = cardScreen;
+                return true;
+            }
+
+            return false;
+        }, timeoutMs, pollIntervalMs);
+
+        if (result == null)
+            Logger.Warning($"Timed out waiting for NCardRewardSelectionScreen after {timeoutMs}ms");
+
+        return result;
+    }
+
+    /// <summary>
+    ///     Finds all <see cref="NCardHolder" /> instances in a <see cref="NCardRewardSelectionScreen" />.
+    ///     Cardholders are children of the <c>UI/CardRow</c> node.
+    /// </summary>
+    private static List<NCardHolder> FindCardHolders(NCardRewardSelectionScreen screen)
+    {
+        var holders = new List<NCardHolder>();
+
+        try
+        {
+            var cardRow = screen.GetNode<Control>("UI/CardRow");
+            if (cardRow == null) return holders;
+
+            foreach (var child in cardRow.GetChildren())
+                if (child is NCardHolder holder)
+                    holders.Add(holder);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to access CardRow: {ex.Message}");
+        }
+
+        return holders;
+    }
+
+    /// <summary>
+    ///     Finds all <see cref="NCardRewardAlternativeButton" /> instances (e.g., Skip, Reroll)
+    ///     in a <see cref="NCardRewardSelectionScreen" />.
+    /// </summary>
+    private static List<NCardRewardAlternativeButton> FindAlternativeButtons(NCardRewardSelectionScreen screen)
+    {
+        var buttons = new List<NCardRewardAlternativeButton>();
+
+        try
+        {
+            var container = screen.GetNode<Control>("UI/RewardAlternatives");
+            if (container == null) return buttons;
+
+            foreach (var child in container.GetChildren())
+                if (child is NCardRewardAlternativeButton button)
+                    buttons.Add(button);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to access RewardAlternatives: {ex.Message}");
+        }
+
+        return buttons;
     }
 }

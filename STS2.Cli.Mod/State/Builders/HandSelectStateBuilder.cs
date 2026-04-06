@@ -88,7 +88,7 @@ public static class HandSelectStateBuilder
             var confirmButton = hand.GetNodeOrNull<Control>("%SelectModeConfirmButton");
             if (confirmButton == null) return false;
 
-            return UiUtils.GetCachedBoolProperty(ref _confirmIsEnabledProp, confirmButton, "IsEnabled") ?? false;
+            return GetCachedBoolProperty(ref _confirmIsEnabledProp, confirmButton, "IsEnabled") ?? false;
         }
         catch (Exception ex)
         {
@@ -162,5 +162,23 @@ public static class HandSelectStateBuilder
         }
 
         return cards;
+    }
+
+    /// <summary>
+    ///     Gets a cached boolean property value using a static cache field.
+    /// </summary>
+    private static bool? GetCachedBoolProperty(ref PropertyInfo? cache, object obj, string propertyName)
+    {
+        try
+        {
+            cache ??= obj.GetType().GetProperty(propertyName, BindingFlags.Public | BindingFlags.Instance);
+            return cache?.GetValue(obj) as bool?;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(
+                $"Failed to get cached bool property '{propertyName}' from {obj.GetType().Name}: {ex.Message}");
+            return null;
+        }
     }
 }

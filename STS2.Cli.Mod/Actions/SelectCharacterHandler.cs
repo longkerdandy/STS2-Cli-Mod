@@ -1,6 +1,6 @@
 using Godot;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
-using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.Utils;
 
@@ -67,7 +67,7 @@ public static class SelectCharacterHandler
         NCharacterSelectButton? targetBtn = null;
         foreach (var btn in buttons)
         {
-            var model = SelectCharacterUtils.GetCharacterModel(btn);
+            var model = GetCharacterModel(btn);
             if (model?.Id.Entry.Equals(characterId, StringComparison.OrdinalIgnoreCase) == true)
             {
                 targetBtn = btn;
@@ -87,7 +87,7 @@ public static class SelectCharacterHandler
         }
 
         // Check if the character is locked
-        if (SelectCharacterUtils.GetIsLocked(targetBtn))
+        if (GetIsLocked(targetBtn))
         {
             Logger.Warning($"Character '{characterId}' is locked");
             return new
@@ -108,5 +108,39 @@ public static class SelectCharacterHandler
             ok = true,
             data = new { character_id = characterId }
         };
+    }
+
+    /// <summary>
+    ///     Gets the CharacterModel from a character select button.
+    ///     NCharacterSelectButton.Character is a public property.
+    /// </summary>
+    private static CharacterModel? GetCharacterModel(NCharacterSelectButton btn)
+    {
+        try
+        {
+            return btn.Character;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get character model: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    ///     Gets the locked status from a character select button.
+    ///     NCharacterSelectButton.IsLocked is a public property.
+    /// </summary>
+    private static bool GetIsLocked(NCharacterSelectButton btn)
+    {
+        try
+        {
+            return btn.IsLocked;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get locked status: {ex.Message}");
+            return false;
+        }
     }
 }

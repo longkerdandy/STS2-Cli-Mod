@@ -1,4 +1,5 @@
 using System.Collections;
+using Godot;
 using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
 using STS2.Cli.Mod.Models.State;
@@ -55,8 +56,8 @@ public static class GameOverStateBuilder
                 CharacterId = characterId,
                 Score = score,
                 EpochsDiscovered = 0,
-                CanReturnToMenu = UiUtils.HasChildNode(screen, "%MainMenuButton"),
-                CanContinue = UiUtils.HasChildNode(screen, "%ContinueButton")
+                CanReturnToMenu = screen.GetNodeOrNull<Node>("%MainMenuButton") != null,
+                CanContinue = screen.GetNodeOrNull<Node>("%ContinueButton") != null
             };
         }
         catch (Exception ex)
