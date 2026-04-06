@@ -156,6 +156,8 @@ public static class PipeServer
 
                 "set_ascension" => MainThreadExecutor.RunOnMainThread(() => SetAscensionHandler.Execute(request)),
 
+                "embark" => MainThreadExecutor.RunOnMainThread(() => EmbarkHandler.Execute()),
+
                 "tri_select_card" => MainThreadExecutor.RunOnMainThread(() =>
                     TriSelectCardHandler.Execute(request)),
 
@@ -233,6 +235,12 @@ public static class PipeServer
 
                 "continue_run" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     ContinueRunHandler.ExecuteAsync()),
+
+                "new_run" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    NewRunHandler.ExecuteAsync()),
+
+                "abandon_run" => MainThreadExecutor.RunOnMainThread(() =>
+                    AbandonRunHandler.Execute()),
 
                 // --- Room-based ---
                 "choose_event" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
