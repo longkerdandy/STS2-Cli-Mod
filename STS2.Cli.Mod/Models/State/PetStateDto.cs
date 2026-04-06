@@ -5,6 +5,7 @@ namespace STS2.Cli.Mod.Models.State;
 /// <summary>
 ///     Pet creature state DTO (e.g., Necrobinder's Osty, Byrdpip).
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class PetStateDto
 {
@@ -12,7 +13,7 @@ public class PetStateDto
     ///     Unique combat ID assigned by the game engine.
     ///     Can be used as target for AnyPlayer/AnyAlly potions and cards.
     /// </summary>
-    public uint CombatId { get; set; }
+    public required uint CombatId { get; set; }
 
     /// <summary>
     ///     Monster model ID (e.g., "OSTY", "BYRDPIP").

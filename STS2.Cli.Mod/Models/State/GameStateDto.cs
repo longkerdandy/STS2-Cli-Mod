@@ -12,7 +12,7 @@ public class GameStateDto
     /// <summary>
     ///     Current screen/phase (COMBAT, MENU, MAP, SHOP, etc.)
     /// </summary>
-    public string Screen { get; set; } = "UNKNOWN";
+    public required string Screen { get; set; }
 
     /// <summary>
     ///     Unix timestamp of state extraction.

@@ -18,12 +18,12 @@ public class SelectableCardDto
     /// <summary>
     ///     Card ID (e.g., "STRIKE_IRONCLAD").
     /// </summary>
-    public string CardId { get; set; } = string.Empty;
+    public required string CardId { get; set; }
 
     /// <summary>
     ///     Localized card name.
     /// </summary>
-    public string CardName { get; set; } = string.Empty;
+    public required string CardName { get; set; }
 
     /// <summary>
     ///     Card type: Attack, Skill, Power, Status, Curse.

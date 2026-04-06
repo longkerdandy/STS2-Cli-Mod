@@ -6,8 +6,8 @@ namespace STS2.Cli.Mod.Models.State;
 ///     Individual reward DTO representing a single reward on the reward screen.
 ///     Type-specific fields are null when not applicable to the reward type.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-[SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 public class RewardItemDto
 {
     /// <summary>

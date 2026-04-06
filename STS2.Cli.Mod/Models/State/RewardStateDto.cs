@@ -5,9 +5,8 @@ namespace STS2.Cli.Mod.Models.State;
 /// <summary>
 ///     Root reward state DTO containing the list of available rewards on the reward screen.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-[SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
-[SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
 public class RewardStateDto
 {
     /// <summary>

@@ -17,7 +17,7 @@ public class EventOptionDto
     /// <summary>
     ///     Localized option display text.
     /// </summary>
-    public string Title { get; set; } = string.Empty;
+    public required string Title { get; set; }
 
     /// <summary>
     ///     Localized option description/tooltip.

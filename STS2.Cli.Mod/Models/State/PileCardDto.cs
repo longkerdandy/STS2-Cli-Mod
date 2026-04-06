@@ -6,6 +6,7 @@ namespace STS2.Cli.Mod.Models.State;
 ///     Simplified card DTO for pile listings (draw/discard/exhaust piles).
 ///     Excludes description to reduce payload size; use full CardStateDto for hand cards.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class PileCardDto
 {

@@ -5,6 +5,7 @@ namespace STS2.Cli.Mod.Models.State;
 /// <summary>
 ///     Relic state DTO representing an acquired relic.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class RelicStateDto
 {

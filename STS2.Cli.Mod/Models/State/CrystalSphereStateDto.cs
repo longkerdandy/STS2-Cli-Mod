@@ -40,7 +40,7 @@ public class CrystalSphereStateDto
     /// <summary>
     ///     Current divination tool: "big" or "small".
     /// </summary>
-    public string Tool { get; set; } = "big";
+    public required string Tool { get; set; }
 
     /// <summary>
     ///     Whether the big divination button is available.
@@ -132,7 +132,7 @@ public class CrystalSphereRevealedItemDto
     /// <summary>
     ///     Item class name (e.g., "CrystalSphereRelic", "CrystalSphereGold", "CrystalSphereCurse").
     /// </summary>
-    public string ItemType { get; set; } = "";
+    public required string ItemType { get; set; }
 
     /// <summary>
     ///     Whether this item is beneficial (true for all items except curse).

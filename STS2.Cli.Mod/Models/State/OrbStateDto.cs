@@ -5,6 +5,7 @@ namespace STS2.Cli.Mod.Models.State;
 /// <summary>
 ///     Orb state DTO representing a channeled orb (Defect exclusive).
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class OrbStateDto
 {

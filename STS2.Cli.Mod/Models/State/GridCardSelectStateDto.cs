@@ -15,7 +15,7 @@ public class GridCardSelectStateDto
     /// <summary>
     ///     Type of selection: remove, upgrade, transform, enchant, or generic.
     /// </summary>
-    public string SelectionType { get; set; } = "unknown";
+    public required string SelectionType { get; set; }
 
     /// <summary>
     ///     Prompt text shown to the player (e.g., "Choose a card to remove.").

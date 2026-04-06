@@ -55,27 +55,27 @@ public class ShopCardDto
     /// <summary>
     ///     Card model ID (e.g., "STRIKE_IRONCLAD").
     /// </summary>
-    public string CardId { get; set; } = string.Empty;
+    public required string CardId { get; set; }
 
     /// <summary>
     ///     Localized display name.
     /// </summary>
-    public string CardName { get; set; } = string.Empty;
+    public required string CardName { get; set; }
 
     /// <summary>
     ///     Card effect description with dynamic values resolved.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public required string Description { get; set; }
 
     /// <summary>
     ///     Card type: Attack, Skill, Power, Status, Curse.
     /// </summary>
-    public string CardType { get; set; } = string.Empty;
+    public required string CardType { get; set; }
 
     /// <summary>
     ///     Rarity: Common, Uncommon, Rare.
     /// </summary>
-    public string Rarity { get; set; } = string.Empty;
+    public required string Rarity { get; set; }
 
     /// <summary>
     ///     Gold cost after price modifiers.
@@ -108,22 +108,22 @@ public class ShopRelicDto
     /// <summary>
     ///     Relic model ID (e.g., "VAJRA").
     /// </summary>
-    public string RelicId { get; set; } = string.Empty;
+    public required string RelicId { get; set; }
 
     /// <summary>
     ///     Localized display name.
     /// </summary>
-    public string RelicName { get; set; } = string.Empty;
+    public required string RelicName { get; set; }
 
     /// <summary>
     ///     Effect description with dynamic values resolved.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public required string Description { get; set; }
 
     /// <summary>
     ///     Rarity tier: Common, Uncommon, Rare, Shop.
     /// </summary>
-    public string Rarity { get; set; } = string.Empty;
+    public required string Rarity { get; set; }
 
     /// <summary>
     ///     Gold cost after price modifiers.
@@ -151,22 +151,22 @@ public class ShopPotionDto
     /// <summary>
     ///     Potion model ID (e.g., "FIRE_POTION").
     /// </summary>
-    public string PotionId { get; set; } = string.Empty;
+    public required string PotionId { get; set; }
 
     /// <summary>
     ///     Localized display name.
     /// </summary>
-    public string PotionName { get; set; } = string.Empty;
+    public required string PotionName { get; set; }
 
     /// <summary>
     ///     Effect description with dynamic values resolved.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public required string Description { get; set; }
 
     /// <summary>
     ///     Rarity: Common, Uncommon, Rare.
     /// </summary>
-    public string Rarity { get; set; } = string.Empty;
+    public required string Rarity { get; set; }
 
     /// <summary>
     ///     Gold cost after price modifiers.

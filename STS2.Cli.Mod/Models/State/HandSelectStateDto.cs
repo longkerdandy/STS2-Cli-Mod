@@ -14,7 +14,7 @@ public class HandSelectStateDto
     /// <summary>
     ///     Selection mode: "SimpleSelect" or "UpgradeSelect".
     /// </summary>
-    public string Mode { get; set; } = "unknown";
+    public required string Mode { get; set; }
 
     /// <summary>
     ///     Prompt text shown to the player (e.g., "Choose 1 card to discard.").
@@ -78,12 +78,12 @@ public class HandSelectCardDto
     /// <summary>
     ///     Card model ID (e.g., "STRIKE_IRONCLAD").
     /// </summary>
-    public string CardId { get; set; } = string.Empty;
+    public required string CardId { get; set; }
 
     /// <summary>
     ///     Localized card name.
     /// </summary>
-    public string CardName { get; set; } = string.Empty;
+    public required string CardName { get; set; }
 
     /// <summary>
     ///     Card type: Attack, Skill, Power, Status, Curse.

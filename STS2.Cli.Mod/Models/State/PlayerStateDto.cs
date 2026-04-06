@@ -6,8 +6,8 @@ namespace STS2.Cli.Mod.Models.State;
 ///     Player state DTO containing character stats and resources.
 ///     Field order follows game source: Player → Creature → PlayerCombatState.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-[SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 public class PlayerStateDto
 {
     // ------ Player (run-scoped) ------

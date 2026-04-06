@@ -45,20 +45,20 @@ public class TreasureRelicDto
     /// <summary>
     ///     Relic model ID (e.g., "GORGET", "BURNING_BLOOD").
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public required string Id { get; set; }
 
     /// <summary>
     ///     Localized display name.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
     /// <summary>
     ///     Effect description with dynamic values resolved.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public required string Description { get; set; }
 
     /// <summary>
     ///     Rarity tier: Common, Uncommon, Rare, etc.
     /// </summary>
-    public string Rarity { get; set; } = string.Empty;
+    public required string Rarity { get; set; }
 }

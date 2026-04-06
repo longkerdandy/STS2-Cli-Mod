@@ -45,12 +45,12 @@ public class CharacterOptionDto
     /// <summary>
     ///     Character identifier (e.g., "ironclad", "silent").
     /// </summary>
-    public string CharacterId { get; set; } = string.Empty;
+    public required string CharacterId { get; set; }
 
     /// <summary>
     ///     Localized character name.
     /// </summary>
-    public string CharacterName { get; set; } = string.Empty;
+    public required string CharacterName { get; set; }
 
     /// <summary>
     ///     Whether the character is locked.

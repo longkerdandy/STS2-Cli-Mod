@@ -6,6 +6,7 @@ namespace STS2.Cli.Mod.Models.State;
 ///     Card choice DTO representing a single card option within a card reward.
 ///     Used by <see cref="RewardItemDto.CardChoices" /> to list the pickable cards.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class CardChoiceDto
 {

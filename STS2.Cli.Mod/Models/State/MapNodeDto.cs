@@ -7,8 +7,6 @@ namespace STS2.Cli.Mod.Models.State;
 /// </summary>
 [SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-[SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
-[SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
 public class MapNodeDto
 {
     /// <summary>
@@ -24,12 +22,12 @@ public class MapNodeDto
     /// <summary>
     ///     Node type: MONSTER, ELITE, BOSS, SHOP, REST_SITE, TREASURE, UNKNOWN, ANCIENT, UNASSIGNED.
     /// </summary>
-    public string Type { get; set; } = string.Empty;
+    public required string Type { get; set; }
 
     /// <summary>
     ///     Node travelability state: TRAVELABLE, TRAVELED, UNTRAVELABLE.
     /// </summary>
-    public string State { get; set; } = string.Empty;
+    public required string State { get; set; }
 
     /// <summary>
     ///     Coordinates of child nodes (outgoing edges in the map DAG).

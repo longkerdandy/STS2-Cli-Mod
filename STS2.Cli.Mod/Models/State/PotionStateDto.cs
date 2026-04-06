@@ -6,6 +6,7 @@ namespace STS2.Cli.Mod.Models.State;
 ///     Potion state DTO representing a potion in the player's belt.
 ///     Null slots (empty) are excluded from the list; use Slot to identify the position.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class PotionStateDto
 {

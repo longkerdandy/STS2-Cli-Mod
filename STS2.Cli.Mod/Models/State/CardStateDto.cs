@@ -8,9 +8,8 @@ namespace STS2.Cli.Mod.Models.State;
 ///     Index (DTO) → Identity → Classification → Cost → Keywords/Tags/DynamicVars →
 ///     Enchantment/Affliction → Upgrade → Playability.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
-[SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
-[SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
 public class CardStateDto
 {
     // -- DTO context --

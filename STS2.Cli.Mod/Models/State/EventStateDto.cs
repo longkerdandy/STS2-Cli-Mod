@@ -12,12 +12,12 @@ public class EventStateDto
     /// <summary>
     ///     Event identifier (ModelId as string).
     /// </summary>
-    public string EventId { get; set; } = string.Empty;
+    public required string EventId { get; set; }
 
     /// <summary>
     ///     Localized event title.
     /// </summary>
-    public string Title { get; set; } = string.Empty;
+    public required string Title { get; set; }
 
     /// <summary>
     ///     Localized event description (current page).
@@ -27,7 +27,7 @@ public class EventStateDto
     /// <summary>
     ///     Layout type: "Default", "Combat", "Ancient", "Custom".
     /// </summary>
-    public string LayoutType { get; set; } = "Default";
+    public required string LayoutType { get; set; }
 
     /// <summary>
     ///     Whether the event has concluded.

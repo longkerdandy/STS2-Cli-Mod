@@ -5,6 +5,7 @@ namespace STS2.Cli.Mod.Models.State;
 /// <summary>
 ///     Game over screen state DTO.
 /// </summary>
+[SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public class GameOverStateDto
 {

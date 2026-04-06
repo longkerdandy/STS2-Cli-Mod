@@ -17,7 +17,7 @@ public class TriSelectStateDto
     ///     Type of selection: choose_from_pool_attack, choose_from_pool_skill, choose_from_pool_power,
     ///     choose_from_pool, etc.
     /// </summary>
-    public string SelectionType { get; set; } = "unknown";
+    public required string SelectionType { get; set; }
 
     /// <summary>
     ///     Minimum number of cards that must be selected (0 if skippable, 1 if forced).

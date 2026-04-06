@@ -35,12 +35,12 @@ public class RestSiteOptionDto
     /// <summary>
     ///     Option identifier (e.g., "HEAL", "SMITH", "MEND", "LIFT", "DIG", "HATCH", "COOK", "CLONE").
     /// </summary>
-    public string OptionId { get; set; } = string.Empty;
+    public required string OptionId { get; set; }
 
     /// <summary>
     ///     Localized option name.
     /// </summary>
-    public string Name { get; set; } = string.Empty;
+    public required string Name { get; set; }
 
     /// <summary>
     ///     Localized option description.
