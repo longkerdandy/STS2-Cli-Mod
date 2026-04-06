@@ -7,6 +7,8 @@ namespace STS2.Cli.Mod.Models.State;
 /// </summary>
 [SuppressMessage("ReSharper", "PropertyCanBeMadeInitOnly.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "AutoPropertyCanBeMadeGetOnly.Global")]
+[SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 public class MapNodeDto
 {
     /// <summary>
