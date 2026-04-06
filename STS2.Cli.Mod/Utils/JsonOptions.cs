@@ -42,12 +42,8 @@ public static class JsonOptions
     private static void IgnoreEmptyCollections(JsonTypeInfo typeInfo)
     {
         foreach (var property in typeInfo.Properties)
-        {
             if (typeof(ICollection).IsAssignableFrom(property.PropertyType))
-            {
                 property.ShouldSerialize = (_, value) =>
                     value is ICollection { Count: > 0 };
-            }
-        }
     }
 }

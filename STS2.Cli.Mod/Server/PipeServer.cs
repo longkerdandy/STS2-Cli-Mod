@@ -17,9 +17,9 @@ namespace STS2.Cli.Mod.Server;
 /// </summary>
 public static class PipeServer
 {
-    private static readonly ModLogger Logger = new("PipeServer");
     private const string PipeName = "sts2-cli-mod";
     private const int PipeBufferSize = 4096;
+    private static readonly ModLogger Logger = new("PipeServer");
     private static CancellationTokenSource? _cts;
 
     /// <summary>

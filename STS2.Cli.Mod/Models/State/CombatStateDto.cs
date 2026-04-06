@@ -40,7 +40,7 @@ public class CombatStateDto
 
     /// <summary>
     ///     True if the player has pressed End Turn and actions are no longer accepted.
-    ///     When true, the AI should not send any more actions even if <see cref="IsPlayerTurn"/> is still true.
+    ///     When true, the AI should not send any more actions even if <see cref="IsPlayerTurn" /> is still true.
     /// </summary>
     /// <remarks>
     ///     Source: <c>CombatManager.PlayerActionsDisabled</c>.
