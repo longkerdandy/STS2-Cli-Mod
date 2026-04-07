@@ -18,7 +18,7 @@ AI Agent ──> sts2 CLI ──Named Pipe──> In-Game Mod ──> Game
 - **16+ screen types detected** — Combat, Map, Event, Shop, Reward, Rest Site, Treasure, Character Select, Crystal Sphere mini-game, and others.
 - **40+ commands** — Covering the full game flow from main menu to game over.
 - **Structured JSON protocol** — All responses follow `{"ok": true, "data": {...}}` / `{"ok": false, "error": "CODE", "message": "..."}` format with snake_case naming.
-- **Cross-platform CLI** — Windows, macOS (Intel & Apple Silicon), and Linux builds. WSL fully supported.
+- **Cross-platform CLI** — Windows, macOS (Intel & Apple Silicon), and Linux builds. WSL fully supported. (**Note:** macOS and Linux support is currently untested.)
 
 ## Installation
 
