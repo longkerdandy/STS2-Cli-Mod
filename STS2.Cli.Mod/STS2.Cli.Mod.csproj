@@ -49,9 +49,9 @@
     <GameDirAvailable Condition="Exists('$(STS2GameDir)/$(STS2DataDir)/')">true</GameDirAvailable>
     <GameDirAvailable Condition="!Exists('$(STS2GameDir)/$(STS2DataDir)/')">false</GameDirAvailable>
     
-    <!-- Resolve the actual path for game assembly references -->
-    <GameAssemblyDir Condition="'$(GameDirAvailable)' == 'true'">$(STS2GameDir)/$(STS2DataDir)</GameAssemblyDir>
-    <GameAssemblyDir Condition="'$(GameDirAvailable)' != 'true'">$(MSBuildProjectDirectory)/../../STS2-Reverse-Engineering/dependencies</GameAssemblyDir>
+    <!-- Resolve the actual path for game assembly references (can be overridden via -p:GameAssemblyDir=<path>) -->
+    <GameAssemblyDir Condition="'$(GameAssemblyDir)' == '' AND '$(GameDirAvailable)' == 'true'">$(STS2GameDir)/$(STS2DataDir)</GameAssemblyDir>
+    <GameAssemblyDir Condition="'$(GameAssemblyDir)' == '' AND '$(GameDirAvailable)' != 'true'">$(MSBuildProjectDirectory)/../../STS2-Reverse-Engineering/dependencies</GameAssemblyDir>
   </PropertyGroup>
 
   <!-- Direct references to game assemblies -->
