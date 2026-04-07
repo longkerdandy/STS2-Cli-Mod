@@ -315,17 +315,32 @@ resolve_archive_ext() {
 # ── Version Helpers ────────────────────────────────────────────────────────────
 
 get_latest_release_tag() {
+    # Primary: GitHub REST API
     local tag
     tag=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
         -H "Accept: application/vnd.github+json" \
-        -H "User-Agent: STS2-Installer" \
-        | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
+        -H "User-Agent: STS2-Installer" 2>/dev/null \
+        | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p') || true
 
-    if [[ -z "$tag" ]]; then
-        err "Failed to fetch latest release tag"
-        return 1
+    if [[ -n "$tag" ]]; then
+        echo "$tag"
+        return 0
     fi
-    echo "$tag"
+
+    # Fallback: parse redirect Location from releases/latest page (no API quota)
+    muted "  GitHub API unavailable (rate limit?), trying fallback..."
+    local location
+    location=$(curl -sI "https://github.com/$REPO/releases/latest" \
+        -H "User-Agent: STS2-Installer" 2>/dev/null \
+        | sed -n 's/^[Ll]ocation: *.*\/tag\/\(.*\)/\1/p' | tr -d '\r\n') || true
+
+    if [[ -n "$location" ]]; then
+        echo "$location"
+        return 0
+    fi
+
+    err "Failed to fetch latest release tag from GitHub"
+    return 1
 }
 
 get_installed_cli_version() {

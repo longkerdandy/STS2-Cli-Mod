@@ -152,18 +152,42 @@ function Get-LatestReleaseTag {
     <#
     .SYNOPSIS
         Fetches the latest release tag from GitHub (e.g. "v0.102.1").
+        Tries the GitHub API first, falls back to parsing the 302 redirect
+        from the releases/latest page if the API is rate-limited.
     #>
+
+    # Primary: GitHub REST API
     try {
         $response = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repo/releases/latest" -Headers @{
             "Accept"     = "application/vnd.github+json"
             "User-Agent" = "STS2-Installer"
         }
-        return $response.tag_name
+        if ($response.tag_name) {
+            return $response.tag_name
+        }
     }
     catch {
-        Write-Err "Failed to fetch latest release: $_"
-        return $null
+        Write-Muted "  GitHub API unavailable (rate limit?), trying fallback..."
     }
+
+    # Fallback: parse redirect Location from releases/latest page (no API quota)
+    try {
+        $request = [System.Net.WebRequest]::Create("https://github.com/$Repo/releases/latest")
+        $request.AllowAutoRedirect = $false
+        $request.UserAgent = "STS2-Installer"
+        $response = $request.GetResponse()
+        $location = $response.Headers["Location"]
+        $response.Close()
+        if ($location -match '/tag/(.+)$') {
+            return $Matches[1]
+        }
+    }
+    catch {
+        # Ignore fallback errors
+    }
+
+    Write-Err "Failed to fetch latest release from GitHub."
+    return $null
 }
 
 function Get-InstalledCliVersion {
