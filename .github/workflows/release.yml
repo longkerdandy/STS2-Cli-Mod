@@ -15,6 +15,22 @@ jobs:
     env:
       DOTNET_NOLOGO: true
 
+    strategy:
+      matrix:
+        include:
+          - rid: win-x64
+            exe: sts2.exe
+            archive: zip
+          - rid: osx-x64
+            exe: sts2
+            archive: tar.gz
+          - rid: osx-arm64
+            exe: sts2
+            archive: tar.gz
+          - rid: linux-x64
+            exe: sts2
+            archive: tar.gz
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,6 +54,7 @@ jobs:
           echo "Version: $TAG, Game version prefix: $GAME_VERSION"
 
       - name: Download game dependencies from STS2-Reverse-Engineering
+        if: matrix.rid == 'win-x64'
         env:
           GH_TOKEN: ${{ secrets.PRIVATE_REPO_PAT }}
         run: |
@@ -68,47 +85,84 @@ jobs:
           ls -la game-deps/
 
       - name: Build Mod
+        if: matrix.rid == 'win-x64'
         run: |
           dotnet build STS2.Cli.Mod/STS2.Cli.Mod.csproj \
             -c Release \
             -p:Version=${{ steps.version.outputs.version }} \
             -p:GameAssemblyDir=${{ github.workspace }}/game-deps
 
-      - name: Publish CLI (win-x64)
+      - name: Publish CLI (${{ matrix.rid }})
         run: |
           dotnet publish STS2.Cli.Cmd/STS2.Cli.Cmd.csproj \
             -c Release \
-            -r win-x64 \
+            -r ${{ matrix.rid }} \
             -p:Version=${{ steps.version.outputs.version }} \
             -p:DeployOnPublish=false
 
-      - name: Package artifacts
-        id: package
+      - name: Package CLI
+        id: cli
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          RID="${{ matrix.rid }}"
+          CLI_DIR="STS2.Cli.Cmd/bin/Release/net9.0/${RID}/publish"
 
-          # Package CLI
-          CLI_DIR="STS2.Cli.Cmd/bin/Release/net9.0/win-x64/publish"
-          CLI_ZIP="sts2-cli-v${VERSION}-win-x64.zip"
-          (cd "$CLI_DIR" && zip "${{ github.workspace }}/${CLI_ZIP}" sts2.exe)
-          echo "cli_zip=$CLI_ZIP" >> "$GITHUB_OUTPUT"
+          if [ "${{ matrix.archive }}" = "zip" ]; then
+            CLI_ARCHIVE="sts2-cli-v${VERSION}-${RID}.zip"
+            (cd "$CLI_DIR" && zip "${{ github.workspace }}/${CLI_ARCHIVE}" ${{ matrix.exe }})
+          else
+            CLI_ARCHIVE="sts2-cli-v${VERSION}-${RID}.tar.gz"
+            (cd "$CLI_DIR" && tar czf "${{ github.workspace }}/${CLI_ARCHIVE}" ${{ matrix.exe }})
+          fi
 
-          # Package Mod (DLL + manifest JSON)
+          echo "cli_archive=$CLI_ARCHIVE" >> "$GITHUB_OUTPUT"
+          echo "Packaged: $CLI_ARCHIVE"
+
+      - name: Package Mod
+        if: matrix.rid == 'win-x64'
+        id: mod
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
           MOD_DIR="STS2.Cli.Mod/bin/Release/net9.0"
           MOD_ZIP="sts2-mod-v${VERSION}.zip"
           (cd "$MOD_DIR" && zip "${{ github.workspace }}/${MOD_ZIP}" STS2.Cli.Mod.dll STS2.Cli.Mod.json)
           echo "mod_zip=$MOD_ZIP" >> "$GITHUB_OUTPUT"
+          echo "Packaged: $MOD_ZIP"
 
-          echo "Packaged artifacts:"
-          ls -la "${{ github.workspace }}"/${CLI_ZIP} "${{ github.workspace }}"/${MOD_ZIP}
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.rid }}
+          path: ${{ steps.cli.outputs.cli_archive }}
+
+      - name: Upload Mod artifact
+        if: matrix.rid == 'win-x64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mod
+          path: ${{ steps.mod.outputs.mod_zip }}
+
+  publish:
+    runs-on: ubuntu-24.04
+    needs: release
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -la artifacts/
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VERSION="${{ steps.version.outputs.version }}"
+          VERSION="${GITHUB_REF#refs/tags/v}"
           gh release create "v${VERSION}" \
+            --repo "${{ github.repository }}" \
             --title "v${VERSION}" \
             --generate-notes \
-            "${{ steps.package.outputs.cli_zip }}" \
-            "${{ steps.package.outputs.mod_zip }}"
+            artifacts/*
