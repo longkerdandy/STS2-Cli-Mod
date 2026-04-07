@@ -70,18 +70,31 @@
     </Reference>
   </ItemGroup>
 
-  <!-- Mod manifest file -->
+  <!-- Mod manifest template (version placeholder replaced at build time) -->
   <ItemGroup>
-    <Content Include="STS2.Cli.Mod.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    <None Include="STS2.Cli.Mod.json.template" />
+    <Content Include="STS2.Cli.Mod.json" CopyToOutputDirectory="PreserveNewest">
+      <DependentUpon>STS2.Cli.Mod.json.template</DependentUpon>
     </Content>
   </ItemGroup>
+
+  <!-- Generate mod manifest from template, replacing $VERSION$ with the actual version -->
+  <Target Name="GenerateModManifest" BeforeTargets="Build">
+    <PropertyGroup>
+      <ModVersion>$(Version)</ModVersion>
+    </PropertyGroup>
+    <ReadLinesFromFile File="$(ProjectDir)STS2.Cli.Mod.json.template">
+      <Output TaskParameter="Lines" ItemName="TemplateLines" />
+    </ReadLinesFromFile>
+    <WriteLinesToFile File="$(ProjectDir)STS2.Cli.Mod.json" Lines="@(TemplateLines-&gt;Replace('$VERSION$','$(ModVersion)'))" Overwrite="true" />
+    <Message Text="Generated STS2.Cli.Mod.json with version $(ModVersion)" Importance="high" />
+  </Target>
   <ItemGroup>
     <PackageReference Include="System.IO.Pipes.AccessControl" Version="5.0.0" />
   </ItemGroup>
 
   <!-- Deploy to game directory after build (skip when game directory is unavailable) -->
-  <Target Name="DeployMod" AfterTargets="Build" Condition="'$(GameDirAvailable)' == 'true' AND Exists('$(STS2GameDir)/mods/')">
+  <Target Name="DeployMod" AfterTargets="Build" DependsOnTargets="GenerateModManifest" Condition="'$(GameDirAvailable)' == 'true' AND Exists('$(STS2GameDir)/mods/')">
     <Message Text="Deploying mod to $(STS2GameDir)/mods/" Importance="high" />
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(STS2GameDir)/mods/" SkipUnchangedFiles="true" />
     <Copy SourceFiles="$(ProjectDir)STS2.Cli.Mod.json" DestinationFolder="$(STS2GameDir)/mods/" SkipUnchangedFiles="true" />

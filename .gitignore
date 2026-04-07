@@ -32,6 +32,9 @@ tmp/
 temp/
 *.tmp
 
+# Generated files
+STS2.Cli.Mod/STS2.Cli.Mod.json
+
 # Deployment
 publish/
 *.zip

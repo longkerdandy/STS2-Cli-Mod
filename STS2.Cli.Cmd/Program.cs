@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Reflection;
 using System.Text;
 using STS2.Cli.Cmd.Commands;
 
@@ -22,6 +23,13 @@ internal static class Program
         Console.OutputEncoding = Encoding.UTF8;
 
         var rootCommand = new RootCommand("STS2 CLI - Control Slay the Spire 2 via command line");
+
+        // Add --version option to display the CLI version
+        var versionOption = new Option<bool>("--version", "-v")
+        {
+            Description = "Show version information"
+        };
+        rootCommand.Options.Add(versionOption);
 
         // Global --pretty option inherited by all subcommands automatically
         rootCommand.Options.Add(CommandExecutor.PrettyOption);
@@ -125,6 +133,17 @@ internal static class Program
         // Bug reporting command (local-only, no pipe required)
         rootCommand.Subcommands.Add(ReportBugCommand.Create());
 
-        return rootCommand.Parse(args).Invoke();
+        // Parse args and intercept --version before invoking
+        var parseResult = rootCommand.Parse(args);
+        if (parseResult.GetValue(versionOption))
+        {
+            var version = typeof(Program).Assembly
+                .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+                ?.InformationalVersion ?? "unknown";
+            Console.WriteLine(version);
+            return 0;
+        }
+
+        return parseResult.Invoke();
     }
 }

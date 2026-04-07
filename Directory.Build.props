@@ -1,0 +1,8 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- Single source of truth for version across all projects -->
+    <Version>0.102.0-dev</Version>
+  </PropertyGroup>
+
+</Project>

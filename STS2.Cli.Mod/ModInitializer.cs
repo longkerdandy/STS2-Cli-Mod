@@ -1,3 +1,4 @@
+using System.Reflection;
 using MegaCrit.Sts2.Core.Modding;
 using STS2.Cli.Mod.Server;
 using STS2.Cli.Mod.Utils;
@@ -18,9 +19,13 @@ public static class CliModEntry
     /// </summary>
     public static void Initialize()
     {
+        var version = typeof(CliModEntry).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion ?? "unknown";
+
         Logger.Info("========================================");
         Logger.Info("STS2.Cli.Mod loaded successfully!");
-        Logger.Info("Version: 0.1.0");
+        Logger.Info($"Version: {version}");
         Logger.Info("========================================");
 
         // Initialize the main thread executor (required for game actions)
