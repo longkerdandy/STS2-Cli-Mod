@@ -79,7 +79,8 @@ jobs:
           dotnet publish STS2.Cli.Cmd/STS2.Cli.Cmd.csproj \
             -c Release \
             -r win-x64 \
-            -p:Version=${{ steps.version.outputs.version }}
+            -p:Version=${{ steps.version.outputs.version }} \
+            -p:DeployOnPublish=false
 
       - name: Package artifacts
         id: package
