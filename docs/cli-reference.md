@@ -4,11 +4,20 @@ CLI for controlling Slay the Spire 2 via named pipe. All responses are JSON: `{"
 
 Exit codes: 0=success, 1=connection, 2=invalid state, 3=invalid param, 4=timeout, 5=state changed.
 
+## Global Options
+
+| Option | Description |
+|--------|-------------|
+| `--version`, `-v` | Show CLI version |
+| `--pretty`, `-p` | Pretty-print JSON output |
+
 ## Commands
 
 All commands use stable IDs (not indices). Use `--nth N` (0-based, default 0) when multiple items share the same ID.
 
-### ping
+### Connection Test
+
+#### ping
 
 ```
 ./sts2 ping
@@ -16,7 +25,9 @@ All commands use stable IDs (not indices). Use `--nth N` (0-based, default 0) wh
 
 Test connection. Returns `{"ok": true}`.
 
-### state
+### State Query
+
+#### state
 
 ```
 ./sts2 state [--include-pile-details]
@@ -29,207 +40,9 @@ Get full game state. See [Game State Structure](#game-state-structure) below.
 
 ---
 
-### play_card
+### Main Menu
 
-```
-./sts2 play_card <card_id> [--nth <n>] [--target <combat_id>]
-```
-
-Play a card from hand. `--target` required for enemy-targeting cards only.
-
-### use_potion
-
-```
-./sts2 use_potion <potion_id> [--nth <n>] [--target <combat_id>]
-```
-
-Use a potion. `--target` required for enemy-targeting potions. Some potions open a card selection screen (screen becomes `TRI_SELECT`) -- use `tri_select_card` or `tri_select_skip` to complete.
-
-### end_turn
-
-```
-./sts2 end_turn
-```
-
-End turn. Response contains all enemy action results -- always read it.
-
----
-
-### reward_claim
-
-```
-./sts2 reward_claim --type <type> [--id <id>] [--nth <n>]
-```
-
-Claim a non-card reward. Types: `gold`, `potion`, `relic`, `special_card`. `--id` required for all except `gold`.
-
-### reward_choose_card / reward_skip_card
-
-```
-./sts2 reward_choose_card --type card --card_id <card_id> [--nth <n>]
-./sts2 reward_skip_card --type card [--nth <n>]
-```
-
-Pick or skip a card reward. `--nth` selects which card reward when multiple exist.
-
-### proceed
-
-```
-./sts2 proceed
-```
-
-Leave reward screen, FakeMerchant event, rest site (after choosing an option), treasure room (after picking/skipping relic), or merchant room and proceed to map.
-
----
-
-### choose_event
-
-```
-./sts2 choose_event <index>
-```
-
-Choose event option by 0-based index. For Ancient events, advance dialogue first.
-
-### advance_dialogue
-
-```
-./sts2 advance_dialogue [--auto]
-```
-
-Advance Ancient event dialogue. Use `--auto` to skip all dialogue lines until options appear. Then use `choose_event`.
-
----
-
-### tri_select_card
-
-```
-./sts2 tri_select_card <card_id> [<card_id>...] [--nth <n>...]
-```
-
-Select cards from a three-choose-one card selection screen (triggered by potions, cards like Discovery/Quasar/Splash, relics like Toolbox, and monsters). Check `tri_select.min_select` / `max_select` in state for how many to pick.
-
-### tri_select_skip
-
-```
-./sts2 tri_select_skip
-```
-
-Skip three-choose-one card selection (only if `tri_select.can_skip` is true).
-
----
-
-### choose_map_node
-
-```
-./sts2 choose_map_node <col> <row>
-```
-
-Travel to a map node. Only nodes with state `TRAVELABLE` can be selected -- check `map.travelable_coords` in state.
-
----
-
-### choose_rest_option
-
-```
-./sts2 choose_rest_option <option_id>
-```
-
-Choose a rest site (campfire) option by ID. Common options: `HEAL` (restore HP), `SMITH` (upgrade a card). SMITH opens a card selection overlay (screen becomes `GRID_CARD_SELECT`) -- use `grid_select_card` to complete. After choosing, use `proceed` to leave the rest site if `rest_site.can_proceed` is true.
-
----
-
-### open_chest
-
-```
-./sts2 open_chest
-```
-
-Open the treasure chest in a treasure room. After opening, relics are revealed -- use `pick_relic` to pick one, or `proceed` to skip.
-
-### pick_relic
-
-```
-./sts2 pick_relic <index>
-```
-
-Pick a relic from an opened treasure chest by 0-based index. After picking, use `proceed` to leave the treasure room.
-
----
-
-### relic_select / relic_skip
-
-```
-./sts2 relic_select <index>
-./sts2 relic_skip
-```
-
-Select or skip a relic from the boss/event relic choice screen. Index is 0-based.
-
----
-
-### bundle_select
-
-```
-./sts2 bundle_select <index>
-```
-
-Preview a bundle on the bundle selection screen (triggered by the Scroll Boxes relic). Index is 0-based. Opens a preview showing the cards in the selected bundle.
-
-### bundle_confirm
-
-```
-./sts2 bundle_confirm
-```
-
-Confirm the currently previewed bundle. The bundle's cards are added to the deck and the selection screen closes.
-
-### bundle_cancel
-
-```
-./sts2 bundle_cancel
-```
-
-Cancel the current bundle preview and return to bundle selection. Allows previewing a different bundle.
-
----
-
-### crystal_set_tool
-
-```
-./sts2 crystal_set_tool <tool>
-```
-
-Set the divination tool in the Crystal Sphere mini-game. Tool is `big` (3x3 area) or `small` (1 cell).
-
-### crystal_click_cell
-
-```
-./sts2 crystal_click_cell <x> <y>
-```
-
-Click a cell in the Crystal Sphere mini-game to clear fog. Coordinates are 0-based (range 0..10). After clicking, a reward overlay may appear if an item was revealed -- handle the reward first, then continue clicking.
-
-### crystal_proceed
-
-```
-./sts2 crystal_proceed
-```
-
-Leave the Crystal Sphere mini-game after all divinations are exhausted. The proceed button must be enabled (`can_proceed` is true in state).
-
----
-
-### return_to_menu
-
-```
-./sts2 return_to_menu
-```
-
-Return to the main menu from the game over screen. Only available when `screen` is `GAME_OVER` and `game_over.can_return_to_menu` is true. After returning to menu, the screen becomes `MENU` -- use `continue_run`, `new_run`, or `abandon_run` to proceed.
-
----
-
-### continue_run
+#### continue_run
 
 ```
 ./sts2 continue_run
@@ -237,7 +50,7 @@ Return to the main menu from the game over screen. Only available when `screen` 
 
 Continue a saved run from the main menu. Only available when `menu.has_run_save` is true. Clicks the Continue button and waits for the run to load (up to 15 seconds).
 
-### new_run
+#### new_run
 
 ```
 ./sts2 new_run
@@ -245,7 +58,7 @@ Continue a saved run from the main menu. Only available when `menu.has_run_save`
 
 Start a new game from the main menu. Only available when no saved run exists (`menu.has_run_save` is false). Clicks the Singleplayer button. If the player has completed at least one run, this opens the singleplayer submenu (screen becomes `SINGLEPLAYER_SUBMENU`) -- use `choose_game_mode` to select a mode. If it's the first ever game, goes directly to character select.
 
-### abandon_run
+#### abandon_run
 
 ```
 ./sts2 abandon_run
@@ -253,7 +66,7 @@ Start a new game from the main menu. Only available when no saved run exists (`m
 
 Abandon the current saved run from the main menu. Only available when `menu.has_run_save` is true. Skips the confirmation popup. After abandoning, the menu refreshes and `new_run` becomes available.
 
-### choose_game_mode
+#### choose_game_mode
 
 ```
 ./sts2 choose_game_mode <mode>
@@ -263,41 +76,9 @@ Select a game mode from the singleplayer submenu. Only available when `screen` i
 
 ---
 
-### shop_buy_card
+### Character Select
 
-```
-./sts2 shop_buy_card <card_id> [--nth <n>]
-```
-
-Buy a card from the shop by card ID. Use `--nth` to disambiguate when multiple copies of the same card exist.
-
-### shop_buy_relic
-
-```
-./sts2 shop_buy_relic <relic_id> [--nth <n>]
-```
-
-Buy a relic from the shop by relic ID.
-
-### shop_buy_potion
-
-```
-./sts2 shop_buy_potion <potion_id> [--nth <n>]
-```
-
-Buy a potion from the shop by potion ID. Fails if the potion belt is full.
-
-### shop_remove_card
-
-```
-./sts2 shop_remove_card
-```
-
-Buy the card removal service from the shop. Opens a grid card selection screen (screen becomes `GRID_CARD_SELECT`) -- use `grid_select_card` to pick a card to remove, or `grid_select_skip` to cancel. After the shop, use `proceed` to leave.
-
----
-
-### select_character
+#### select_character
 
 ```
 ./sts2 select_character <character_id>
@@ -305,7 +86,7 @@ Buy the card removal service from the shop. Opens a grid card selection screen (
 
 Select a character on the character select screen. ID matching is case-insensitive.
 
-### set_ascension
+#### set_ascension
 
 ```
 ./sts2 set_ascension <level>
@@ -313,7 +94,7 @@ Select a character on the character select screen. ID matching is case-insensiti
 
 Set ascension level (0 to max) on the character select screen. Max level is read from the game (typically 20).
 
-### embark
+#### embark
 
 ```
 ./sts2 embark
@@ -323,7 +104,49 @@ Start a run from the character select screen. Requires a character to be selecte
 
 ---
 
-### hand_select_card
+### Map Navigation
+
+#### choose_map_node
+
+```
+./sts2 choose_map_node <col> <row>
+```
+
+Travel to a map node. Only nodes with state `TRAVELABLE` can be selected -- check `map.travelable_coords` in state.
+
+---
+
+### Combat
+
+#### play_card
+
+```
+./sts2 play_card <card_id> [--nth <n>] [--target <combat_id>]
+```
+
+Play a card from hand. `--target` required for enemy-targeting cards only.
+
+#### end_turn
+
+```
+./sts2 end_turn
+```
+
+End turn. Response contains all enemy action results -- always read it.
+
+#### use_potion
+
+```
+./sts2 use_potion <potion_id> [--nth <n>] [--target <combat_id>]
+```
+
+Use a potion. `--target` required for enemy-targeting potions. Some potions open a card selection screen (screen becomes `TRI_SELECT`) -- use `tri_select_card` or `tri_select_skip` to complete.
+
+---
+
+### Combat Sub-states (Hand/Grid Selection)
+
+#### hand_select_card
 
 ```
 ./sts2 hand_select_card <card_id> [<card_id>...] [--nth <n>...]
@@ -331,7 +154,7 @@ Start a run from the character select screen. Requires a character to be selecte
 
 Select cards from hand during combat selection mode (discard, exhaust, upgrade prompts). When `MinSelect == MaxSelect`, selection auto-completes after selecting the required number of cards. Otherwise, use `hand_confirm_selection` to finalize.
 
-### hand_confirm_selection
+#### hand_confirm_selection
 
 ```
 ./sts2 hand_confirm_selection
@@ -339,9 +162,7 @@ Select cards from hand during combat selection mode (discard, exhaust, upgrade p
 
 Confirm the current hand card selection. Only needed when `hand_select.require_manual_confirmation` is true (i.e., `MinSelect != MaxSelect`).
 
----
-
-### grid_select_card / grid_select_skip
+#### grid_select_card / grid_select_skip
 
 ```
 ./sts2 grid_select_card <card_id> [<card_id>...] [--nth <n>...]
@@ -350,17 +171,275 @@ Confirm the current hand card selection. Only needed when `hand_select.require_m
 
 Select or skip cards from a grid-style card selection screen (card removal, upgrade, transform, enchant, combat grid overlays). Check `grid_card_select.min_select` / `max_select` in state for how many to pick. Skip only works when `grid_card_select.cancelable` is true.
 
+---
+
+### Event Rooms
+
+#### choose_event
+
+```
+./sts2 choose_event <index>
+```
+
+Choose event option by 0-based index. For Ancient events, advance dialogue first.
+
+#### advance_dialogue
+
+```
+./sts2 advance_dialogue [--auto]
+```
+
+Advance Ancient event dialogue. Use `--auto` to skip all dialogue lines until options appear. Then use `choose_event`.
+
+---
+
+### Rest Site
+
+#### choose_rest_option
+
+```
+./sts2 choose_rest_option <option_id>
+```
+
+Choose a rest site (campfire) option by ID. Common options: `HEAL` (restore HP), `SMITH` (upgrade a card). SMITH opens a card selection overlay (screen becomes `GRID_CARD_SELECT`) -- use `grid_select_card` to complete. After choosing, use `proceed` to leave the rest site if `rest_site.can_proceed` is true.
+
+---
+
+### Treasure Room
+
+#### open_chest
+
+```
+./sts2 open_chest
+```
+
+Open the treasure chest in a treasure room. After opening, relics are revealed -- use `pick_relic` to pick one, or `proceed` to skip.
+
+#### pick_relic
+
+```
+./sts2 pick_relic <index>
+```
+
+Pick a relic from an opened treasure chest by 0-based index. After picking, use `proceed` to leave the treasure room.
+
+---
+
+### Shop
+
+#### shop_buy_card
+
+```
+./sts2 shop_buy_card <card_id> [--nth <n>]
+```
+
+Buy a card from the shop by card ID. Use `--nth` to disambiguate when multiple copies of the same card exist.
+
+#### shop_buy_relic
+
+```
+./sts2 shop_buy_relic <relic_id> [--nth <n>]
+```
+
+Buy a relic from the shop by relic ID.
+
+#### shop_buy_potion
+
+```
+./sts2 shop_buy_potion <potion_id> [--nth <n>]
+```
+
+Buy a potion from the shop by potion ID. Fails if the potion belt is full.
+
+#### shop_remove_card
+
+```
+./sts2 shop_remove_card
+```
+
+Buy the card removal service from the shop. Opens a grid card selection screen (screen becomes `GRID_CARD_SELECT`) -- use `grid_select_card` to pick a card to remove, or `grid_select_skip` to cancel. After the shop, use `proceed` to leave.
+
+---
+
+### Post-combat Rewards
+
+#### reward_claim
+
+```
+./sts2 reward_claim --type <type> [--id <id>] [--nth <n>]
+```
+
+Claim a non-card reward. Types: `gold`, `potion`, `relic`, `special_card`. `--id` required for all except `gold`.
+
+#### reward_choose_card / reward_skip_card
+
+```
+./sts2 reward_choose_card --type card --card_id <card_id> [--nth <n>]
+./sts2 reward_skip_card --type card [--nth <n>]
+```
+
+Pick or skip a card reward. `--nth` selects which card reward when multiple exist.
+
+---
+
+### Overlay Screens (Shared Across Contexts)
+
+#### tri_select_card
+
+```
+./sts2 tri_select_card <card_id> [<card_id>...] [--nth <n>...]
+```
+
+Select cards from a three-choose-one card selection screen (triggered by potions, cards like Discovery/Quasar/Splash, relics like Toolbox, and monsters). Check `tri_select.min_select` / `max_select` in state for how many to pick.
+
+#### tri_select_skip
+
+```
+./sts2 tri_select_skip
+```
+
+Skip three-choose-one card selection (only if `tri_select.can_skip` is true).
+
+#### relic_select / relic_skip
+
+```
+./sts2 relic_select <index>
+./sts2 relic_skip
+```
+
+Select or skip a relic from the boss/event relic choice screen. Index is 0-based.
+
+#### bundle_select
+
+```
+./sts2 bundle_select <index>
+```
+
+Preview a bundle on the bundle selection screen (triggered by the Scroll Boxes relic). Index is 0-based. Opens a preview showing the cards in the selected bundle.
+
+#### bundle_confirm
+
+```
+./sts2 bundle_confirm
+```
+
+Confirm the currently previewed bundle. The bundle's cards are added to the deck and the selection screen closes.
+
+#### bundle_cancel
+
+```
+./sts2 bundle_cancel
+```
+
+Cancel the current bundle preview and return to bundle selection. Allows previewing a different bundle.
+
+#### crystal_set_tool
+
+```
+./sts2 crystal_set_tool <tool>
+```
+
+Set the divination tool in the Crystal Sphere mini-game. Tool is `big` (3x3 area) or `small` (1 cell).
+
+#### crystal_click_cell
+
+```
+./sts2 crystal_click_cell <x> <y>
+```
+
+Click a cell in the Crystal Sphere mini-game to clear fog. Coordinates are 0-based (range 0..10). After clicking, a reward overlay may appear if an item was revealed -- handle the reward first, then continue clicking.
+
+#### crystal_proceed
+
+```
+./sts2 crystal_proceed
+```
+
+Leave the Crystal Sphere mini-game after all divinations are exhausted. The proceed button must be enabled (`can_proceed` is true in state).
+
+---
+
+### Navigation (Shared Across Contexts)
+
+#### proceed
+
+```
+./sts2 proceed
+```
+
+Leave reward screen, FakeMerchant event, rest site (after choosing an option), treasure room (after picking/skipping relic), or merchant room and proceed to map.
+
+---
+
+### Game Over
+
+#### return_to_menu
+
+```
+./sts2 return_to_menu
+```
+
+Return to the main menu from the game over screen. Only available when `screen` is `GAME_OVER` and `game_over.can_return_to_menu` is true. After returning to menu, the screen becomes `MENU` -- use `continue_run`, `new_run`, or `abandon_run` to proceed.
+
+---
+
+### Local-only Commands
+
+#### report_bug
+
+```
+./sts2 report_bug --title <title> --description <desc> [--last-command <cmd>] [--last-response <json>] [--severity <level>] [--labels <labels>]
+```
+
+Save a structured bug report to a local JSON file. This is a local-only command -- no pipe connection required. Optionally captures a game state snapshot if the mod is reachable (2s timeout).
+
+**Required options:**
+- `--title` — Short summary of the bug
+- `--description` — Detailed description: what happened, what was expected
+
+**Optional options:**
+- `--last-command` — The CLI command that triggered the bug (e.g., `"play_card STRIKE --nth 0"`)
+- `--last-response` — The JSON response from the last command (parsed as JSON if valid, stored as raw string otherwise)
+- `--severity` — Bug severity: `low`, `medium` (default), `high`, `critical`
+- `--labels` — Comma-separated labels for categorization (e.g., `"combat,play_card"`)
+
+**Output:** `{"ok": true, "data": {"bug_id": "BUG-...", "file": "sts2-cli-bugs/BUG-....json", "has_game_state": true/false}}`
+
+Reports are saved as pretty-printed JSON in the `sts2-cli-bugs/` directory alongside the CLI executable. Each report includes a generated bug ID (`BUG-yyyyMMdd-HHmmss-fff`), CLI version, and optional game state snapshot.
+
 ## Game State Structure
 
 Returned by `state` in the `data` field. Only the relevant screen's data is populated; others are null/omitted.
 
 ```
 data
-├── screen              # COMBAT | HAND_SELECT | REWARD | CARD_REWARD | EVENT | TRI_SELECT
-│                       # MAP | CHARACTER_SELECT | GRID_CARD_SELECT | REST_SITE | TREASURE | SHOP
-│                       # RELIC_SELECT | BUNDLE_SELECT | CRYSTAL_SPHERE | GAME_OVER
-│                       # MENU | SINGLEPLAYER_SUBMENU | UNKNOWN
+├── screen              # MENU | SINGLEPLAYER_SUBMENU | CHARACTER_SELECT
+│                       # MAP | COMBAT | HAND_SELECT | GRID_CARD_SELECT
+│                       # EVENT | REST_SITE | TREASURE | SHOP
+│                       # REWARD | CARD_REWARD | TRI_SELECT | RELIC_SELECT
+│                       # BUNDLE_SELECT | CRYSTAL_SPHERE
+│                       # GAME_OVER | UNKNOWN
 ├── timestamp           # Unix ms
+│
+├── menu                      # Only when screen is MENU
+│   └── has_run_save        # bool, true if a saved run exists (continue_run available)
+├── singleplayer_submenu      # Only when screen is SINGLEPLAYER_SUBMENU
+│   ├── standard_available  # bool, always true
+│   ├── daily_available     # bool, true if daily run epoch is unlocked
+│   └── custom_available    # bool, true if custom/seeds epoch is unlocked
+├── character_select
+│   ├── available_characters[]  # {character_id, character_name, is_locked, is_selected}
+│   ├── selected_character      # string?, null if none selected
+│   ├── current_ascension, max_ascension
+│   └── can_embark
+│
+├── map
+│   ├── act_index, act_floor, total_floor
+│   ├── columns, rows
+│   ├── current_coord       # {col, row}, null at start
+│   ├── nodes[]
+│   └── travelable_coords[] # [{col, row}]
+│
 ├── combat
 │   ├── encounter, turn_number, is_player_turn
 │   ├── is_player_actions_disabled, is_combat_ending
@@ -378,25 +457,6 @@ data
 │   ├── discard_pile[]    # Use --include-pile-details for descriptions
 │   ├── exhaust_pile[]    # Use --include-pile-details for descriptions
 │   └── enemies[]
-├── rewards
-│   └── rewards[]
-├── event
-│   ├── event_id, title, description, layout_type
-│   ├── is_finished, is_in_dialogue
-│   ├── current_dialogue_line, total_dialogue_lines  # Ancient only
-│   └── options[]
-├── tri_select
-│   ├── selection_type, min_select, max_select, can_skip
-│   └── cards[]
-├── character_select
-│   ├── available_characters[]  # {character_id, character_name, is_locked, is_selected}
-│   ├── selected_character      # string?, null if none selected
-│   ├── current_ascension, max_ascension
-│   └── can_embark
-├── grid_card_select
-│   ├── selection_type          # remove, upgrade, transform, enchant, generic, unknown
-│   ├── prompt, min_select, max_select, cancelable
-│   └── cards[]
 ├── hand_select                 # Only when screen is HAND_SELECT (combat sub-state)
 │   ├── mode                    # SimpleSelect or UpgradeSelect
 │   ├── prompt                  # e.g., "Choose 1 card to discard."
@@ -405,12 +465,16 @@ data
 │   ├── can_confirm, selected_count
 │   ├── selectable_cards[]      # Cards available to select from hand
 │   └── selected_cards[]        # Cards already selected
-└── map
-    ├── act_index, act_floor, total_floor
-    ├── columns, rows
-    ├── current_coord       # {col, row}, null at start
-    ├── nodes[]
-    └── travelable_coords[] # [{col, row}]
+├── grid_card_select
+│   ├── selection_type          # remove, upgrade, transform, enchant, generic, unknown
+│   ├── prompt, min_select, max_select, cancelable
+│   └── cards[]
+│
+├── event
+│   ├── event_id, title, description, layout_type
+│   ├── is_finished, is_in_dialogue
+│   ├── current_dialogue_line, total_dialogue_lines  # Ancient only
+│   └── options[]
 ├── rest_site
 │   ├── options[]           # [{index, option_id, name, description, is_enabled}]
 │   └── can_proceed         # bool, true after an option has been chosen
@@ -426,6 +490,12 @@ data
 │   ├── card_removal        # {cost, is_used} or null
 │   ├── player_gold         # int
 │   └── can_proceed         # bool, true when proceed button is enabled
+│
+├── rewards
+│   └── rewards[]
+├── tri_select
+│   ├── selection_type, min_select, max_select, can_skip
+│   └── cards[]
 ├── relic_select
 │   ├── relics[]            # [{index, id, name, description, rarity}]
 │   └── can_skip            # bool, true if selection can be skipped
@@ -444,6 +514,7 @@ data
 │   ├── can_use_big_tool, can_use_small_tool  # bool
 │   ├── divinations_left    # int, remaining divination uses
 │   └── can_proceed         # bool, true when proceed button is enabled
+│
 └── game_over                 # Only when screen is GAME_OVER
     ├── is_victory          # bool, true if defeated final boss
     ├── floor               # int, floor where run ended
@@ -452,12 +523,6 @@ data
     ├── epochs_discovered   # int, number of epochs discovered
     ├── can_return_to_menu  # bool, true when main menu button is available
     └── can_continue        # bool, true when continue/summary button is available
-├── menu                      # Only when screen is MENU
-│   └── has_run_save        # bool, true if a saved run exists (continue_run available)
-└── singleplayer_submenu      # Only when screen is SINGLEPLAYER_SUBMENU
-    ├── standard_available  # bool, always true
-    ├── daily_available     # bool, true if daily run epoch is unlocked
-    └── custom_available    # bool, true if custom/seeds epoch is unlocked
 ```
 
 ### Card Object (in hand)
@@ -519,8 +584,7 @@ data
 - **Reward Item**: `{index, type, description, gold_amount?, potion_id?, potion_name?, potion_rarity?, relic_id?, relic_name?, relic_description?, relic_rarity?, card_choices[]?, card_id?, card_name?}` -- type is `Gold`, `Potion`, `Relic`, `Card`, `SpecialCard`, `CardRemoval`
 - **Card Choice** (in reward): `{index, id, name, description, type, rarity, cost, is_upgraded}`
 - **Event Option**: `{index, title, description, is_locked, is_proceed, relic_id?}`
-- **Selectable Card** (tri select): `{index, card_id, card_name, description, card_type, cost}`
-- **Selectable Card** (grid selection): `{index, card_id, card_name, description, card_type, cost}` -- same structure as tri select
+- **Selectable Card** (tri select / grid select): `{index, card_id, card_name, description, card_type, cost}`
 - **Hand Select Card**: `{index, card_id, card_name, card_type, cost, description}` -- card in hand selection mode
 - **Character Option**: `{character_id, character_name, is_locked, is_selected}`
 - **Map Node**: `{col, row, type, state, children[], parents[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE|NONE`; children/parents are `[{col, row}]`
@@ -570,48 +634,32 @@ Cards can have the following keywords. These are returned as strings in the `key
 
 ## Error Codes
 
-**Combat** (`play_card`, `use_potion`, `end_turn`):
+**General**: `CONNECTION_ERROR` -- game disconnected.
+
+**Main Menu** (`continue_run`, `new_run`, `abandon_run`, `choose_game_mode`):
 
 | Error | Cause |
 |-------|-------|
-| `NOT_IN_COMBAT` | Combat ended |
-| `COMBAT_ENDING` | Combat resolving |
-| `CARD_NOT_FOUND` | Card ID not in hand |
-| `CANNOT_PLAY_CARD` | Not enough energy or blocked |
-| `TARGET_NOT_FOUND` | Enemy died or wrong combat_id |
+| `NOT_ON_MENU` | Not on main menu screen |
+| `NO_SAVED_RUN` | No saved run exists (continue/abandon) |
+| `RUN_SAVE_EXISTS` | Saved run exists, must abandon first (new_run) |
+| `NOT_ON_SINGLEPLAYER_SUBMENU` | Not on singleplayer submenu (choose_game_mode) |
+| `INVALID_GAME_MODE` | Mode not one of standard, daily, custom |
+| `MODE_NOT_UNLOCKED` | Game mode not yet unlocked |
+| `BUTTON_NOT_FOUND` | UI button not found |
+| `BUTTON_DISABLED` | UI button is disabled |
+| `TIMEOUT` | Run failed to load within timeout (continue_run) |
 
-**Reward** (`reward_claim`, `reward_choose_card`, `reward_skip_card`):
-
-| Error | Cause |
-|-------|-------|
-| `NOT_ON_REWARD_SCREEN` | Not on reward screen |
-| `REWARD_NOT_FOUND` | No matching reward |
-| `AMBIGUOUS_REWARD` | nth!=0 but only one item |
-| `INVALID_REWARD_INDEX` | nth out of range |
-| `ID_MISMATCH` | Item doesn't match expected ID |
-| `NOT_CARD_REWARD` | Used card command on non-card reward |
-| `USE_CHOOSE_CARD` | Used `reward_claim` on card reward |
-| `POTION_BELT_FULL` | No empty potion slots |
-| `NOT_SUPPORTED` | Unsupported reward type |
-| `CLAIM_FAILED` | Unknown failure |
-
-**Event** (`choose_event`, `advance_dialogue`):
+**Character Select** (`select_character`, `set_ascension`, `embark`):
 
 | Error | Cause |
 |-------|-------|
-| `NOT_ANCIENT_EVENT` | `advance_dialogue` on non-Ancient event |
-| `NOT_IN_DIALOGUE` | Dialogue already finished |
-
-**Tri Select** (`tri_select_card`, `tri_select_skip`):
-
-| Error | Cause |
-|-------|-------|
-| `NOT_IN_TRI_SELECT` | Not on selection screen |
-| `CANNOT_SKIP` | Selection cannot be skipped |
-| `SKIP_BUTTON_NOT_FOUND` | Skip button unavailable |
-| `INVALID_SELECTION_COUNT` | Wrong number of cards |
-| `DUPLICATE_SELECTION` | Same card selected twice |
-| `NO_CARDS_AVAILABLE` | Empty selection screen |
+| `NOT_IN_CHARACTER_SELECT` | Not on character select screen |
+| `CHARACTER_NOT_FOUND` | Character ID not found |
+| `CHARACTER_LOCKED` | Character not unlocked |
+| `INVALID_ASCENSION_LEVEL` | Level out of range (0 to max) |
+| `NO_CHARACTER_SELECTED` | Embark without selecting character |
+| `EMBARK_NOT_AVAILABLE` | Embark button disabled |
 
 **Map** (`choose_map_node`):
 
@@ -622,6 +670,42 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `NODE_NOT_FOUND` | Invalid coordinates |
 | `NOT_TRAVELABLE` | Node not reachable |
 | `TRAVEL_DISABLED` | Animation in progress |
+
+**Combat** (`play_card`, `use_potion`, `end_turn`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_COMBAT` | Combat ended |
+| `COMBAT_ENDING` | Combat resolving |
+| `CARD_NOT_FOUND` | Card ID not in hand |
+| `CANNOT_PLAY_CARD` | Not enough energy or blocked |
+| `TARGET_NOT_FOUND` | Enemy died or wrong combat_id |
+
+**Hand Select** (`hand_select_card`, `hand_confirm_selection`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_HAND_SELECT` | Not in hand card selection mode |
+| `INVALID_SELECTION_COUNT` | Would exceed max selection count |
+| `CARD_NOT_FOUND` | Card ID not in selectable hand |
+| `CANNOT_CONFIRM` | Not enough cards selected to confirm |
+| `UI_NOT_FOUND` | Confirm button not found |
+
+**Grid Card Select** (`grid_select_card`, `grid_select_skip`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_GRID_CARD_SELECT` | Not on grid selection screen |
+| `INVALID_SELECTION_COUNT` | Wrong number of cards selected |
+| `CARD_NOT_FOUND` | Card ID not in selection |
+| `CANNOT_SKIP` | Selection is not cancelable |
+
+**Event** (`choose_event`, `advance_dialogue`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_ANCIENT_EVENT` | `advance_dialogue` on non-Ancient event |
+| `NOT_IN_DIALOGUE` | Dialogue already finished |
 
 **Rest Site** (`choose_rest_option`):
 
@@ -640,6 +724,44 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `CHEST_ALREADY_OPENED` | Chest already opened |
 | `NO_RELICS_AVAILABLE` | No relics to pick (not opened or already picked) |
 | `INVALID_RELIC_INDEX` | Relic index out of range |
+
+**Shop** (`shop_buy_card`, `shop_buy_relic`, `shop_buy_potion`, `shop_remove_card`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_SHOP` | Not in a merchant room |
+| `ITEM_NOT_FOUND` | Item ID not found in shop |
+| `ITEM_SOLD_OUT` | Item already purchased |
+| `NOT_ENOUGH_GOLD` | Insufficient gold |
+| `POTION_BELT_FULL` | No empty potion slots |
+| `CARD_REMOVAL_USED` | Card removal already used this visit |
+| `PURCHASE_FAILED` | Unknown purchase failure |
+
+**Reward** (`reward_claim`, `reward_choose_card`, `reward_skip_card`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_ON_REWARD_SCREEN` | Not on reward screen |
+| `REWARD_NOT_FOUND` | No matching reward |
+| `AMBIGUOUS_REWARD` | nth!=0 but only one item |
+| `INVALID_REWARD_INDEX` | nth out of range |
+| `ID_MISMATCH` | Item doesn't match expected ID |
+| `NOT_CARD_REWARD` | Used card command on non-card reward |
+| `USE_CHOOSE_CARD` | Used `reward_claim` on card reward |
+| `POTION_BELT_FULL` | No empty potion slots |
+| `NOT_SUPPORTED` | Unsupported reward type |
+| `CLAIM_FAILED` | Unknown failure |
+
+**Tri Select** (`tri_select_card`, `tri_select_skip`):
+
+| Error | Cause |
+|-------|-------|
+| `NOT_IN_TRI_SELECT` | Not on selection screen |
+| `CANNOT_SKIP` | Selection cannot be skipped |
+| `SKIP_BUTTON_NOT_FOUND` | Skip button unavailable |
+| `INVALID_SELECTION_COUNT` | Wrong number of cards |
+| `DUPLICATE_SELECTION` | Same card selected twice |
+| `NO_CARDS_AVAILABLE` | Empty selection screen |
 
 **Relic Select** (`relic_select`, `relic_skip`):
 
@@ -660,18 +782,6 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `INVALID_BUNDLE_INDEX` | Bundle index out of range |
 | `CANNOT_CONFIRM` | Confirm button disabled (no bundle previewed) |
 | `CANNOT_CANCEL` | Cancel button disabled (no preview open) |
-
-**Shop** (`shop_buy_card`, `shop_buy_relic`, `shop_buy_potion`, `shop_remove_card`):
-
-| Error | Cause |
-|-------|-------|
-| `NOT_IN_SHOP` | Not in a merchant room |
-| `ITEM_NOT_FOUND` | Item ID not found in shop |
-| `ITEM_SOLD_OUT` | Item already purchased |
-| `NOT_ENOUGH_GOLD` | Insufficient gold |
-| `POTION_BELT_FULL` | No empty potion slots |
-| `CARD_REMOVAL_USED` | Card removal already used this visit |
-| `PURCHASE_FAILED` | Unknown purchase failure |
 
 **Crystal Sphere** (`crystal_set_tool`, `crystal_click_cell`, `crystal_proceed`):
 
@@ -695,48 +805,8 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `BUTTON_DISABLED` | Main menu button is disabled |
 | `ACTION_FAILED` | Failed to initiate return to menu |
 
-**Character Select** (`select_character`, `set_ascension`, `embark`):
+**Bug Report** (`report_bug`):
 
 | Error | Cause |
 |-------|-------|
-| `NOT_IN_CHARACTER_SELECT` | Not on character select screen |
-| `CHARACTER_NOT_FOUND` | Character ID not found |
-| `CHARACTER_LOCKED` | Character not unlocked |
-| `INVALID_ASCENSION_LEVEL` | Level out of range (0 to max) |
-| `NO_CHARACTER_SELECTED` | Embark without selecting character |
-| `EMBARK_NOT_AVAILABLE` | Embark button disabled |
-
-**Grid Card Select** (`grid_select_card`, `grid_select_skip`):
-
-| Error | Cause |
-|-------|-------|
-| `NOT_IN_GRID_CARD_SELECT` | Not on grid selection screen |
-| `INVALID_SELECTION_COUNT` | Wrong number of cards selected |
-| `CARD_NOT_FOUND` | Card ID not in selection |
-| `CANNOT_SKIP` | Selection is not cancelable |
-
-**Hand Select** (`hand_select_card`, `hand_confirm_selection`):
-
-| Error | Cause |
-|-------|-------|
-| `NOT_IN_HAND_SELECT` | Not in hand card selection mode |
-| `INVALID_SELECTION_COUNT` | Would exceed max selection count |
-| `CARD_NOT_FOUND` | Card ID not in selectable hand |
-| `CANNOT_CONFIRM` | Not enough cards selected to confirm |
-| `UI_NOT_FOUND` | Confirm button not found |
-
-**General**: `CONNECTION_ERROR` -- game disconnected.
-
-**Main Menu** (`continue_run`, `new_run`, `abandon_run`, `choose_game_mode`):
-
-| Error | Cause |
-|-------|-------|
-| `NOT_ON_MENU` | Not on main menu screen |
-| `NO_SAVED_RUN` | No saved run exists (continue/abandon) |
-| `RUN_SAVE_EXISTS` | Saved run exists, must abandon first (new_run) |
-| `NOT_ON_SINGLEPLAYER_SUBMENU` | Not on singleplayer submenu (choose_game_mode) |
-| `INVALID_GAME_MODE` | Mode not one of standard, daily, custom |
-| `MODE_NOT_UNLOCKED` | Game mode not yet unlocked |
-| `BUTTON_NOT_FOUND` | UI button not found |
-| `BUTTON_DISABLED` | UI button is disabled |
-| `TIMEOUT` | Run failed to load within timeout (continue_run) |
+| `WRITE_FAILED` | Cannot create bug report directory or write file |

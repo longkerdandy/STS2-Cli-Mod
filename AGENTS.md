@@ -15,7 +15,8 @@ Agent -> sts2 CLI (STS2.Cli.Cmd) -> Named Pipe -> C# Mod (STS2.Cli.Mod, in-proce
 
 - **STS2.Cli.Mod/**: In-process game mod. References `sts2.dll` and `GodotSharp.dll` from the game directory. One NuGet package (`System.IO.Pipes.AccessControl` for Windows pipe ACL). Runs inside Godot 4.5.1 engine.
 - **STS2.Cli.Cmd/**: Standalone CLI tool. Depends on `System.CommandLine`. Outputs JSON to stdout/stderr.
-- The two projects share no code. `Request`/`Response` models are intentionally duplicated.
+- The two projects share no code. `Request` models are intentionally duplicated. Mod-side responses use anonymous types exclusively; only the CLI has a `Response` DTO.
+- **Directory.Build.props**: Centralized `<Version>` property (currently `0.102.0-dev`) applied to all projects. The mod manifest version is injected at build time via `$VERSION$` placeholder in `STS2.Cli.Mod.json.template`.
 
 ## Build Commands
 
@@ -151,7 +152,7 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 ### Class Design Patterns
 
 - **Static utility classes** for stateless logic: `TextUtils`, `JsonOptions`, `ActionUtils`
-- **Static handler classes** for actions: `PlayCardHandler` (`ExecuteAsync()`), `EndTurnHandler` (`Execute()`)
+- **Static handler classes** for actions: `PlayCardHandler` (`ExecuteAsync()`), `EndTurnHandler` (`ExecuteAsync()`)
 - **Static builder classes** with `Build()` / `BuildFromHistory()` for data extraction: `CardStateBuilder`, `PlayerStateBuilder`, `CombatHistoryBuilder`
 - **DTO classes** with public auto-properties `{ get; set; }`, no behavior, nullable fields where optional
 - Use `required` keyword for mandatory properties: `public required string Cmd { get; set; }`
@@ -192,8 +193,8 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 - Standard TAP (Task-based Asynchronous Pattern)
 - Pass `CancellationToken` through async chains
 - Fire-and-forget only for server startup: `_ = Task.Run(async () => { ... });`
-- `MainThreadExecutor.RunOnMainThread<T>()` blocks pipe thread to synchronize with Godot main thread
 - `MainThreadExecutor.RunOnMainThreadAsync<T>()` kicks off an async chain on the main thread, returns `Task<T>` the pipe thread can await (used for multi-frame actions like `play_card`)
+- For synchronous single-frame work (state reads, end_turn), pass a lambda returning `Task.FromResult`
 - No `ConfigureAwait(false)` (not needed in Godot context)
 
 ### JSON Serialization
@@ -206,8 +207,9 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 
 - Pipe server runs on a background thread; game state must be accessed on the Godot main thread
 - Use `MainThreadExecutor` (ConcurrentQueue + ProcessFrame signal) to marshal calls
-- `RunOnMainThread<T>()` for synchronous single-frame work (state reads, end_turn)
-- `RunOnMainThreadAsync<T>()` for async multi-frame work (play_card waits for action completion)
+- `RunOnMainThreadAsync<T>()` for all main-thread work (state reads, end_turn, play_card)
+- For synchronous single-frame work, pass a lambda returning `Task.FromResult`
+- For async multi-frame work (play_card waits for action completion), pass a real async lambda
 
 ## Project References
 
