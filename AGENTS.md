@@ -18,6 +18,20 @@ Agent -> sts2 CLI (STS2.Cli.Cmd) -> Named Pipe -> C# Mod (STS2.Cli.Mod, in-proce
 - The two projects share no code. `Request` models are intentionally duplicated. Mod-side responses use anonymous types exclusively; only the CLI has a `Response` DTO.
 - **Directory.Build.props**: Centralized `<Version>` property (currently `0.102.0-dev`) applied to all projects. The mod manifest version is injected at build time via `$VERSION$` placeholder in `STS2.Cli.Mod.json.template`.
 
+## Installation
+
+End users can install the CLI and Mod from GitHub Releases using the install scripts:
+
+```powershell
+# Windows (PowerShell)
+irm https://raw.githubusercontent.com/longkerdandy/STS2-Cli-Mod/main/install.ps1 | iex
+
+# WSL / macOS / Linux (bash)
+curl -fsSL https://raw.githubusercontent.com/longkerdandy/STS2-Cli-Mod/main/install.sh | bash
+```
+
+The scripts auto-detect the Steam game directory (including custom Steam libraries via `libraryfolders.vdf`), download both CLI and Mod, and configure PATH/alias. Use `--uninstall` to remove. See `install.ps1` / `install.sh` headers for all options.
+
 ## Build Commands
 
 **IMPORTANT**: The game runs on Windows. Always build the CLI for `win-x64` and use the Windows exe for testing.
