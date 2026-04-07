@@ -5,10 +5,10 @@
 #   irm https://raw.githubusercontent.com/longkerdandy/STS2-Cli-Mod/main/install.ps1 | iex
 #
 # Install specific version:
-#   $Version="0.102.1"; irm https://raw.githubusercontent.com/longkerdandy/STS2-Cli-Mod/main/install.ps1 | iex
+#   $env:STS2_VERSION="0.102.1"; irm https://raw.githubusercontent.com/longkerdandy/STS2-Cli-Mod/main/install.ps1 | iex
 #
 # Uninstall:
-#   $Uninstall=$true; irm https://raw.githubusercontent.com/longkerdandy/STS2-Cli-Mod/main/install.ps1 | iex
+#   $env:STS2_UNINSTALL="1"; irm https://raw.githubusercontent.com/longkerdandy/STS2-Cli-Mod/main/install.ps1 | iex
 #
 # Or download and run with parameters:
 #   .\install.ps1 -Version 0.102.1
@@ -35,12 +35,16 @@ $GameName = "Slay the Spire 2"
 $ModFiles = @("STS2.Cli.Mod.dll", "STS2.Cli.Mod.json")
 $DefaultCliDir = Join-Path $env:LOCALAPPDATA "sts2-cli"
 
-# Support piped invocation: pick up variables set before piping
-if (-not $Version -and (Test-Path variable:global:Version)) {
-    $Version = $global:Version
+# Support piped invocation: pick up env vars set before piping.
+# NOTE: param() in iex context runs in the caller's scope and overwrites any
+# global variables with the same name, so we use $env: vars which are immune.
+if (-not $Version -and $env:STS2_VERSION) {
+    $Version = $env:STS2_VERSION
+    $env:STS2_VERSION = $null
 }
-if (-not $Uninstall -and (Test-Path variable:global:Uninstall) -and $global:Uninstall) {
+if (-not $Uninstall -and $env:STS2_UNINSTALL) {
     $Uninstall = [switch]::Present
+    $env:STS2_UNINSTALL = $null
 }
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
