@@ -93,6 +93,7 @@ Verify the mod works by:
 38. `sts2.exe new_run` - confirms clicking Singleplayer button (opens submenu or goes to character select)
 39. `sts2.exe abandon_run` - confirms abandoning the saved run from the main menu
 40. `sts2.exe choose_game_mode <mode>` - confirms game mode selection (standard, daily, custom) from singleplayer submenu
+41. `sts2.exe report_bug --title <title> --description <desc> [--last-command <cmd>] [--last-response <json>] [--severity <level>] [--labels <labels>]` - saves a structured bug report to local file with optional game state snapshot
 
 ## Code Style Guidelines
 

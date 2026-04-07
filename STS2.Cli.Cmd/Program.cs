@@ -122,6 +122,9 @@ internal static class Program
             "Abandon the current saved run from the main menu"));
         rootCommand.Subcommands.Add(ChooseGameModeCommand.Create());
 
+        // Bug reporting command (local-only, no pipe required)
+        rootCommand.Subcommands.Add(ReportBugCommand.Create());
+
         return rootCommand.Parse(args).Invoke();
     }
 }
