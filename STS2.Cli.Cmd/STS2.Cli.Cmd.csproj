@@ -17,4 +17,58 @@
     <PackageReference Include="System.CommandLine" Version="2.0.5" />
   </ItemGroup>
 
+  <!--
+    CLI deploy directory detection - supports Windows, WSL, macOS, and Linux
+    Priority: 1. STS2_CLI_DIR env var > 2. Auto-detect based on platform
+
+    Windows native:  %LOCALAPPDATA%\sts2-cli\
+    WSL:             /mnt/c/Users/<user>/AppData/Local/sts2-cli/  (resolved via wslpath)
+    macOS:           ~/.local/bin/
+    Linux:           ~/.local/bin/
+  -->
+  <PropertyGroup>
+    <!-- Use environment variable if set -->
+    <STS2CliDir Condition="'$(STS2CliDir)' == ''">$(STS2_CLI_DIR)</STS2CliDir>
+
+    <!-- Windows native (PowerShell, CMD, Visual Studio, Rider) -->
+    <STS2CliDir Condition="'$(STS2CliDir)' == '' AND '$(OS)' == 'Windows_NT'">$(LOCALAPPDATA)\sts2-cli</STS2CliDir>
+
+    <!-- WSL detection flag (resolved dynamically in ResolveWslCliDir target) -->
+    <IsWsl Condition="'$(OS)' != 'Windows_NT' AND Exists('/mnt/c/')">true</IsWsl>
+
+    <!-- macOS -->
+    <STS2CliDir Condition="'$(STS2CliDir)' == '' AND '$(IsWsl)' != 'true' AND Exists('/System/Library/')">$(HOME)/.local/bin</STS2CliDir>
+
+    <!-- Linux native (fallback) -->
+    <STS2CliDir Condition="'$(STS2CliDir)' == '' AND '$(IsWsl)' != 'true'">$(HOME)/.local/bin</STS2CliDir>
+  </PropertyGroup>
+
+  <!-- Resolve Windows LOCALAPPDATA path from WSL via cmd.exe + wslpath (two-step) -->
+  <Target Name="ResolveWslCliDir" BeforeTargets="DeployCli" Condition="'$(IsWsl)' == 'true' AND '$(STS2CliDir)' == ''">
+    <!-- Step 1: Get Windows LOCALAPPDATA path (e.g. C:\Users\<user>\AppData\Local) -->
+    <Exec Command="cmd.exe /c &quot;echo %25LOCALAPPDATA%25&quot; 2>/dev/null | tr -d '\r'"
+          ConsoleToMSBuild="true" StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_WinLocalAppData" />
+    </Exec>
+    <!-- Step 2: Convert Windows path to WSL path (e.g. /mnt/c/Users/<user>/AppData/Local) -->
+    <Exec Command="wslpath -u &quot;$(_WinLocalAppData)&quot;"
+          ConsoleToMSBuild="true" StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="WslLocalAppData" />
+    </Exec>
+    <PropertyGroup>
+      <STS2CliDir>$(WslLocalAppData)/sts2-cli</STS2CliDir>
+    </PropertyGroup>
+    <Message Text="WSL detected: resolved CLI deploy dir to $(STS2CliDir)" Importance="high" />
+  </Target>
+
+  <!-- Deploy CLI exe after publish -->
+  <Target Name="DeployCli" AfterTargets="Publish" Condition="'$(STS2CliDir)' != '' OR '$(IsWsl)' == 'true'">
+    <MakeDir Directories="$(STS2CliDir)" Condition="!Exists('$(STS2CliDir)')" />
+    <Copy SourceFiles="$(PublishDir)$(AssemblyName).exe" DestinationFolder="$(STS2CliDir)" SkipUnchangedFiles="true"
+          Condition="'$(OS)' == 'Windows_NT' OR '$(IsWsl)' == 'true'" />
+    <Copy SourceFiles="$(PublishDir)$(AssemblyName)" DestinationFolder="$(STS2CliDir)" SkipUnchangedFiles="true"
+          Condition="'$(OS)' != 'Windows_NT' AND '$(IsWsl)' != 'true'" />
+    <Message Text="CLI deployed to $(STS2CliDir)" Importance="high" />
+  </Target>
+
 </Project>

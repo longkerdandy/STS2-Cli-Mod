@@ -32,9 +32,12 @@ dotnet build STS2.Cli.Mod/STS2.Cli.Mod.csproj -c Release
 # Build CLI for Windows x64 (MUST specify -r win-x64)
 dotnet build STS2.Cli.Cmd/STS2.Cli.Cmd.csproj -c Release -r win-x64
 
-# Publish CLI as single-file exe
-dotnet publish STS2.Cli.Cmd/STS2.Cli.Cmd.csproj -c Release -r win-x64 \
-  --self-contained -p:PublishSingleFile=true -p:PublishAot=true
+# Publish CLI as single-file exe (auto-deploys to install directory via DeployCli MSBuild target)
+# Windows native:  %LOCALAPPDATA%\sts2-cli\sts2.exe
+# WSL:             /mnt/c/Users/<user>/AppData/Local/sts2-cli/sts2.exe  (resolved via wslpath)
+# macOS/Linux:     ~/.local/bin/sts2
+# Override with:   STS2_CLI_DIR env var or -p:STS2CliDir=<path>
+dotnet publish STS2.Cli.Cmd/STS2.Cli.Cmd.csproj -c Release -r win-x64
 ```
 
 ## Testing

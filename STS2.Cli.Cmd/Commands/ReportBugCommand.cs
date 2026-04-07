@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Reflection;
 using System.Text.Json;
 using STS2.Cli.Cmd.Client;
 using STS2.Cli.Cmd.Models.Messages;
@@ -137,10 +138,14 @@ internal static class ReportBugCommand
         object? gameStateSnapshot = await CaptureGameStateAsync();
 
         // Build the bug report object
+        var cliVersion = Assembly.GetEntryAssembly()?
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion ?? "unknown";
         var bugReport = new
         {
             bug_id = bugId,
             timestamp = now,
+            cli_version = cliVersion,
             title,
             description,
             severity,
