@@ -215,7 +215,11 @@ public static class ActionUtils
                         message = $"'{itemTitle}' is self-targeting and does not accept a target"
                     });
 
-                return (player.Creature, null);
+                // Pass null for Self-targeting cards. The game's IsValidTarget()
+                // returns false when a non-null creature is provided for non-AnyEnemy
+                // /non-AnyAlly target types. The card's OnPlay resolves the owner
+                // internally so no explicit target is needed.
+                return (null, null);
 
             case TargetType.AnyPlayer:
             case TargetType.AnyAlly:

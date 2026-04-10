@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 using STS2.Cli.Cmd.Commands;
@@ -19,6 +20,11 @@ internal static class Program
     /// <returns>Exit code: 0=success, 1=connection error, 2=invalid state, 3=invalid parameter, 4=timeout</returns>
     private static int Main(string[] args)
     {
+        // Force English locale so System.CommandLine outputs consistent English messages
+        // (avoids mixed Chinese/English when running on a Chinese-locale system)
+        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+        CultureInfo.CurrentUICulture = CultureInfo.InvariantCulture;
+
         // Force UTF-8 encoding for proper Chinese character display in WSL
         Console.OutputEncoding = Encoding.UTF8;
 

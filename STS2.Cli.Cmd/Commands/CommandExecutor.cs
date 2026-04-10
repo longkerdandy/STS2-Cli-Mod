@@ -26,7 +26,8 @@ internal static class CommandExecutor
     internal static readonly Option<bool> PrettyOption = new("--pretty", "-p")
     {
         Description = "Format JSON output with indentation for readability",
-        DefaultValueFactory = _ => false
+        DefaultValueFactory = _ => false,
+        Recursive = true
     };
 
     /// <summary>
