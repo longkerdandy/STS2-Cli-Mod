@@ -153,6 +153,9 @@ public static class PipeServer
                 "state" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     StateHandler.HandleRequestAsync(request)),
 
+                "view_deck" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
+                    ViewDeckHandler.ExecuteAsync()),
+
                 // --- Main menu ---
                 "continue_run" => await MainThreadExecutor.RunOnMainThreadAsync(() =>
                     ContinueRunHandler.ExecuteAsync()),
