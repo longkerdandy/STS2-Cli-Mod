@@ -35,9 +35,4 @@ public class MapNodeDto
     ///     Coordinates of child nodes (outgoing edges in the map DAG).
     /// </summary>
     public List<MapCoordDto> Children { get; set; } = [];
-
-    /// <summary>
-    ///     Coordinates of parent nodes (incoming edges in the map DAG).
-    /// </summary>
-    public List<MapCoordDto> Parents { get; set; } = [];
 }

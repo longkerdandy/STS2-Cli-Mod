@@ -40,7 +40,9 @@ public class MapStateDto
     public MapCoordDto? CurrentCoord { get; set; }
 
     /// <summary>
-    ///     All map nodes including grid nodes, starting point, boss, and optional second boss.
+    ///     Potentially reachable map nodes: TRAVELED (path history), TRAVELABLE (immediate next step),
+    ///     and all forward-reachable nodes via Children edges from TRAVELABLE nodes.
+    ///     Excludes unreachable past nodes and disconnected future nodes.
     /// </summary>
     public List<MapNodeDto> Nodes { get; set; } = [];
 

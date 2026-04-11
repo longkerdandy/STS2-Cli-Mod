@@ -16,6 +16,9 @@ public static class MapStateBuilder
 
     /// <summary>
     ///     Builds the map state DTO from the current game state.
+    ///     Only includes potentially reachable nodes: TRAVELED nodes (path history),
+    ///     TRAVELABLE nodes (immediate next step), and all forward-reachable nodes
+    ///     via BFS along Children edges from TRAVELABLE nodes.
     ///     Returns null if the map screen is not open or run state is unavailable.
     /// </summary>
     public static MapStateDto? Build()
@@ -58,41 +61,52 @@ public static class MapStateBuilder
                     Row = currentCoord.Value.row
                 };
 
-            // Build all nodes from the ActMap data model
-            var nodes = new List<MapNodeDto>();
-            var travelableCoords = new List<MapCoordDto>();
-
-            // Grid nodes (rows 1..N-1, the regular map rows)
+            // Collect all map points into a coord-indexed lookup for BFS
+            var allPoints = new Dictionary<MapCoord, MapPoint>();
             foreach (var point in map.GetAllMapPoints())
+                allPoints[point.coord] = point;
+            allPoints[map.StartingMapPoint.coord] = map.StartingMapPoint;
+            allPoints[map.BossMapPoint.coord] = map.BossMapPoint;
+            if (map.SecondBossMapPoint != null)
+                allPoints[map.SecondBossMapPoint.coord] = map.SecondBossMapPoint;
+
+            // Partition nodes by state: TRAVELED and TRAVELABLE
+            var reachableCoords = new HashSet<MapCoord>();
+            var travelableCoords = new List<MapCoordDto>();
+            var bfsQueue = new Queue<MapPoint>();
+
+            foreach (var (coord, point) in allPoints)
             {
-                var node = BuildNode(point, pointStateMap);
-                nodes.Add(node);
-                if (node.State == "TRAVELABLE")
-                    travelableCoords.Add(new MapCoordDto { Col = node.Col, Row = node.Row });
+                var state = GetNodeState(coord, pointStateMap);
+                if (state == "TRAVELED")
+                {
+                    reachableCoords.Add(coord);
+                }
+                else if (state == "TRAVELABLE")
+                {
+                    reachableCoords.Add(coord);
+                    travelableCoords.Add(new MapCoordDto { Col = coord.col, Row = coord.row });
+                    bfsQueue.Enqueue(point);
+                }
             }
 
-            // Starting point (row 0)
-            var startingPoint = map.StartingMapPoint;
-            var startNode = BuildNode(startingPoint, pointStateMap);
-            nodes.Add(startNode);
-            if (startNode.State == "TRAVELABLE")
-                travelableCoords.Add(new MapCoordDto { Col = startNode.Col, Row = startNode.Row });
-
-            // Boss point (row = GetRowCount(), outside grid)
-            var bossPoint = map.BossMapPoint;
-            var bossNode = BuildNode(bossPoint, pointStateMap);
-            nodes.Add(bossNode);
-            if (bossNode.State == "TRAVELABLE")
-                travelableCoords.Add(new MapCoordDto { Col = bossNode.Col, Row = bossNode.Row });
-
-            // Second boss point (optional, row = GetRowCount() + 1)
-            var secondBossPoint = map.SecondBossMapPoint;
-            if (secondBossPoint != null)
+            // Forward BFS from TRAVELABLE nodes along Children edges
+            while (bfsQueue.Count > 0)
             {
-                var secondBossNode = BuildNode(secondBossPoint, pointStateMap);
-                nodes.Add(secondBossNode);
-                if (secondBossNode.State == "TRAVELABLE")
-                    travelableCoords.Add(new MapCoordDto { Col = secondBossNode.Col, Row = secondBossNode.Row });
+                var current = bfsQueue.Dequeue();
+                foreach (var child in current.Children)
+                {
+                    if (reachableCoords.Add(child.coord))
+                        bfsQueue.Enqueue(child);
+                }
+            }
+
+            // Build DTOs only for reachable nodes
+            var nodes = new List<MapNodeDto>(reachableCoords.Count);
+            foreach (var coord in reachableCoords)
+            {
+                if (allPoints.TryGetValue(coord, out var point))
+                    nodes.Add(BuildNode(point, pointStateMap));
             }
 
             // Sort nodes by row then col for deterministic output
@@ -133,10 +147,6 @@ public static class MapStateBuilder
         // Build children edges
         foreach (var child in point.Children)
             node.Children.Add(new MapCoordDto { Col = child.coord.col, Row = child.coord.row });
-
-        // Build parent edges
-        foreach (var parent in point.parents)
-            node.Parents.Add(new MapCoordDto { Col = parent.coord.col, Row = parent.coord.row });
 
         return node;
     }
