@@ -16,7 +16,7 @@ Agent -> sts2 CLI (STS2.Cli.Cmd) -> Named Pipe -> C# Mod (STS2.Cli.Mod, in-proce
 ```
 
 - **STS2.Cli.Mod/**: In-process game mod. References `sts2.dll` and `GodotSharp.dll` from the game directory. One NuGet package (`System.IO.Pipes.AccessControl` for Windows pipe ACL). Runs inside Godot 4.5.1 engine.
-- **STS2.Cli.Cmd/**: Standalone CLI tool. Depends on `System.CommandLine`. Outputs JSON to stdout/stderr.
+- **STS2.Cli.Cmd/**: Standalone CLI tool. Depends on `System.CommandLine`. Outputs all JSON to stdout.
 - The two projects share no code. `Request` models are intentionally duplicated. Mod-side responses use anonymous types exclusively; only the CLI has a `Response` DTO.
 - **Directory.Build.props**: Centralized `<Version>` property (currently `0.103.0`) applied to all projects. The mod manifest version is injected at build time via `$VERSION$` placeholder in `STS2.Cli.Mod.json.template`.
 
@@ -75,45 +75,49 @@ Verify the mod works by:
 
 1. `sts2.exe ping` - confirms pipe connection
 2. `sts2.exe state` - confirms state extraction (returns full game state as JSON)
-3. `sts2.exe play_card <card_id> [--nth <n>] [--target <combat_id>]` - confirms card play with execution results (damage, block, powers)
-4. `sts2.exe end_turn` - confirms end turn action with execution results (enemy turn damage, block, powers)
-5. `sts2.exe use_potion <potion_id> [--nth <n>] [--target <combat_id>]` - confirms potion use with execution results (damage, block, powers)
-6. `sts2.exe reward_claim --type <type> [--id <id>] [--nth <n>]` - confirms reward claim (gold, potion, relic)
-7. `sts2.exe reward_choose_card --type card --card_id <card_id> [--nth <n>]` - confirms card choice from card reward
-8. `sts2.exe reward_skip_card --type card [--nth <n>]` - confirms skipping a card reward
-9. `sts2.exe proceed` - confirms leaving reward screen, FakeMerchant event, or shop and proceeding to map
-10. `sts2.exe choose_event <index>` - confirms event option selection with updated event state
-11. `sts2.exe advance_dialogue [--auto]` - confirms Ancient event dialogue advancement (use --auto to skip to options)
-12. `sts2.exe tri_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from three-choose-one selection screen
-13. `sts2.exe tri_select_skip` - confirms skipping a three-choose-one card selection (if allowed)
-14. `sts2.exe select_character <character_id>` - confirms character selection on character select screen
-15. `sts2.exe set_ascension <level>` - confirms ascension level setting
-16. `sts2.exe embark` - confirms game start from character select screen
-17. `sts2.exe choose_map_node <col> <row>` - confirms map node selection and travel
-18. `sts2.exe choose_rest_option <option_id>` - confirms rest site option selection (HEAL, SMITH, etc.)
-19. `sts2.exe open_chest` - confirms treasure chest opening with relic reveal
-20. `sts2.exe pick_relic <index>` - confirms relic pick from treasure room
-21. `sts2.exe shop_buy_card <card_id> [--nth <n>]` - confirms card purchase from shop
-22. `sts2.exe shop_buy_relic <relic_id> [--nth <n>]` - confirms relic purchase from shop
-23. `sts2.exe shop_buy_potion <potion_id> [--nth <n>]` - confirms potion purchase from shop
-24. `sts2.exe shop_remove_card` - confirms card removal service purchase (opens deck select)
-25. `sts2.exe hand_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from hand during combat (discard, exhaust, upgrade)
-26. `sts2.exe hand_confirm_selection` - confirms hand card selection when manual confirmation is required
-27. `sts2.exe relic_select <index>` - confirms relic selection from boss/event relic choice screen
-28. `sts2.exe relic_skip` - confirms skipping relic selection on boss/event relic choice screen
-29. `sts2.exe bundle_select <index>` - confirms bundle preview on bundle selection screen (Scroll Boxes relic)
-30. `sts2.exe bundle_confirm` - confirms the previewed bundle selection
-31. `sts2.exe bundle_cancel` - cancels bundle preview and returns to bundle selection
-32. `sts2.exe crystal_set_tool <tool>` - confirms Crystal Sphere divination tool switch (big or small)
-33. `sts2.exe crystal_click_cell <x> <y>` - confirms Crystal Sphere cell click with fog clearing
-34. `sts2.exe crystal_proceed` - confirms leaving the Crystal Sphere mini-game after divinations are complete
-35. `sts2.exe state --include-pile-details` - confirms draw/discard/exhaust pile contents with full card descriptions
-36. `sts2.exe return_to_menu` - confirms returning to main menu from game over screen
-37. `sts2.exe continue_run` - confirms loading a saved run from the main menu
-38. `sts2.exe new_run` - confirms clicking Singleplayer button (opens submenu or goes to character select)
-39. `sts2.exe abandon_run` - confirms abandoning the saved run from the main menu
-40. `sts2.exe choose_game_mode <mode>` - confirms game mode selection (standard, daily, custom) from singleplayer submenu
-41. `sts2.exe report_bug --title <title> --description <desc> [--last-command <cmd>] [--last-response <json>] [--severity <level>] [--labels <labels>]` - saves a structured bug report to local file with optional game state snapshot
+3. `sts2.exe view_deck` - confirms master deck inspection (returns all cards in deck with details)
+3. `sts2.exe view_deck` - confirms master deck inspection (returns all cards in deck with details)
+4. `sts2.exe play_card <card_id> [--nth <n>] [--target <combat_id>]` - confirms card play with execution results (damage, block, powers)
+5. `sts2.exe end_turn` - confirms end turn action with execution results (enemy turn damage, block, powers)
+6. `sts2.exe use_potion <potion_id> [--nth <n>] [--target <combat_id>]` - confirms potion use with execution results (damage, block, powers)
+7. `sts2.exe reward_claim --type <type> [--id <id>] [--nth <n>]` - confirms reward claim (gold, potion, relic)
+8. `sts2.exe reward_choose_card --type card --card_id <card_id> [--nth <n>]` - confirms card choice from card reward
+9. `sts2.exe reward_skip_card --type card [--nth <n>]` - confirms skipping a card reward
+10. `sts2.exe proceed` - confirms leaving reward screen, FakeMerchant event, or shop and proceeding to map
+11. `sts2.exe choose_event <index>` - confirms event option selection with updated event state
+12. `sts2.exe advance_dialogue [--auto]` - confirms Ancient event dialogue advancement (use --auto to skip to options)
+13. `sts2.exe tri_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from three-choose-one selection screen
+14. `sts2.exe tri_select_skip` - confirms skipping a three-choose-one card selection (if allowed)
+15. `sts2.exe select_character <character_id>` - confirms character selection on character select screen
+16. `sts2.exe set_ascension <level>` - confirms ascension level setting
+17. `sts2.exe embark` - confirms game start from character select screen
+18. `sts2.exe choose_map_node <col> <row>` - confirms map node selection and travel
+19. `sts2.exe choose_rest_option <option_id>` - confirms rest site option selection (HEAL, SMITH, etc.)
+20. `sts2.exe open_chest` - confirms treasure chest opening with relic reveal
+21. `sts2.exe pick_relic <index>` - confirms relic pick from treasure room
+22. `sts2.exe shop_buy_card <card_id> [--nth <n>]` - confirms card purchase from shop
+23. `sts2.exe shop_buy_relic <relic_id> [--nth <n>]` - confirms relic purchase from shop
+24. `sts2.exe shop_buy_potion <potion_id> [--nth <n>]` - confirms potion purchase from shop
+25. `sts2.exe shop_remove_card` - confirms card removal service purchase (opens deck select)
+26. `sts2.exe hand_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from hand during combat (discard, exhaust, upgrade)
+27. `sts2.exe hand_confirm_selection` - confirms hand card selection when manual confirmation is required
+28. `sts2.exe grid_select_card <card_id> [<card_id>...] [--nth <n>...]` - confirms card selection from grid selection screen (card removal, upgrade, transform, enchant)
+29. `sts2.exe grid_select_skip` - confirms skipping a grid card selection (if cancelable)
+30. `sts2.exe relic_select <index>` - confirms relic selection from boss/event relic choice screen
+31. `sts2.exe relic_skip` - confirms skipping relic selection on boss/event relic choice screen
+32. `sts2.exe bundle_select <index>` - confirms bundle preview on bundle selection screen (Scroll Boxes relic)
+33. `sts2.exe bundle_confirm` - confirms the previewed bundle selection
+34. `sts2.exe bundle_cancel` - cancels bundle preview and returns to bundle selection
+35. `sts2.exe crystal_set_tool <tool>` - confirms Crystal Sphere divination tool switch (big or small)
+36. `sts2.exe crystal_click_cell <x> <y>` - confirms Crystal Sphere cell click with fog clearing
+37. `sts2.exe crystal_proceed` - confirms leaving the Crystal Sphere mini-game after divinations are complete
+38. `sts2.exe state --include-pile-details` - confirms draw/discard/exhaust pile contents with full card descriptions
+39. `sts2.exe return_to_menu` - confirms returning to main menu from game over screen
+40. `sts2.exe continue_run` - confirms loading a saved run from the main menu
+41. `sts2.exe new_run` - confirms clicking Singleplayer button (opens submenu or goes to character select)
+42. `sts2.exe abandon_run` - confirms abandoning the saved run from the main menu
+43. `sts2.exe choose_game_mode <mode>` - confirms game mode selection (standard, daily, custom) from singleplayer submenu
+44. `sts2.exe report_bug --title <title> --description <desc> [--last-command <cmd>] [--last-response <json>] [--severity <level>] [--labels <labels>]` - saves a structured bug report to local file with optional game state snapshot
 
 ## Code Style Guidelines
 
@@ -169,7 +173,7 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 
 - **Static utility classes** for stateless logic: `TextUtils`, `JsonOptions`, `ActionUtils`
 - **Static handler classes** for actions: `PlayCardHandler` (`ExecuteAsync()`), `EndTurnHandler` (`ExecuteAsync()`)
-- **Static builder classes** with `Build()` / `BuildFromHistory()` for data extraction: `CardStateBuilder`, `PlayerStateBuilder`, `CombatHistoryBuilder`
+- **Static builder classes** with `Build()` / `BuildFromHistory()` for data extraction: `CardStateBuilder`, `PlayerStateBuilder`, `CombatHistoryUtils`
 - **DTO classes** with public auto-properties `{ get; set; }`, no behavior, nullable fields where optional
 - Use `required` keyword for mandatory properties: `public required string Cmd { get; set; }`
 
@@ -195,7 +199,7 @@ using static STS2.Cli.Mod.Utils.TextUtils;
 - Log errors via `Logger.Warning()` or `Logger.Error()` with the exception message
 - Action handlers use sequential guard clauses with early returns, each returning a specific error
 - Structured error responses: `new { ok = false, error = "CODE", message = "description" }`
-- Exit codes: 0=success, 1=connection, 2=invalid state, 3=invalid param, 4=timeout, 5=state changed
+- Exit codes: 0=success, 1=connection, 2=invalid state, 3=invalid param, 4=timeout
 
 ### Null Handling
 

@@ -2,7 +2,7 @@
 
 CLI for controlling Slay the Spire 2 via named pipe. All responses are JSON to stdout: `{"ok": true, "data": {...}}` on success, `{"ok": false, "error": "CODE", "message": "..."}` on error.
 
-Exit codes: 0=success, 1=connection, 2=invalid state, 3=invalid param, 4=timeout, 5=state changed.
+Exit codes: 0=success, 1=connection, 2=invalid state, 3=invalid param, 4=timeout.
 
 ## Global Options
 

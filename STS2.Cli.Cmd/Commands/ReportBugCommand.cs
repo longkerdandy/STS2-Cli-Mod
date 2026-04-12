@@ -48,7 +48,7 @@ internal static class ReportBugCommand
 
         var lastResponseOption = new Option<string>("--last-response")
         {
-            Description = "The JSON response from the last command (copy-paste the stderr/stdout output)"
+            Description = "The JSON response from the last command (copy-paste the stdout output)"
         };
 
         var severityOption = new Option<string>("--severity")
