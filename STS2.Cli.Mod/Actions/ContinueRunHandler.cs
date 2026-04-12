@@ -3,6 +3,7 @@ using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using MegaCrit.Sts2.Core.Runs;
 using MegaCrit.Sts2.Core.Saves;
+using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -10,7 +11,8 @@ namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
 ///     Handles the <c>continue_run</c> CLI command.
-///     Clicks the Continue button on the main menu to load a saved run.
+///     Clicks the Continue button on the main menu to load a saved run,
+///     then waits for the run to load and the destination screen to appear before returning.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -24,12 +26,10 @@ namespace STS2.Cli.Mod.Actions;
 /// </remarks>
 public static class ContinueRunHandler
 {
-    private const int PollIntervalMs = 100;
-    private const int MaxWaitMs = 15000;
     private static readonly ModLogger Logger = new("ContinueRunHandler");
 
     /// <summary>
-    ///     Clicks the Continue button and waits for the run to load.
+    ///     Clicks the Continue button, waits for the run to load and the game screen to be ready.
     ///     Validates the current screen state and saved run existence.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
@@ -85,25 +85,46 @@ public static class ContinueRunHandler
             continueButton.EmitSignal(NClickableControl.SignalName.Released, continueButton);
 
             // Wait for the run to load (RunManager.Instance.IsInProgress becomes true)
-            var elapsed = 0;
-            while (elapsed < MaxWaitMs)
-            {
-                await Task.Delay(PollIntervalMs);
-                elapsed += PollIntervalMs;
+            await Task.Delay(ActionUtils.PostClickDelayMs);
+            var runLoaded = await ActionUtils.PollUntilAsync(
+                () => RunManager.Instance.IsInProgress,
+                ActionUtils.ActionTimeoutMs);
 
-                if (RunManager.Instance.IsInProgress)
+            if (!runLoaded)
+            {
+                Logger.Warning("Timed out waiting for run to load after continue_run");
+                return new
                 {
-                    Logger.Info($"Run loaded successfully after {elapsed}ms");
-                    return new { ok = true, data = new { action = "CONTINUE_RUN" } };
-                }
+                    ok = true,
+                    data = new { action = "CONTINUE_RUN" },
+                    warning = "Timed out waiting for run to load"
+                };
             }
 
-            // Timeout — run may still be loading
-            Logger.Warning($"Timed out waiting for run to load after {MaxWaitMs}ms");
-            return new
+            // Run data is loaded, but the game screen may not be ready yet.
+            // Wait for the actual destination screen to appear (not MENU or UNKNOWN).
+            var screenReady = await ActionUtils.PollUntilAsync(
+                () =>
+                {
+                    var s = StateHandler.DetectScreen();
+                    return s != "MENU" && s != "UNKNOWN";
+                },
+                ActionUtils.ActionTimeoutMs);
+
+            var screen = StateHandler.DetectScreen();
+            if (!screenReady)
             {
-                ok = false, error = "TIMEOUT", message = $"Timed out waiting for run to load after {MaxWaitMs}ms"
-            };
+                Logger.Warning($"Timed out waiting for game screen after continue_run (current: {screen})");
+                return new
+                {
+                    ok = true,
+                    data = new { action = "CONTINUE_RUN", screen },
+                    warning = "Timed out waiting for game screen to appear"
+                };
+            }
+
+            Logger.Info($"Run loaded successfully, landed on {screen} screen");
+            return new { ok = true, data = new { action = "CONTINUE_RUN", screen } };
         }
         catch (Exception ex)
         {
