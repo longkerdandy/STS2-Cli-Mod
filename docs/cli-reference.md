@@ -635,7 +635,17 @@ Cards can have the following keywords. These are returned as strings in the `key
 
 ## Error Codes
 
-**General**: `CONNECTION_ERROR` -- game disconnected.
+**General** (may apply to any command):
+
+| Error | Cause |
+|-------|-------|
+| `CONNECTION_ERROR` | Game not running or mod not loaded |
+| `INVALID_REQUEST` | Failed to parse request |
+| `UNKNOWN_COMMAND` | Command not recognized |
+| `MISSING_ARGUMENT` | Required argument not provided |
+| `INTERNAL_ERROR` | Unexpected internal error |
+| `UI_NOT_FOUND` | Required UI element not found |
+| `TIMEOUT` | Action did not complete within time limit |
 
 **Main Menu** (`continue_run`, `new_run`, `abandon_run`, `choose_game_mode`):
 
@@ -649,7 +659,7 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `MODE_NOT_UNLOCKED` | Game mode not yet unlocked |
 | `BUTTON_NOT_FOUND` | UI button not found |
 | `BUTTON_DISABLED` | UI button is disabled |
-| `TIMEOUT` | Run failed to load within timeout (continue_run) |
+| `ACTION_FAILED` | Failed to execute menu action |
 
 **Character Select** (`select_character`, `set_ascension`, `embark`):
 
@@ -660,6 +670,7 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `CHARACTER_LOCKED` | Character not unlocked |
 | `INVALID_ASCENSION_LEVEL` | Level out of range (0 to max) |
 | `NO_CHARACTER_SELECTED` | Embark without selecting character |
+| `EMBARK_BUTTON_NOT_FOUND` | Embark button not found |
 | `EMBARK_NOT_AVAILABLE` | Embark button disabled |
 
 **Map** (`choose_map_node`):
@@ -676,16 +687,25 @@ Cards can have the following keywords. These are returned as strings in the `key
 
 | Error | Cause |
 |-------|-------|
-| `NOT_IN_COMBAT` | Combat ended |
-| `COMBAT_ENDING` | Combat resolving |
+| `NOT_IN_COMBAT` | Combat not in progress |
+| `COMBAT_ENDING` | Combat is over or ending |
 | `NOT_PLAYER_TURN` | Not in play phase |
+| `ACTIONS_DISABLED` | Player actions temporarily disabled |
+| `NO_PLAYER` | Player not found or not in combat |
 | `PLAYER_DEAD` | Player is dead |
+| `CARD_NOT_FOUND` | Card ID not in hand |
+| `INVALID_CARD_INDEX` | nth out of range for duplicate cards |
+| `CANNOT_PLAY_CARD` | Card not playable (energy, blocked, etc.) |
+| `TARGET_REQUIRED` | Card/potion requires a target but none provided |
+| `TARGET_NOT_FOUND` | Enemy died or wrong combat_id |
+| `TARGET_NOT_ALLOWED` | Item does not accept a target (self/AoE/non-combat) |
+| `POTION_NOT_FOUND` | Potion ID not in belt |
+| `INVALID_POTION_SLOT` | nth out of range for duplicate potions |
+| `POTION_ALREADY_QUEUED` | Potion already queued for use |
+| `POTION_NOT_USABLE` | Potion fails custom usability check |
 | `NOT_IN_RUN` | No active run (AnyTime potion outside combat) |
 | `AUTOMATIC_POTION` | Potion is automatic, cannot be used manually |
-| `TARGET_NOT_ALLOWED` | Cannot target creatures outside combat |
-| `CARD_NOT_FOUND` | Card ID not in hand |
-| `CANNOT_PLAY_CARD` | Not enough energy or blocked |
-| `TARGET_NOT_FOUND` | Enemy died or wrong combat_id |
+| `ACTION_CANCELLED` | Action was cancelled by the game |
 
 **Hand Select** (`hand_select_card`, `hand_confirm_selection`):
 
@@ -695,7 +715,6 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `INVALID_SELECTION_COUNT` | Would exceed max selection count |
 | `CARD_NOT_FOUND` | Card ID not in selectable hand |
 | `CANNOT_CONFIRM` | Not enough cards selected to confirm |
-| `UI_NOT_FOUND` | Confirm button not found |
 
 **Grid Card Select** (`grid_select_card`, `grid_select_skip`):
 
@@ -710,8 +729,15 @@ Cards can have the following keywords. These are returned as strings in the `key
 
 | Error | Cause |
 |-------|-------|
+| `NOT_IN_EVENT` | Not currently in an event |
+| `NO_EVENT_LAYOUT` | Event layout not found |
+| `INVALID_OPTION_INDEX` | Option index out of range |
+| `OPTION_LOCKED` | Option is locked and cannot be selected |
+| `OPTION_BUTTON_NOT_FOUND` | Option button not found in UI |
+| `EVENT_TIMEOUT` | Event state did not change within timeout |
 | `NOT_ANCIENT_EVENT` | `advance_dialogue` on non-Ancient event |
 | `NOT_IN_DIALOGUE` | Dialogue already finished |
+| `DIALOGUE_HITBOX_NOT_FOUND` | Dialogue hitbox not found |
 
 **Rest Site** (`choose_rest_option`):
 
@@ -720,7 +746,6 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `NOT_AT_REST_SITE` | Not at a rest site |
 | `OPTION_NOT_FOUND` | Option ID not available |
 | `OPTION_DISABLED` | Option is disabled (e.g., SMITH with no upgradable cards) |
-| `OPTION_CANCELLED` | Option was cancelled (e.g., SMITH card selection skipped) |
 
 **Treasure Room** (`open_chest`, `pick_relic`):
 
@@ -751,12 +776,22 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `REWARD_NOT_FOUND` | No matching reward |
 | `AMBIGUOUS_REWARD` | nth!=0 but only one item |
 | `INVALID_REWARD_INDEX` | nth out of range |
-| `ID_MISMATCH` | Item doesn't match expected ID |
-| `NOT_CARD_REWARD` | Used card command on non-card reward |
+| `INVALID_REWARD_TYPE` | choose_card/skip_card only supports card type |
 | `USE_CHOOSE_CARD` | Used `reward_claim` on card reward |
+| `CARD_NOT_FOUND` | Card ID not found in card reward |
 | `POTION_BELT_FULL` | No empty potion slots |
 | `NOT_SUPPORTED` | Unsupported reward type |
 | `CLAIM_FAILED` | Unknown failure |
+
+**Proceed** (`proceed`):
+
+| Error | Cause |
+|-------|-------|
+| `NO_PROCEED_AVAILABLE` | Not on a screen that supports proceed |
+| `PROCEED_BUTTON_NOT_FOUND` | Proceed button not found |
+| `PROCEED_NOT_VISIBLE` | Proceed button is not visible |
+| `PROCEED_NOT_ENABLED` | Proceed button is not enabled |
+| `EVENT_NOT_FINISHED` | Event not finished, use choose_event first |
 
 **Tri Select** (`tri_select_card`, `tri_select_skip`):
 
@@ -767,7 +802,6 @@ Cards can have the following keywords. These are returned as strings in the `key
 | `SKIP_BUTTON_NOT_FOUND` | Skip button unavailable |
 | `INVALID_SELECTION_COUNT` | Wrong number of cards |
 | `DUPLICATE_SELECTION` | Same card selected twice |
-| `NO_CARDS_AVAILABLE` | Empty selection screen |
 
 **Relic Select** (`relic_select`, `relic_skip`):
 

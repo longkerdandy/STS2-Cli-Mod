@@ -109,17 +109,21 @@ internal static class CommandExecutor
                 "ACTIONS_DISABLED" or "NO_PLAYER" or "PLAYER_DEAD" or
                 "CANNOT_PLAY_CARD" or "ACTION_CANCELLED" or
                 "POTION_ALREADY_QUEUED" or "POTION_NOT_USABLE" or
-                "NO_PROCEED_AVAILABLE" or "UNSUPPORTED_EVENT" or "PROCEED_BUTTON_NOT_FOUND" or "PROCEED_NOT_VISIBLE" or "PROCEED_NOT_ENABLED" or "POTION_BELT_FULL" or
+                "NOT_IN_RUN" or "AUTOMATIC_POTION" or
+                "NO_PROCEED_AVAILABLE" or "PROCEED_BUTTON_NOT_FOUND" or
+                "PROCEED_NOT_VISIBLE" or "PROCEED_NOT_ENABLED" or
+                "EVENT_NOT_FINISHED" or "POTION_BELT_FULL" or
                 "NOT_SUPPORTED" or "CLAIM_FAILED" or
                 "NOT_IN_EVENT" or "NO_EVENT_LAYOUT" or
                 "OPTION_LOCKED" or "OPTION_BUTTON_NOT_FOUND" or
                 "NOT_ANCIENT_EVENT" or "NOT_IN_DIALOGUE" or "DIALOGUE_HITBOX_NOT_FOUND" or
-                "NOT_IN_POTION_SELECTION" or "CANNOT_SKIP" or
-                "SKIP_BUTTON_NOT_FOUND" or "NO_CARDS_AVAILABLE" or
+                "CANNOT_SKIP" or "SKIP_BUTTON_NOT_FOUND" or
+                "NOT_ON_REWARD_SCREEN" or "NOT_IN_TRI_SELECT" or
                 "NOT_IN_CHARACTER_SELECT" or "CHARACTER_LOCKED" or
                 "NO_CHARACTER_SELECTED" or "EMBARK_BUTTON_NOT_FOUND" or "EMBARK_NOT_AVAILABLE" or
                 "NOT_IN_GRID_CARD_SELECT" or
                 "NOT_IN_HAND_SELECT" or "CANNOT_CONFIRM" or
+                "NOT_IN_RELIC_SELECT" or
                 "NOT_IN_BUNDLE_SELECT" or "PREVIEW_ALREADY_OPEN" or
                 "NO_BUNDLES_AVAILABLE" or "CANNOT_CANCEL" or
                 "NOT_IN_CRYSTAL_SPHERE" or "TOOL_NOT_AVAILABLE" or
@@ -127,12 +131,13 @@ internal static class CommandExecutor
                 "CELL_NOT_CLICKABLE" or "CANNOT_PROCEED" or
                 "NOT_ON_MAP" or "NO_RUN_STATE" or "NOT_TRAVELABLE" or
                 "TRAVEL_DISABLED" or
-                "NOT_AT_REST_SITE" or "OPTION_DISABLED" or "OPTION_CANCELLED" or
+                "NOT_AT_REST_SITE" or "OPTION_DISABLED" or
                 "NOT_IN_TREASURE_ROOM" or "CHEST_ALREADY_OPENED" or "NO_RELICS_AVAILABLE" or
                 "NOT_IN_SHOP" or "ITEM_SOLD_OUT" or "NOT_ENOUGH_GOLD" or
                 "CARD_REMOVAL_USED" or "PURCHASE_FAILED" or
                 "NOT_ON_MENU" or "NO_SAVED_RUN" or "RUN_SAVE_EXISTS" or
                 "NOT_ON_SINGLEPLAYER_SUBMENU" or "MODE_NOT_UNLOCKED" or
+                "NOT_ON_GAME_OVER_SCREEN" or "NO_ACTIVE_RUN" or
                 "BUTTON_NOT_FOUND" or "BUTTON_DISABLED" or
                 "ACTION_FAILED" => ExitInvalidState,
 
@@ -141,10 +146,10 @@ internal static class CommandExecutor
                 "INVALID_CARD_INDEX" or "INVALID_OPTION_INDEX" or
                 "TARGET_REQUIRED" or "TARGET_NOT_FOUND" or
                 "TARGET_NOT_ALLOWED" or "INVALID_POTION_SLOT" or
-                "EMPTY_POTION_SLOT" or "INVALID_REWARD_INDEX" or
-                "NOT_CARD_REWARD" or "USE_CHOOSE_CARD" or
-                "CARD_NOT_FOUND" or "POTION_NOT_FOUND" or "AMBIGUOUS_ID" or
-                "INVALID_REWARD_TYPE" or "REWARD_NOT_FOUND" or "ID_MISMATCH" or
+                "INVALID_REWARD_INDEX" or
+                "INVALID_REWARD_TYPE" or "USE_CHOOSE_CARD" or
+                "CARD_NOT_FOUND" or "POTION_NOT_FOUND" or
+                "REWARD_NOT_FOUND" or
                 "AMBIGUOUS_REWARD" or "INVALID_SELECTION_COUNT" or
                 "DUPLICATE_SELECTION" or "CHARACTER_NOT_FOUND" or
                 "INVALID_ASCENSION_LEVEL" or "UI_NOT_FOUND" or
