@@ -1,12 +1,16 @@
 using MegaCrit.Sts2.Core.Nodes.CommonUi;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Nodes.Screens.CharacterSelect;
+using MegaCrit.Sts2.Core.Nodes.Screens.Map;
+using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
 ///     Handles the <c>embark</c> CLI command.
-///     Clicks the Embark button to start the game from character select.
+///     Clicks the Embark button to start the game from character select,
+///     then waits for the destination screen (map or Neow event) to appear before returning.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -19,16 +23,12 @@ public static class EmbarkHandler
     private static readonly ModLogger Logger = new("EmbarkHandler");
 
     /// <summary>
-    ///     Clicks the Embark button to start the game.
+    ///     Clicks the Embark button to start the game, then polls until the destination screen appears.
+    ///     If NeowEpoch is unlocked, the game enters the Neow Ancient event; otherwise, the map opens directly.
     ///     Validates the current screen state and returns a response indicating success or failure.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static Task<object> ExecuteAsync()
-    {
-        return Task.FromResult<object>(ExecuteCore());
-    }
-
-    private static object ExecuteCore()
+    public static async Task<object> ExecuteAsync()
     {
         Logger.Info("Requested to embark");
 
@@ -87,10 +87,34 @@ public static class EmbarkHandler
         Logger.Info("Clicking embark button");
         embarkBtn.ForceClick();
 
+        // Wait for the run to load: either the map screen opens (no Neow)
+        // or an event room appears (Neow Ancient event when NeowEpoch is unlocked)
+        await Task.Delay(ActionUtils.PostClickDelayMs);
+        var screenReady = await ActionUtils.PollUntilAsync(
+            () => NMapScreen.Instance is { IsOpen: true } ||
+                  NEventRoom.Instance is { } er && er.IsInsideTree(),
+            ActionUtils.ActionTimeoutMs);
+
+        if (!screenReady)
+        {
+            Logger.Warning("Timed out waiting for map or event screen after embark");
+            return new
+            {
+                ok = true,
+                data = new { embarked = true },
+                warning = "Timed out waiting for destination screen"
+            };
+        }
+
+        // Detect which screen we landed on
+        var screen_name = NEventRoom.Instance is { } eventRoom && eventRoom.IsInsideTree()
+            ? "EVENT"
+            : "MAP";
+        Logger.Info($"Embark completed, landed on {screen_name} screen");
         return new
         {
             ok = true,
-            data = new { embarked = true }
+            data = new { embarked = true, screen = screen_name }
         };
     }
 }
