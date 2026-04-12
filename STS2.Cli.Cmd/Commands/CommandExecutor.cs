@@ -176,6 +176,6 @@ internal static class CommandExecutor
     private static void WriteError(string error, string message, JsonSerializerOptions options)
     {
         var response = new { ok = false, error, message };
-        Console.Error.WriteLine(JsonSerializer.Serialize(response, options));
+        Console.WriteLine(JsonSerializer.Serialize(response, options));
     }
 }
