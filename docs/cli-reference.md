@@ -38,6 +38,14 @@ Get full game state. See [Game State Structure](#game-state-structure) below.
 **Options:**
 - `--include-pile-details` — Include full card descriptions in draw/discard/exhaust pile listings. Default is off to reduce payload size.
 
+#### view_deck
+
+```
+./sts2 view_deck
+```
+
+View the master deck (all cards collected during the run). Available at any point during a run -- map, combat, shop, event, rest site, etc. Returns `{count, cards[]}` where each card is a [Pile Card Object](#pile-card-object-drawdiscardexhaust) with description always included.
+
 ---
 
 ### Main Menu
@@ -420,6 +428,7 @@ data
 │                       # BUNDLE_SELECT | CRYSTAL_SPHERE
 │                       # GAME_OVER | UNKNOWN
 ├── timestamp           # Unix ms
+├── error               # string?, error message if state extraction failed
 │
 ├── menu                      # Only when screen is MENU
 │   └── has_run_save        # bool, true if a saved run exists (continue_run available)
@@ -492,7 +501,7 @@ data
 │   └── can_proceed         # bool, true when proceed button is enabled
 │
 ├── rewards
-│   ├── can_skip            # bool, false when rewards are mandatory (e.g., NeowsBones relic)
+│   ├── can_skip            # bool?, false when rewards are mandatory (e.g., NeowsBones relic)
 │   └── rewards[]
 ├── tri_select
 │   ├── selection_type, min_select, max_select, can_skip
@@ -534,8 +543,8 @@ data
 | `id` | string | Card identifier (use with `play_card`) |
 | `name` | string | Display name |
 | `description` | string | Card effect text |
-| `type` | string | `Attack`, `Skill`, `Power`, `Status`, `Curse` |
-| `rarity` | string | `Basic`, `Common`, `Uncommon`, `Rare`, `Ancient`, `Event`, `Token`, `Status`, `Curse` |
+| `type` | string | `Attack`, `Skill`, `Power`, `Status`, `Curse`, `Quest` |
+| `rarity` | string | `Basic`, `Common`, `Uncommon`, `Rare`, `Ancient`, `Event`, `Token`, `Status`, `Curse`, `Quest` |
 | `target_type` | string | `None`, `Self`, `AnyEnemy`, `AllEnemies`, `RandomEnemy`, `AnyAlly`, etc. |
 | `cost` | int | Energy cost (-1 = X-cost) |
 | `star_cost` | int? | Regent only (-1 = X-star) |
@@ -555,8 +564,8 @@ data
 |-------|------|-------------|
 | `id` | string | Card identifier |
 | `name` | string | Display name |
-| `type` | string | `Attack`, `Skill`, `Power`, `Status`, `Curse` |
-| `rarity` | string | `Basic`, `Common`, `Uncommon`, `Rare`, `Ancient`, `Event`, `Token`, `Status`, `Curse` |
+| `type` | string | `Attack`, `Skill`, `Power`, `Status`, `Curse`, `Quest` |
+| `rarity` | string | `Basic`, `Common`, `Uncommon`, `Rare`, `Ancient`, `Event`, `Token`, `Status`, `Curse`, `Quest` |
 | `cost` | int | Energy cost |
 | `keywords` | string[] | Active keywords |
 | `is_upgraded` | bool | Whether upgraded |
@@ -574,21 +583,23 @@ data
 | `is_alive` | bool | Alive status |
 | `is_minion` | bool | Summoned minion |
 | `move_id` | string | Current move |
-| `intents[]` | array | `{type, damage?, hits?}` -- damage is **per hit** |
+| `intents[]` | array | `{type, damage?, hits?, description}` -- damage is **per hit** |
 | `powers[]` | array | `{id, name, amount, type, stack_type, description}` |
 
 ### Sub-objects
 
-- **Relic**: `{id, name, description, rarity}`
+- **Relic**: `{id, name, description, rarity, status, counter?}` -- status: `Normal|Active|Disabled`; counter is null if the relic has no counter
 - **Potion**: `{slot, id, name, description, rarity, usage, target_type}`
+- **Orb**: `{id, name, passive_value, evoke_value}` -- Defect only; passive/evoke values are affected by Focus
+- **Pet**: `{combat_id, id, name, is_alive, hp, max_hp, block, powers[]}` -- Necrobinder only (e.g., Osty, Byrdpip)
 - **Power**: `{id, name, amount, type, stack_type, description}`
-- **Reward Item**: `{index, type, description, gold_amount?, potion_id?, potion_name?, potion_rarity?, relic_id?, relic_name?, relic_description?, relic_rarity?, card_choices[]?, card_id?, card_name?}` -- type is `Gold`, `Potion`, `Relic`, `Card`, `SpecialCard`, `CardRemoval`
+- **Reward Item**: `{index, type, description, gold_amount?, potion_id?, potion_name?, potion_rarity?, relic_id?, relic_name?, relic_description?, relic_rarity?, card_choices[]?, card_id?, card_name?}` -- type is `Gold`, `Potion`, `Relic`, `Card`, `SpecialCard`, `CardRemoval`, `LinkedRewardSet`
 - **Card Choice** (in reward): `{index, id, name, description, type, rarity, cost, is_upgraded}`
-- **Event Option**: `{index, title, description, is_locked, is_proceed, relic_id?}`
+- **Event Option**: `{index, title, description?, text_key?, is_locked, is_proceed, was_chosen, relic_id?, relic_name?}`
 - **Selectable Card** (tri select / grid select): `{index, card_id, card_name, description, card_type, cost}`
 - **Hand Select Card**: `{index, card_id, card_name, card_type, cost, description}` -- card in hand selection mode
 - **Character Option**: `{character_id, character_name, is_locked, is_selected}`
-- **Map Node**: `{col, row, type, state, children[], parents[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE|NONE`; children/parents are `[{col, row}]`
+- **Map Node**: `{col, row, type, state, children[]}` -- type: `MONSTER|ELITE|BOSS|SHOP|REST_SITE|TREASURE|ANCIENT|UNASSIGNED|UNKNOWN`; state: `TRAVELABLE|TRAVELED|UNTRAVELABLE`; children are `[{col, row}]`
 - **Rest Site Option**: `{index, option_id, name, description, is_enabled}` -- option_id: `HEAL`, `SMITH`, `MEND`, `LIFT`, `DIG`, `HATCH`, `COOK`, `CLONE`
 - **Treasure Relic**: `{index, id, name, description, rarity}` -- relic available from an opened treasure chest
 - **Shop Card**: `{index, card_id, card_name, description, card_type, rarity, cost, is_on_sale, is_stocked}` -- card for sale in shop
