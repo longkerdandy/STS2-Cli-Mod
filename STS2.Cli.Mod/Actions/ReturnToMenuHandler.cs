@@ -1,6 +1,7 @@
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.GameOverScreen;
 using MegaCrit.Sts2.Core.Nodes.Screens.Overlays;
+using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -8,13 +9,16 @@ namespace STS2.Cli.Mod.Actions;
 
 /// <summary>
 ///     Handles the return_to_menu command from the game over screen.
+///     Clicks the main menu button and waits for the main menu to appear before returning.
 /// </summary>
 internal static class ReturnToMenuHandler
 {
     private static readonly ModLogger Logger = new("ReturnToMenuHandler");
 
     /// <summary>
-    ///     Executes the return to menu action.
+    ///     Clicks the main menu button on the game over screen, then polls until the main menu appears.
+    ///     Validates the current screen state and returns a response indicating success or failure.
+    ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
     public static async Task<object> ExecuteAsync()
     {
@@ -69,10 +73,24 @@ internal static class ReturnToMenuHandler
             Logger.Info("Clicking main menu button");
             mainMenuButton.EmitSignal(NClickableControl.SignalName.Released, mainMenuButton);
 
-            // Wait a moment for the transition to start (non-blocking)
-            await Task.Delay(100);
+            // Wait for the main menu to appear (scene unload + menu load)
+            await Task.Delay(ActionUtils.PostClickDelayMs);
+            var menuReady = await ActionUtils.PollUntilAsync(
+                () => UiUtils.FindMainMenu() != null,
+                ActionUtils.ActionTimeoutMs);
 
-            Logger.Info("Return to menu initiated successfully");
+            if (!menuReady)
+            {
+                Logger.Warning("Timed out waiting for main menu after return_to_menu");
+                return new
+                {
+                    ok = true,
+                    data = new { action = "RETURN_TO_MENU" },
+                    warning = "Timed out waiting for main menu to appear"
+                };
+            }
+
+            Logger.Info("Return to menu completed successfully");
             return new { ok = true, data = new { action = "RETURN_TO_MENU", screen = "MENU" } };
         }
         catch (Exception ex)

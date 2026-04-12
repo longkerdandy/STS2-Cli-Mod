@@ -2,6 +2,7 @@ using MegaCrit.Sts2.Core.Nodes;
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.MainMenu;
 using MegaCrit.Sts2.Core.Saves;
+using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
@@ -24,7 +25,8 @@ public static class NewRunHandler
     private static readonly ModLogger Logger = new("NewRunHandler");
 
     /// <summary>
-    ///     Clicks the Singleplayer button on the main menu.
+    ///     Clicks the Singleplayer button on the main menu, then polls until the destination screen appears.
+    ///     If NumberOfRuns > 0, waits for the singleplayer submenu; if NumberOfRuns == 0, waits for character select.
     ///     Validates the current screen state and saved run existence.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
@@ -84,11 +86,31 @@ public static class NewRunHandler
             Logger.Info("Clicking Singleplayer button");
             singleplayerButton.EmitSignal(NClickableControl.SignalName.Released, singleplayerButton);
 
-            // Wait a moment for the UI transition (non-blocking)
-            await Task.Delay(100);
+            // Wait for the destination screen: singleplayer submenu (NumberOfRuns > 0)
+            // or character select (NumberOfRuns == 0, first game ever)
+            await Task.Delay(ActionUtils.PostClickDelayMs);
+            var screenReady = await ActionUtils.PollUntilAsync(
+                () => UiUtils.FindSingleplayerSubmenu() != null ||
+                      UiUtils.FindCharacterSelectScreen() != null,
+                ActionUtils.UiTimeoutMs);
 
-            Logger.Info("New run initiated successfully");
-            return new { ok = true, data = new { action = "NEW_RUN" } };
+            if (!screenReady)
+            {
+                Logger.Warning("Timed out waiting for submenu or character select after new_run");
+                return new
+                {
+                    ok = true,
+                    data = new { action = "NEW_RUN" },
+                    warning = "Timed out waiting for destination screen"
+                };
+            }
+
+            // Detect which screen we landed on
+            var screen = UiUtils.FindCharacterSelectScreen() != null
+                ? "CHARACTER_SELECT"
+                : "SINGLEPLAYER_SUBMENU";
+            Logger.Info($"New run initiated, landed on {screen} screen");
+            return new { ok = true, data = new { action = "NEW_RUN", screen } };
         }
         catch (Exception ex)
         {

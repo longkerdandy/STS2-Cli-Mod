@@ -1,4 +1,5 @@
 using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
+using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
@@ -21,7 +22,8 @@ public static class ChooseGameModeHandler
     private static readonly ModLogger Logger = new("ChooseGameModeHandler");
 
     /// <summary>
-    ///     Clicks the corresponding button on the singleplayer submenu.
+    ///     Clicks the corresponding button on the singleplayer submenu,
+    ///     then polls until the character select screen appears.
     ///     Validates parameters and current screen state.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
@@ -97,11 +99,25 @@ public static class ChooseGameModeHandler
             Logger.Info($"Clicking {buttonName}");
             button.EmitSignal(NClickableControl.SignalName.Released, button);
 
-            // Wait a moment for the UI transition (non-blocking)
-            await Task.Delay(100);
+            // Wait for the character select screen to appear
+            await Task.Delay(ActionUtils.PostClickDelayMs);
+            var screenReady = await ActionUtils.PollUntilAsync(
+                () => UiUtils.FindCharacterSelectScreen() != null,
+                ActionUtils.UiTimeoutMs);
 
-            Logger.Info($"Game mode '{mode}' selected successfully");
-            return new { ok = true, data = new { action = "CHOOSE_GAME_MODE", mode } };
+            if (!screenReady)
+            {
+                Logger.Warning($"Timed out waiting for character select after choosing game mode '{mode}'");
+                return new
+                {
+                    ok = true,
+                    data = new { action = "CHOOSE_GAME_MODE", mode },
+                    warning = "Timed out waiting for character select screen"
+                };
+            }
+
+            Logger.Info($"Game mode '{mode}' selected, character select screen ready");
+            return new { ok = true, data = new { action = "CHOOSE_GAME_MODE", mode, screen = "CHARACTER_SELECT" } };
         }
         catch (Exception ex)
         {
