@@ -5,6 +5,7 @@ using MegaCrit.Sts2.Core.Nodes.GodotExtensions;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
 using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.Models.Messages;
+using STS2.Cli.Mod.State;
 using STS2.Cli.Mod.Utils;
 
 namespace STS2.Cli.Mod.Actions;
@@ -35,16 +36,12 @@ public static class TriSelectCardHandler
     private static readonly ModLogger Logger = new("TriSelectCardHandler");
 
     /// <summary>
-    ///     Selects a card from the "choose a card" selection screen by card ID.
+    ///     Selects a card from the "choose a card" selection screen by card ID,
+    ///     then waits for the selection screen to close before returning.
     ///     Validates parameters and current screen state.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static Task<object> ExecuteAsync(Request request)
-    {
-        return Task.FromResult<object>(ExecuteCore(request));
-    }
-
-    private static object ExecuteCore(Request request)
+    public static async Task<object> ExecuteAsync(Request request)
     {
         if (request.CardIds == null || request.CardIds.Length == 0)
         {
@@ -120,10 +117,18 @@ public static class TriSelectCardHandler
                 selectedCardIds.Add(cardId);
 
                 // Small delay between clicks for multi-select
-                if (i < cardIds.Length - 1) OS.DelayMsec(ActionUtils.ClickDelayMs);
+                if (i < cardIds.Length - 1) await Task.Delay(ActionUtils.ClickDelayMs);
             }
 
-            Logger.Info($"Successfully selected {selectedCardIds.Count} card(s)");
+            // Wait for the selection screen to close
+            await Task.Delay(ActionUtils.PostClickDelayMs);
+            var completed = await WaitForScreenRemoval(selectionScreen);
+
+            if (!completed)
+                Logger.Warning("Tri-select screen was not dismissed in time after card selection");
+
+            var screen = StateHandler.DetectScreen();
+            Logger.Info($"Tri-select completed, selected {selectedCardIds.Count} card(s), now on {screen}");
 
             return new
             {
@@ -132,7 +137,7 @@ public static class TriSelectCardHandler
                 {
                     selected_count = selectedCardIds.Count,
                     selected_cards = selectedCardIds,
-                    message = $"Successfully selected {selectedCardIds.Count} card(s)"
+                    screen
                 }
             };
         }
@@ -144,16 +149,12 @@ public static class TriSelectCardHandler
     }
 
     /// <summary>
-    ///     Skips the current card selection if allowed.
+    ///     Skips the current card selection if allowed,
+    ///     then waits for the selection screen to close before returning.
     ///     Validates current screen state.
     ///     Must be called on the Godot main thread (via <see cref="MainThreadExecutor" />).
     /// </summary>
-    public static Task<object> ExecuteSkipAsync(Request request)
-    {
-        return Task.FromResult<object>(ExecuteSkipCore(request));
-    }
-
-    private static object ExecuteSkipCore(Request _)
+    public static async Task<object> ExecuteSkipAsync(Request request)
     {
         Logger.Info("Requested to skip tri-select card selection");
 
@@ -193,10 +194,20 @@ public static class TriSelectCardHandler
             Logger.Info("Skipping tri-select card selection");
             skipButton.ForceClick();
 
+            // Wait for the selection screen to close
+            await Task.Delay(ActionUtils.PostClickDelayMs);
+            var completed = await WaitForScreenRemoval(selectionScreen);
+
+            if (!completed)
+                Logger.Warning("Tri-select screen was not dismissed in time after skip");
+
+            var screen = StateHandler.DetectScreen();
+            Logger.Info($"Tri-select skip completed, now on {screen}");
+
             return new
             {
                 ok = true,
-                data = new { skipped = true }
+                data = new { skipped = true, screen }
             };
         }
         catch (Exception ex)
@@ -268,5 +279,16 @@ public static class TriSelectCardHandler
         {
             return false;
         }
+    }
+
+    /// <summary>
+    ///     Waits for the tri-select screen to be removed from the scene tree.
+    ///     Uses <see cref="ActionUtils.PollUntilAsync" /> to avoid blocking the Godot main thread.
+    /// </summary>
+    private static async Task<bool> WaitForScreenRemoval(NChooseACardSelectionScreen screen)
+    {
+        return await ActionUtils.PollUntilAsync(
+            () => !GodotObject.IsInstanceValid(screen) || !screen.IsInsideTree(),
+            ActionUtils.UiTimeoutMs);
     }
 }
