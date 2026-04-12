@@ -140,12 +140,18 @@ public static class ProceedHandler
 
         if (!proceedButton.IsEnabled)
         {
-            Logger.Warning("NProceedButton is not enabled");
+            // Check if skipping is disallowed (mandatory rewards like NeowsBones)
+            var skipDisallowed = UiUtils.GetPrivateFieldValue<bool>(screen, "_skipDisallowed") ?? false;
+            var message = skipDisallowed
+                ? "All rewards must be claimed before proceeding (skipping is not allowed)"
+                : "Proceed button is not enabled";
+
+            Logger.Warning($"NProceedButton is not enabled (skipDisallowed={skipDisallowed})");
             return new
             {
                 ok = false,
                 error = "PROCEED_NOT_ENABLED",
-                message = "Proceed button is not enabled"
+                message
             };
         }
 

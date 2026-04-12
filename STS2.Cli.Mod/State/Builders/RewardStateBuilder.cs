@@ -36,6 +36,10 @@ public static class RewardStateBuilder
 
             var result = new RewardStateDto();
 
+            // Check if skipping is disallowed (e.g., NeowsBones relic rewards)
+            var skipDisallowed = UiUtils.GetPrivateFieldValue<bool>(screen, "_skipDisallowed") ?? false;
+            result.CanSkip = !skipDisallowed;
+
             var rewardsContainer = screen.GetNodeOrNull<Control>("%RewardsContainer");
             if (rewardsContainer == null)
             {

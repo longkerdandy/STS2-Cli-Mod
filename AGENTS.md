@@ -7,6 +7,8 @@
 
 A CLI control mod for Slay the Spire 2. Two independent .NET 9 / C# 12 projects communicating via Named Pipe with JSON messages.
 
+**Supported game version: v0.103.0** (Steam Build 22722129, 2026-04-09)
+
 ## Architecture
 
 ```
@@ -16,7 +18,7 @@ Agent -> sts2 CLI (STS2.Cli.Cmd) -> Named Pipe -> C# Mod (STS2.Cli.Mod, in-proce
 - **STS2.Cli.Mod/**: In-process game mod. References `sts2.dll` and `GodotSharp.dll` from the game directory. One NuGet package (`System.IO.Pipes.AccessControl` for Windows pipe ACL). Runs inside Godot 4.5.1 engine.
 - **STS2.Cli.Cmd/**: Standalone CLI tool. Depends on `System.CommandLine`. Outputs JSON to stdout/stderr.
 - The two projects share no code. `Request` models are intentionally duplicated. Mod-side responses use anonymous types exclusively; only the CLI has a `Response` DTO.
-- **Directory.Build.props**: Centralized `<Version>` property (currently `0.102.0-dev`) applied to all projects. The mod manifest version is injected at build time via `$VERSION$` placeholder in `STS2.Cli.Mod.json.template`.
+- **Directory.Build.props**: Centralized `<Version>` property (currently `0.103.0`) applied to all projects. The mod manifest version is injected at build time via `$VERSION$` placeholder in `STS2.Cli.Mod.json.template`.
 
 ## Installation
 

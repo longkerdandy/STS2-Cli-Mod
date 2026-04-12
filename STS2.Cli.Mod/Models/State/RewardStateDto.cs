@@ -16,4 +16,10 @@ public class RewardStateDto
     ///     Ordered by their position in the UI (index 0 = top reward).
     /// </summary>
     public List<RewardItemDto> Rewards { get; set; } = [];
+
+    /// <summary>
+    ///     Whether the reward screen allows skipping (proceeding without claiming all rewards).
+    ///     False when rewards are mandatory (e.g., from NeowsBones relic).
+    /// </summary>
+    public bool? CanSkip { get; set; }
 }

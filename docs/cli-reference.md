@@ -140,7 +140,7 @@ End turn. Response contains all enemy action results -- always read it.
 ./sts2 use_potion <potion_id> [--nth <n>] [--target <combat_id>]
 ```
 
-Use a potion. `--target` required for enemy-targeting potions. Some potions open a card selection screen (screen becomes `TRI_SELECT`) -- use `tri_select_card` or `tri_select_skip` to complete.
+Use a potion. `--target` required for enemy-targeting potions. Some potions open a card selection screen (screen becomes `TRI_SELECT`) -- use `tri_select_card` or `tri_select_skip` to complete. Potions with `usage: AnyTime` (e.g., Blood Potion, Fruit Juice, Entropic Brew, Foul Potion) can be used outside combat -- `--target` is not allowed outside combat.
 
 ---
 
@@ -492,6 +492,7 @@ data
 │   └── can_proceed         # bool, true when proceed button is enabled
 │
 ├── rewards
+│   ├── can_skip            # bool, false when rewards are mandatory (e.g., NeowsBones relic)
 │   └── rewards[]
 ├── tri_select
 │   ├── selection_type, min_select, max_select, can_skip
@@ -677,6 +678,11 @@ Cards can have the following keywords. These are returned as strings in the `key
 |-------|-------|
 | `NOT_IN_COMBAT` | Combat ended |
 | `COMBAT_ENDING` | Combat resolving |
+| `NOT_PLAYER_TURN` | Not in play phase |
+| `PLAYER_DEAD` | Player is dead |
+| `NOT_IN_RUN` | No active run (AnyTime potion outside combat) |
+| `AUTOMATIC_POTION` | Potion is automatic, cannot be used manually |
+| `TARGET_NOT_ALLOWED` | Cannot target creatures outside combat |
 | `CARD_NOT_FOUND` | Card ID not in hand |
 | `CANNOT_PLAY_CARD` | Not enough energy or blocked |
 | `TARGET_NOT_FOUND` | Enemy died or wrong combat_id |

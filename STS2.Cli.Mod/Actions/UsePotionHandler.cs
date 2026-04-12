@@ -3,10 +3,12 @@ using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Entities.Actions;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.Entities.Players;
+using MegaCrit.Sts2.Core.Entities.Potions;
 using MegaCrit.Sts2.Core.GameActions;
 using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Nodes.Combat;
 using MegaCrit.Sts2.Core.Nodes.Screens.CardSelection;
+using MegaCrit.Sts2.Core.Runs;
 using STS2.Cli.Mod.Actions.Utils;
 using STS2.Cli.Mod.Models.Messages;
 using STS2.Cli.Mod.State.Builders;
@@ -80,22 +82,29 @@ public static class UsePotionHandler
 
         try
         {
-            // --- Validation (synchronous, single frame) ---
+            // --- Determine combat context ---
 
-            var combatError = ActionUtils.ValidateCombatReady();
-            if (combatError != null) return combatError;
+            var isInCombat = CombatManager.Instance.IsInProgress;
 
-            var player = ActionUtils.GetLocalPlayer();
-            if (player?.PlayerCombatState == null)
-                return new { ok = false, error = "NO_PLAYER", message = "Player not found or not in combat" };
+            // --- Get player from appropriate source ---
 
-            if (!player.Creature.IsAlive)
-                return new { ok = false, error = "PLAYER_DEAD", message = "Player is dead - cannot use potions" };
+            var player = isInCombat
+                ? ActionUtils.GetLocalPlayer()
+                : ActionUtils.GetLocalPlayerFromRun();
 
-            // Find potion by ID
+            if (player == null)
+                return new { ok = false, error = "NO_PLAYER", message = "Player not found" };
+
+            // --- Find potion first (needed to check Usage type) ---
+
             var (potion, slot, findError) = FindPotionById(player, potionId, nth);
             if (findError != null)
                 return findError;
+
+            // --- Validate based on potion usage type ---
+
+            var usageError = ValidatePotionUsage(potion, player, isInCombat);
+            if (usageError != null) return usageError;
 
             if (potion.IsQueued)
                 return new
@@ -111,21 +120,35 @@ public static class UsePotionHandler
                     message = $"Potion '{potion.Title}' cannot be used right now"
                 };
 
-            // Resolve target based on potion's TargetType
-            var (target, targetError) = ActionUtils.ResolveTarget(
-                player, potion.TargetType, targetCombatId, potion.Title.ToString() ?? potion.Id.Entry);
-            if (targetError != null)
-                return targetError;
+            // --- Resolve target ---
+
+            Creature? target = null;
+            if (isInCombat)
+            {
+                var (t, targetError) = ActionUtils.ResolveTarget(
+                    player, potion.TargetType, targetCombatId, potion.Title.ToString() ?? potion.Id.Entry);
+                if (targetError != null)
+                    return targetError;
+                target = t;
+            }
+            else if (targetCombatId != null)
+            {
+                return new
+                {
+                    ok = false, error = "TARGET_NOT_ALLOWED",
+                    message = "Cannot target creatures outside combat"
+                };
+            }
 
             // --- Enqueue and execute ---
 
-            if (RequiresCardSelection(potion.Id.Entry))
+            if (isInCombat && RequiresCardSelection(potion.Id.Entry))
             {
                 Logger.Info($"Potion '{potion.Title}' requires card selection, monitoring for selection screen");
                 return await EnqueueWithCardSelectionAsync(potion, slot, target, targetCombatId);
             }
 
-            return await EnqueueAndAwaitResultsAsync(potion, slot, target, targetCombatId);
+            return await EnqueueAndAwaitResultsAsync(potion, slot, target, targetCombatId, isInCombat);
         }
         catch (Exception ex)
         {
@@ -140,14 +163,14 @@ public static class UsePotionHandler
     ///     Enqueues a standard potion action and waits for completion, then collects results.
     /// </summary>
     private static async Task<object> EnqueueAndAwaitResultsAsync(
-        PotionModel potion, int slot, Creature? target, int? targetCombatId)
+        PotionModel potion, int slot, Creature? target, int? targetCombatId, bool isInCombat = true)
     {
-        var historyBefore = CombatManager.Instance.History.Entries.Count();
+        var historyBefore = isInCombat ? CombatManager.Instance.History.Entries.Count() : 0;
         var action = CreateAction(potion, slot, target);
 
         var finalState = await ActionUtils.EnqueueAndAwaitAsync(action, ActionUtils.ActionTimeoutMs);
 
-        return HandleActionResult(finalState, potion, slot, targetCombatId, historyBefore);
+        return HandleActionResult(finalState, potion, slot, targetCombatId, historyBefore, isInCombat);
     }
 
     /// <summary>
@@ -228,6 +251,64 @@ public static class UsePotionHandler
     }
 
     // ── Potion classification ────────────────────────────────────────
+
+    /// <summary>
+    ///     Validates whether the potion can be used based on its <see cref="PotionUsage" /> type
+    ///     and the current combat context.
+    ///     <list type="bullet">
+    ///         <item><c>CombatOnly</c>: requires full combat readiness (play phase, actions enabled, player alive).</item>
+    ///         <item><c>AnyTime</c>: requires an active run; in combat, only checks not ending and player alive.</item>
+    ///         <item><c>Automatic</c>: cannot be used manually.</item>
+    ///     </list>
+    /// </summary>
+    /// <returns>An error response object if validation fails, or <c>null</c> if the potion can be used.</returns>
+    private static object? ValidatePotionUsage(PotionModel potion, Player player, bool isInCombat)
+    {
+        switch (potion.Usage)
+        {
+            case PotionUsage.CombatOnly:
+            {
+                var combatError = ActionUtils.ValidateCombatReady();
+                if (combatError != null) return combatError;
+                if (!player.Creature.IsAlive)
+                    return new { ok = false, error = "PLAYER_DEAD", message = "Player is dead - cannot use potions" };
+                break;
+            }
+            case PotionUsage.AnyTime:
+            {
+                if (!RunManager.Instance.IsInProgress)
+                    return new { ok = false, error = "NOT_IN_RUN", message = "No active run" };
+                if (isInCombat)
+                {
+                    if (CombatManager.Instance.IsOverOrEnding)
+                        return new
+                        {
+                            ok = false, error = "COMBAT_ENDING", message = "Combat is over or ending"
+                        };
+                    if (!player.Creature.IsAlive)
+                        return new
+                        {
+                            ok = false, error = "PLAYER_DEAD", message = "Player is dead - cannot use potions"
+                        };
+                }
+                break;
+            }
+            case PotionUsage.Automatic:
+                return new
+                {
+                    ok = false, error = "AUTOMATIC_POTION",
+                    message = $"Potion '{potion.Title}' is automatic and cannot be used manually"
+                };
+            default:
+                return new
+                {
+                    ok = false, error = "POTION_NOT_USABLE",
+                    message = $"Potion '{potion.Title}' cannot be used (usage type: {potion.Usage})"
+                };
+        }
+
+        return null;
+    }
 
     /// <summary>
     ///     Checks if a potion requires any form of card selection when used.
@@ -384,7 +465,8 @@ public static class UsePotionHandler
     ///     Converts a completed (or timed-out / cancelled) action into a response object.
     /// </summary>
     private static object HandleActionResult(
-        GameActionState? finalState, PotionModel potion, int slot, int? targetCombatId, int historyBefore)
+        GameActionState? finalState, PotionModel potion, int slot, int? targetCombatId, int historyBefore,
+        bool isInCombat = true)
     {
         if (finalState == null)
         {
@@ -402,7 +484,7 @@ public static class UsePotionHandler
             };
         }
 
-        var results = CombatHistoryUtils.BuildFromHistory(historyBefore);
+        var results = isInCombat ? CombatHistoryUtils.BuildFromHistory(historyBefore) : [];
         Logger.Info($"UsePotionAction completed with {results.Count} result entries");
 
         return new

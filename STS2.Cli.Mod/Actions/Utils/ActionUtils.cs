@@ -62,6 +62,27 @@ public static class ActionUtils
     }
 
     /// <summary>
+    ///     Gets the local player from the current run state (works outside combat).
+    ///     In single player mode, returns the first player.
+    ///     Requires an active run (caller must validate <see cref="RunManager.IsInProgress" /> first).
+    ///     Use this instead of <see cref="GetLocalPlayer" /> when outside combat.
+    /// </summary>
+    public static Player? GetLocalPlayerFromRun()
+    {
+        try
+        {
+            var runState = RunManager.Instance.DebugOnlyGetState();
+            var players = runState?.Players;
+            return players?.Count > 0 ? players[0] : null;
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"Failed to get local player from run: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>
     ///     Validates that combat is active and the player can act.
     ///     Checks: combat in progress, not ending, play phase, actions not disabled.
     ///     Returns an error response object if any check fails, or <c>null</c> if all pass.
