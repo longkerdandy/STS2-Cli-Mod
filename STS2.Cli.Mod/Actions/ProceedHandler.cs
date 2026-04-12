@@ -55,7 +55,7 @@ public static class ProceedHandler
             if (rewardScreen != null)
             {
                 Logger.Info("Detected reward screen context");
-                return ExecuteRewardProceed(rewardScreen);
+                return await ExecuteRewardProceedAsync(rewardScreen);
             }
 
             // --- Try FakeMerchant Event ---
@@ -123,8 +123,9 @@ public static class ProceedHandler
 
     /// <summary>
     ///     Proceeds from the reward screen.
+    ///     Clicks the proceed button and waits for the map to open.
     /// </summary>
-    private static object ExecuteRewardProceed(NRewardsScreen screen)
+    private static async Task<object> ExecuteRewardProceedAsync(NRewardsScreen screen)
     {
         var proceedButton = UiUtils.FindFirst<NProceedButton>(screen);
         if (proceedButton == null)
@@ -158,8 +159,7 @@ public static class ProceedHandler
         Logger.Info("Clicking proceed button on reward screen");
         proceedButton.ForceClick();
 
-        // ForceClick triggers OnProceedButtonPressed which handles the full
-        // transition (ExitCurrentRoom, open map).
+        var proceeded = await WaitForMapOpenAsync();
 
         return new
         {
@@ -167,6 +167,7 @@ public static class ProceedHandler
             data = new
             {
                 context = "reward_screen",
+                proceeded,
                 action = "PROCEED"
             }
         };
