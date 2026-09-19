@@ -36,16 +36,16 @@ public static class CombatStateBuilder
             return null;
         }
 
+        var player = combatState.Players.Count > 0 ? combatState.Players[0] : null;
         var result = new CombatStateDto
         {
             Encounter = combatState.Encounter?.Id.Entry,
             TurnNumber = combatState.RoundNumber,
-            IsPlayerTurn = combatManager.IsPlayPhase,
+            IsPlayerTurn = player?.PlayerCombatState?.Phase == PlayerTurnPhase.Play,
             IsPlayerActionsDisabled = combatManager.PlayerActionsDisabled,
             IsCombatEnding = combatManager.IsOverOrEnding
         };
 
-        var player = combatState.Players.Count > 0 ? combatState.Players[0] : null;
         if (player != null)
         {
             var pcs = player.PlayerCombatState;
