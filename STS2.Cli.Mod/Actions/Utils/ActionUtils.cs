@@ -96,7 +96,7 @@ public static class ActionUtils
         if (CombatManager.Instance.IsOverOrEnding)
             return new { ok = false, error = "COMBAT_ENDING", message = "Combat is over or ending" };
 
-        if (!CombatManager.Instance.IsPlayPhase)
+        if (GetLocalPlayer()?.PlayerCombatState?.Phase != PlayerTurnPhase.Play)
             return new { ok = false, error = "NOT_PLAYER_TURN", message = "Not in play phase" };
 
         if (CombatManager.Instance.PlayerActionsDisabled)

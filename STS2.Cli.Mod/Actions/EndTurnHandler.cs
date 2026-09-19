@@ -46,6 +46,9 @@ public static class EndTurnHandler
             var player = ActionUtils.GetLocalPlayer();
             if (player == null)
                 return new { ok = false, error = "NO_PLAYER", message = "Player not found" };
+            var playerCombatState = player.PlayerCombatState;
+            if (playerCombatState == null)
+                return new { ok = false, error = "NOT_IN_COMBAT", message = "Player combat state not found" };
 
             // --- Snapshot history and end turn ---
 
@@ -57,7 +60,14 @@ public static class EndTurnHandler
             void OnTurnStarted(CombatState _)
             {
                 // Only resolve when it's the player's play phase again
-                if (CombatManager.Instance.IsPlayPhase)
+                if (playerCombatState.Phase == PlayerTurnPhase.Play)
+                    tcs.TrySetResult("turn_started");
+            }
+
+            // Since v0.111, play readiness is per player and can follow TurnStarted.
+            void OnPlayerTurnPhaseChanged()
+            {
+                if (playerCombatState.Phase == PlayerTurnPhase.Play)
                     tcs.TrySetResult("turn_started");
             }
 
@@ -68,6 +78,7 @@ public static class EndTurnHandler
 
             CombatManager.Instance.TurnStarted += OnTurnStarted;
             CombatManager.Instance.CombatEnded += OnCombatEnded;
+            playerCombatState.PlayerTurnPhaseChanged += OnPlayerTurnPhaseChanged;
 
             try
             {
@@ -108,6 +119,7 @@ public static class EndTurnHandler
                 // Always unsubscribe to avoid leaking event handlers
                 CombatManager.Instance.TurnStarted -= OnTurnStarted;
                 CombatManager.Instance.CombatEnded -= OnCombatEnded;
+                playerCombatState.PlayerTurnPhaseChanged -= OnPlayerTurnPhaseChanged;
             }
         }
         catch (Exception ex)

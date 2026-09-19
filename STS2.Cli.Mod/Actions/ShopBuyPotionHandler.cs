@@ -45,7 +45,7 @@ public static class ShopBuyPotionHandler
             if (merchantRoom == null || !merchantRoom.IsInsideTree())
                 return new { ok = false, error = "NOT_IN_SHOP", message = "Not currently in a shop" };
 
-            var inventory = merchantRoom.Room.Inventory;
+            var inventory = merchantRoom.Room.GetLocalInventory();
 
             // --- Find the potion entry by ID + nth ---
             var entry = FindPotionEntry(inventory, potionId, nth);

@@ -31,7 +31,7 @@ public static class ShopStateBuilder
                 return null;
             }
 
-            var inventory = merchantRoom.Room.Inventory;
+            var inventory = merchantRoom.Room.GetLocalInventory();
 
             var cards = BuildCards(inventory);
             var relics = BuildRelics(inventory);

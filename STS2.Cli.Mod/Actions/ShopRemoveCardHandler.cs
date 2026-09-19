@@ -44,7 +44,7 @@ public static class ShopRemoveCardHandler
             if (merchantRoom == null || !merchantRoom.IsInsideTree())
                 return new { ok = false, error = "NOT_IN_SHOP", message = "Not currently in a shop" };
 
-            var inventory = merchantRoom.Room.Inventory;
+            var inventory = merchantRoom.Room.GetLocalInventory();
 
             // --- Guard: Check card removal entry exists ---
             var entry = inventory.CardRemovalEntry;

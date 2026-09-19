@@ -43,7 +43,7 @@ public static class ShopBuyCardHandler
             if (merchantRoom == null || !merchantRoom.IsInsideTree())
                 return new { ok = false, error = "NOT_IN_SHOP", message = "Not currently in a shop" };
 
-            var inventory = merchantRoom.Room.Inventory;
+            var inventory = merchantRoom.Room.GetLocalInventory();
 
             // --- Find the card entry by ID + nth ---
             var entry = FindCardEntry(inventory, cardId, nth);

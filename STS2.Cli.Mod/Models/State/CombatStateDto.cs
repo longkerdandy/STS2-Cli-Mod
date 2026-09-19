@@ -34,7 +34,7 @@ public class CombatStateDto
     ///     True if it's the player's turn and they can play cards.
     /// </summary>
     /// <remarks>
-    ///     Source: <c>CombatManager.IsPlayPhase</c>.
+    ///     Source: <c>PlayerCombatState.Phase == PlayerTurnPhase.Play</c>.
     /// </remarks>
     public bool IsPlayerTurn { get; set; }
 
